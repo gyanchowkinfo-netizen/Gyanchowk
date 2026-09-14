@@ -1,0 +1,180 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+  Gyan Chowk design tokens — source of truth.
+  Values sampled from /public/g1.png (navy G + amber C).
+  Update here first; Tailwind `gc-*` and `gyan-*` map to these variables.
+*/
+:root {
+  color-scheme: light;
+
+  --gyan-primary: #003898;
+  --gyan-primary-light: #2a62c4;
+  --gyan-primary-dark: #001850;
+
+  --gyan-secondary: #f8b000;
+  --gyan-secondary-light: #ffc53a;
+  --gyan-secondary-dark: #c87800;
+
+  --gyan-accent: #f89000;
+
+  --gyan-background: #f6f8fc;
+  --gyan-background-secondary: #eef3fa;
+  --gyan-surface: #ffffff;
+
+  --gyan-text: #001850;
+  --gyan-text-secondary: #1e3d7a;
+  --gyan-text-muted: #4d6490;
+
+  --gyan-border: #c9d6ea;
+  --gyan-border-hover: #003898;
+
+  --gyan-success: #0f7b4c;
+  --gyan-warning: #c87800;
+  --gyan-error: #c43c32;
+  --gyan-info: #003898;
+
+  --gyan-footer: #001850;
+  --gyan-footer-text: #e8eef8;
+  --gyan-footer-muted: #9aafd0;
+
+  --gc-bg: var(--gyan-background);
+  --gc-gold: var(--gyan-secondary);
+  --gc-blue: var(--gyan-primary);
+}
+
+html,
+body {
+  min-height: 100%;
+  background: var(--gyan-background);
+  color: var(--gyan-text-secondary);
+}
+
+body {
+  background-image:
+    radial-gradient(900px 420px at 0% 0%, color-mix(in srgb, var(--gyan-primary) 8%, transparent), transparent 50%),
+    radial-gradient(700px 380px at 100% 0%, color-mix(in srgb, var(--gyan-secondary) 10%, transparent), transparent 45%);
+  background-attachment: fixed;
+}
+
+h1:not([class*='text-']),
+h2:not([class*='text-']),
+h3:not([class*='text-']) {
+  color: var(--gyan-text);
+}
+
+::selection {
+  background: var(--gyan-secondary);
+  color: var(--gyan-primary-dark);
+}
+
+:focus-visible {
+  outline: 2px solid var(--gyan-primary);
+  outline-offset: 3px;
+}
+
+.gc-kicker {
+  @apply text-xs font-semibold uppercase tracking-[0.3em] text-gc-gold;
+}
+
+.gc-heading {
+  color: var(--gyan-text);
+}
+
+.gc-btn {
+  @apply inline-flex items-center justify-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold transition-[transform,background-color,border-color,box-shadow] duration-200;
+}
+
+.gc-btn:hover {
+  transform: scale(1.03);
+}
+
+.gc-btn:active {
+  transform: scale(0.98);
+}
+
+.gc-btn-primary,
+.gc-btn-blue {
+  @apply gc-btn bg-gc-blue text-white shadow-glow hover:bg-gc-glow;
+}
+
+.gc-btn-primary:active,
+.gc-btn-blue:active {
+  background-color: var(--gyan-primary-dark);
+}
+
+.gc-btn-secondary,
+.gc-btn-gold {
+  @apply gc-btn bg-gradient-to-r from-gc-gold to-gc-amber text-gc-black shadow-gold hover:brightness-110;
+}
+
+.gc-btn-ghost {
+  @apply gc-btn border border-gc-line bg-transparent text-gc-blue hover:border-gc-blue hover:bg-gc-navy;
+}
+
+.gc-btn-ghost-inverse {
+  @apply gc-btn border border-white/40 bg-transparent text-white hover:bg-white/10;
+}
+
+.gc-btn-arrow {
+  @apply inline-block transition-transform duration-200;
+}
+
+.gc-btn-primary:hover .gc-btn-arrow,
+.gc-btn-secondary:hover .gc-btn-arrow,
+.gc-btn-gold:hover .gc-btn-arrow,
+a.gc-btn-gold:hover .gc-btn-arrow,
+a.gc-btn-primary:hover .gc-btn-arrow {
+  transform: translateX(3px);
+}
+
+.gc-card {
+  @apply rounded-2xl border border-gc-line bg-gc-ink shadow-sm transition-[transform,border-color,box-shadow] duration-300;
+}
+
+.gc-card:hover {
+  border-color: color-mix(in srgb, var(--gyan-primary) 45%, var(--gyan-border));
+  box-shadow: 0 10px 28px color-mix(in srgb, var(--gyan-primary) 10%, transparent);
+}
+
+.gc-input {
+  /* @apply w-full rounded-xl border border-gc-line bg-white px-4 py-3 text-sm text-gc-black outline-none transition placeholder:text-gc-mute focus:border-gc-blue focus:ring-2 focus:ring-gc-blue/25; */
+  .gc-input {
+  @apply w-full rounded-xl border border-gc-line bg-white px-4 py-3 text-sm text-gc-black outline-none transition placeholder:text-gc-mute focus:border-gc-blue focus:ring-2;
+  --tw-ring-color: rgb(37 99 235 / 0.25);
+}
+}
+
+.gc-blob {
+  animation: gc-blob 18s ease-in-out infinite;
+}
+
+.gc-blob-delay {
+  animation-delay: -7s;
+}
+
+@keyframes gc-blob {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(18px, -12px, 0) scale(1.06);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gc-blob,
+  .gc-blob-delay {
+    animation: none;
+  }
+  .gc-btn:hover,
+  .gc-btn:active {
+    transform: none;
+  }
+  .gc-card {
+    transition: none;
+  }
+}

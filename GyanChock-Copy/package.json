@@ -1,0 +1,29 @@
+{
+  "name": "gyan-chowk",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Gyan Chowk — production e-learning platform",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "concurrently -n server,web -c blue,yellow \"npm run dev -w @gyan-chowk/server\" \"npm run dev -w @gyan-chowk/web\"",
+    "dev:server": "npm run dev -w @gyan-chowk/server",
+    "dev:web": "npm run dev -w @gyan-chowk/web",
+    "build": "npm run build -w @gyan-chowk/shared && npm run build -w @gyan-chowk/server && npm run build -w @gyan-chowk/web",
+    "lint": "npm run lint --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "seed": "npm run seed -w @gyan-chowk/server",
+    "format": "prettier --write \"**/*.{ts,tsx,js,json,md,css}\""
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2",
+    "prettier": "^3.5.3",
+    "typescript": "^5.8.2"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
