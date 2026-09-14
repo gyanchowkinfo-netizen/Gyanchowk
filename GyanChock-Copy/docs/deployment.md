@@ -23,8 +23,10 @@ Root Directory **must** be `GyanChock-Copy/apps/web` (this repo also sets that i
 
 Environment variables on Vercel:
 
-- `NEXT_PUBLIC_API_URL` — Render API origin, e.g. `https://gyanchowk-api.onrender.com`
+- `NEXT_PUBLIC_API_URL` — `https://gyanchowk-1.onrender.com` (optional; this is the production default)
 - `NEXT_PUBLIC_APP_URL` — `https://gyanchowk.vercel.app`
+
+The browser calls same-origin `/api/*`, and Next.js rewrites those requests to the Render API.
 
 ## Render (API)
 
@@ -42,7 +44,7 @@ Preferred service settings (also in `render.yaml`):
 
 Required env vars: `MONGODB_URI`, `JWT_SECRET`, `JWT_REFRESH_SECRET`, `ADMIN_EMAIL`, `ADMIN_PASSWORD`, `CLIENT_ORIGIN`, `NEXT_PUBLIC_APP_URL`, `NODE_ENV=production`. Render sets `PORT` automatically.
 
-`CLIENT_ORIGIN` must include `https://gyanchowk.vercel.app`.
+`CLIENT_ORIGIN` must be `https://gyanchowk.vercel.app`. `NEXT_PUBLIC_APP_URL` should match.
 
 Health: `GET /api/health` → `{ ok: true, service: "gyan-chowk" }`.
 

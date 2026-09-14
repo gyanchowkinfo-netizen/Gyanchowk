@@ -1,8 +1,11 @@
+import { apiOrigin } from './site';
+
 export function cn(...parts: Array<string | false | null | undefined>) {
   return parts.filter(Boolean).join(' ');
 }
 
-export const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+/** Absolute API origin for server/build. Browser calls same-origin `/api` (rewritten to Render). */
+export const API_URL = typeof window === 'undefined' ? apiOrigin() : '';
 
 export async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
   const headers = new Headers(init.headers);
@@ -13,7 +16,7 @@ export async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
     ...init,
     headers,
     credentials: 'include',
-    signal: init.signal ?? AbortSignal.timeout(12_000),
+    signal: init.signal ?? AbortSignal.timeout(20_000),
   });
   const data = (await res.json().catch(() => ({}))) as T & { error?: string };
   if (!res.ok) {

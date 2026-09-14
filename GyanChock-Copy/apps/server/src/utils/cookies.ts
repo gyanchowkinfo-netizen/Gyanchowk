@@ -4,7 +4,7 @@ import { isProd } from '../config/env.js';
 const base: CookieOptions = {
   httpOnly: true,
   secure: isProd,
-  sameSite: isProd ? 'strict' : 'lax',
+  sameSite: 'lax',
   path: '/',
 };
 
