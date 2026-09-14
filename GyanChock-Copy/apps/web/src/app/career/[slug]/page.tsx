@@ -6,6 +6,15 @@ import { CoverMedia } from '@/components/public/CoverMedia';
 import { ScrollProgress } from '@/components/motion';
 import { getCareerArticle } from '@/lib/content';
 import { formatDate, readingMinutes } from '@/lib/format';
+import { staticParams } from '@/lib/static-params';
+
+export const dynamic = 'force-static';
+export const dynamicParams = false;
+export const revalidate = 120;
+
+export function generateStaticParams() {
+  return staticParams('/api/career/articles?limit=200');
+}
 
 const APP = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 

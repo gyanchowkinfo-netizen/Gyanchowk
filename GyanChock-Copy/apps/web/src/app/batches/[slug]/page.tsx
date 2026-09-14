@@ -4,6 +4,15 @@ import { notFound } from 'next/navigation';
 import { api } from '@/lib/api';
 import { BatchDetailView } from '@/components/batches/BatchDetailView';
 import type { BatchCardData } from '@/lib/types';
+import { staticParams } from '@/lib/static-params';
+
+export const dynamic = 'force-static';
+export const dynamicParams = false;
+export const revalidate = 120;
+
+export function generateStaticParams() {
+  return staticParams('/api/batches?limit=200');
+}
 
 const APP = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 

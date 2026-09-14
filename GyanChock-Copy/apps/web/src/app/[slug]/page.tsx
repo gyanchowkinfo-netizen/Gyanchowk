@@ -3,6 +3,10 @@ import { notFound } from 'next/navigation';
 import { api } from '@/lib/api';
 import { PageContainer, PageHeader, Breadcrumbs } from '@/components/layout/Page';
 
+export const dynamic = 'force-static';
+export const dynamicParams = false;
+export const revalidate = 120;
+
 const LEGAL: Record<string, { title: string; body: string }> = {
   'privacy-policy': {
     title: 'Privacy policy',
@@ -25,6 +29,10 @@ const LEGAL: Record<string, { title: string; body: string }> = {
     body: 'Prices are always calculated on the server from MongoDB. Razorpay checkout is used for paid items. Enrollment is created only after HMAC/webhook verification. Coupons and wallet debits are applied server-side. Never trust a frontend success event.',
   },
 };
+
+export function generateStaticParams() {
+  return Object.keys(LEGAL).map((slug) => ({ slug }));
+}
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;

@@ -1,5 +1,14 @@
 import type { Metadata } from 'next';
 import { API_URL } from '@/lib/api';
+import { staticParams } from '@/lib/static-params';
+
+export const dynamic = 'force-static';
+export const dynamicParams = false;
+export const revalidate = 120;
+
+export function generateStaticParams() {
+  return staticParams('/api/courses?limit=200');
+}
 
 export async function generateMetadata({
   params,

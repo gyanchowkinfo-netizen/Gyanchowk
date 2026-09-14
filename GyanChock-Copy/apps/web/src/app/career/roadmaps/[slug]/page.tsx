@@ -4,6 +4,15 @@ import { PageContainer, Breadcrumbs } from '@/components/layout/Page';
 import { RoadmapTimeline } from '@/components/motion/RoadmapTimeline';
 import { ScrollProgress } from '@/components/motion';
 import { getCareerRoadmap } from '@/lib/content';
+import { staticParams } from '@/lib/static-params';
+
+export const dynamic = 'force-static';
+export const dynamicParams = false;
+export const revalidate = 120;
+
+export function generateStaticParams() {
+  return staticParams('/api/career/roadmaps?limit=200');
+}
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;

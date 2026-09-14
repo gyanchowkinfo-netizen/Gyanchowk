@@ -2,14 +2,8 @@ import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
   transpilePackages: ['@gyan-chowk/shared', 'three', '@react-three/fiber'],
-  outputFileTracingIncludes: {
-    '/**': [
-      '../../node_modules/next/**',
-      './node_modules/next/**',
-      '../../packages/shared/**',
-    ],
-  },
   images: {
+    unoptimized: true,
     remotePatterns: [
       { protocol: 'https', hostname: 'res.cloudinary.com' },
       { protocol: 'http', hostname: 'localhost' },

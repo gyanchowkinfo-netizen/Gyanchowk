@@ -3,6 +3,15 @@ import { notFound } from 'next/navigation';
 import { ArticleView } from '@/components/blog/ArticleView';
 import { getBlogPost } from '@/lib/content';
 import { authorName } from '@/lib/format';
+import { staticParams } from '@/lib/static-params';
+
+export const dynamic = 'force-static';
+export const dynamicParams = false;
+export const revalidate = 120;
+
+export function generateStaticParams() {
+  return staticParams('/api/cms/blogs?limit=200');
+}
 
 const APP = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 

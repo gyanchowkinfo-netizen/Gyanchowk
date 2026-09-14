@@ -3,6 +3,15 @@ import { cache } from 'react';
 import { notFound } from 'next/navigation';
 import { api } from '@/lib/api';
 import { TeacherProfileView, type TeacherProfilePayload } from '@/components/teachers/TeacherProfileView';
+import { staticParams } from '@/lib/static-params';
+
+export const dynamic = 'force-static';
+export const dynamicParams = false;
+export const revalidate = 120;
+
+export function generateStaticParams() {
+  return staticParams('/api/catalog/teachers?limit=200', '_id');
+}
 
 const APP = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 
