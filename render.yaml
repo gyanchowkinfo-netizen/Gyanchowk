@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: gyanchowk-api
+    runtime: node
+    rootDir: GyanChock-Copy
+    buildCommand: npm install --include=dev && npm run build:server
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_VERSION
+        value: "20"
+      - key: NODE_ENV
+        value: production

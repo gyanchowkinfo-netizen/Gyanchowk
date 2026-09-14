@@ -1,0 +1,13 @@
+{
+  "name": "gyanchowk",
+  "private": true,
+  "description": "Deploy wrapper — app lives in GyanChock-Copy (npm workspaces monorepo)",
+  "scripts": {
+    "build": "npm install --prefix GyanChock-Copy --include=dev && npm run build:server --prefix GyanChock-Copy",
+    "start": "npm run start --prefix GyanChock-Copy",
+    "build:web": "npm install --prefix GyanChock-Copy --include=dev && npm run build:web --prefix GyanChock-Copy"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
