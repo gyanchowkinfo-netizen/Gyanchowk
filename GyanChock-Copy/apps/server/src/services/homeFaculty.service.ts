@@ -42,7 +42,8 @@ function asList(v: unknown, limit = 8) {
 
 function slugFromHref(href: string) {
   const match = href.match(/^\/teachers\/([^/?#]+)$/i);
-  return match ? decodeURIComponent(match[1]) : '';
+  const segment = match?.[1];
+  return segment ? decodeURIComponent(segment) : '';
 }
 
 function uniqueSlug(name: string, used: Set<string>, requested = '') {

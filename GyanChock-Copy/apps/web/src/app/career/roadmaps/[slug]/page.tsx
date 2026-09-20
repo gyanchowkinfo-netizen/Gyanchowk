@@ -7,7 +7,7 @@ import { getCareerRoadmap } from '@/lib/content';
 import { staticParams } from '@/lib/static-params';
 
 export const dynamic = 'force-static';
-export const dynamicParams = process.env.NODE_ENV !== 'production';
+export const dynamicParams = false;
 export const revalidate = 120;
 
 export function generateStaticParams() {

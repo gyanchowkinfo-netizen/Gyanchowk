@@ -78,7 +78,7 @@ export function HomeHighlightsEditor() {
     }
   }
 
-  async function useLiveStats() {
+  async function resetToLiveStats() {
     setBusy(true);
     try {
       await api('/api/admin/settings', {
@@ -144,7 +144,7 @@ export function HomeHighlightsEditor() {
         <Button type="submit" loading={busy}>
           Save highlights
         </Button>
-        <Button type="button" variant="ghost" disabled={busy} onClick={() => void useLiveStats()}>
+        <Button type="button" variant="ghost" disabled={busy} onClick={() => void resetToLiveStats()}>
           Reset to live stats
         </Button>
       </div>
