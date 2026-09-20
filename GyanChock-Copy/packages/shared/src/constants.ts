@@ -50,6 +50,12 @@ export type QuestionType = (typeof QUESTION_TYPES)[number];
 export const TEST_STATUSES = ['draft', 'scheduled', 'live', 'ended', 'archived'] as const;
 export type TestStatus = (typeof TEST_STATUSES)[number];
 
+export const TEST_CATEGORIES = ['chapter', 'subject', 'daily', 'weekly', 'mock'] as const;
+export type TestCategory = (typeof TEST_CATEGORIES)[number];
+
+export const PAYMENT_GATEWAYS = ['razorpay', 'stripe'] as const;
+export type PaymentGateway = (typeof PAYMENT_GATEWAYS)[number];
+
 export const ATTEMPT_STATUSES = ['in_progress', 'submitted', 'auto_submitted', 'evaluated'] as const;
 export type AttemptStatus = (typeof ATTEMPT_STATUSES)[number];
 

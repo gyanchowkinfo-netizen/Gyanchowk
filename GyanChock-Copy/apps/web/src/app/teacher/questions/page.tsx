@@ -1,7 +1,1 @@
-﻿'use client';
-
-import { ResourcePanel } from '@/components/panel/ResourcePanel';
-
-export default function Page() {
-  return <ResourcePanel title="Question bank" path="/api/questions" />;
-}
+export { default } from '../../admin/questions/page';

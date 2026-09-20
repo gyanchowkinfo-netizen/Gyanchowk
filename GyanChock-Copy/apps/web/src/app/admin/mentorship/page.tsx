@@ -1,7 +1,18 @@
-﻿'use client';
+'use client';
 
-import { ResourcePanel } from '@/components/panel/ResourcePanel';
+import { ResourceManager } from '@/components/panel/ResourceManager';
 
 export default function Page() {
-  return <ResourcePanel title="Mentors" path="/api/mentorship/mentors" />;
+  return (
+    <ResourceManager
+      title="Mentorship"
+      path="/api/mentorship"
+      empty="No mentorship requests"
+      columns={[
+        { key: 'topic', label: 'Topic' },
+        { key: 'status', label: 'Status', kind: 'status' },
+        { key: 'createdAt', label: 'Requested', kind: 'date' },
+      ]}
+    />
+  );
 }

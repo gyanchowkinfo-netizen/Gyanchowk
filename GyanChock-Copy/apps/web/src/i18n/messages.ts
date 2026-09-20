@@ -12,11 +12,11 @@ export const messages = {
       register: 'Get started',
     },
     hero: {
-      kicker: 'Recorded learning. Serious outcomes.',
-      title: 'The chowk where knowledge becomes rank.',
-      body: 'Gyan Chowk is built for high-performance recorded courses, batches, tests, doubts, mentorship and career growth — not live-class noise.',
-      cta: 'Explore courses',
-      secondary: 'Join a batch',
+      kicker: 'Gyan Chowk · Learn with purpose',
+      title: 'Learn deeply.\nBuild confidently.',
+      body: 'Structured courses, focused practice, expert guidance and measurable progress — built for learners who want to move forward with purpose.',
+      cta: 'Start learning',
+      secondary: 'Explore courses',
     },
     footer: {
       copy: '© Gyan Chowk. All rights reserved.',

@@ -15,6 +15,7 @@ import {
   LessonModel,
   ProgressModel,
   ReviewModel,
+  SettingModel,
   StudyMaterialModel,
   SubjectModel,
   TestModel,
@@ -23,7 +24,9 @@ import {
 } from '../models/index.js';
 import { paginate, paginatedResult, slugify } from '../utils/helpers.js';
 import { notFound } from '../utils/errors.js';
+import { facultyCardToProfile, resolveHomeFaculty } from '../services/homeFaculty.service.js';
 import { assertTeacherOwnsCourse } from '../services/learning.service.js';
+import { destroyMedia } from '../services/banner.service.js';
 
 export const courseRouter = Router();
 export const batchRouter = Router();
@@ -39,11 +42,12 @@ courseRouter.get(
     const filter: Record<string, unknown> = {};
     if (q.mine === '1' && req.user?.role === 'teacher') {
       filter.teachers = req.user.id;
-    } else if (q.mine === '1' && req.user?.role === 'admin') {
-      /* all courses */
+    } else if (req.user?.role === 'admin') {
+      if (q.status) filter.status = q.status;
     } else {
       filter.status = 'published';
     }
+    if (q.careerTrack) filter.careerTrack = q.careerTrack;
     if (q.q) filter.$text = { $search: q.q };
     if (q.category) filter.category = q.category;
     if (q.subject) filter.subjects = q.subject;
@@ -139,6 +143,7 @@ const courseBody = z.object({
   examCategories: z.array(z.string()).optional(),
   targetClass: z.string().optional(),
   targetExam: z.string().optional(),
+  careerTrack: z.string().optional(),
   language: z.string().optional(),
   pricingType: z.enum(['free', 'paid']).optional(),
   price: z.number().min(0).optional(),
@@ -169,6 +174,20 @@ courseRouter.post(
   }),
 );
 
+courseRouter.delete(
+  '/:id',
+  authenticate,
+  requireRoles('admin'),
+  audit('course.delete', 'Course'),
+  asyncHandler(async (req: AuthedRequest, res) => {
+    const course = await CourseModel.findById(req.params.id);
+    if (!course) throw notFound('Course not found');
+    if (course.thumbnail?.publicId) await destroyMedia(course.thumbnail.publicId);
+    await CourseModel.deleteOne({ _id: course._id });
+    res.json({ ok: true });
+  }),
+);
+
 courseRouter.patch(
   '/:id',
   authenticate,
@@ -177,6 +196,16 @@ courseRouter.patch(
     const course = await CourseModel.findById(req.params.id);
     if (!course) throw notFound('Course not found');
     assertTeacherOwnsCourse(req.user!.role, req.user!.id, course);
+    const nextThumb = req.body.thumbnail;
+    if (nextThumb === null) {
+      await destroyMedia(course.thumbnail?.publicId);
+      course.set('thumbnail', undefined);
+      delete req.body.thumbnail;
+    } else if (nextThumb?.publicId) {
+      if (course.thumbnail?.publicId && course.thumbnail.publicId !== nextThumb.publicId) {
+        await destroyMedia(course.thumbnail.publicId);
+      }
+    }
     Object.assign(course, req.body);
     await course.save();
     res.json({ course });
@@ -458,6 +487,19 @@ batchRouter.post(
   }),
 );
 
+batchRouter.patch(
+  '/:id',
+  authenticate,
+  teacherOrAdmin,
+  asyncHandler(async (req: AuthedRequest, res) => {
+    const batch = await BatchModel.findById(req.params.id);
+    if (!batch) throw notFound('Batch not found');
+    Object.assign(batch, req.body);
+    await batch.save();
+    res.json({ batch });
+  }),
+);
+
 batchRouter.post(
   '/:id/announcements',
   authenticate,
@@ -693,20 +735,33 @@ catalogRouter.get(
   }),
 );
 
+async function loadFacultyProfile(slug: string) {
+  const setting = await SettingModel.findOne({ key: 'home.faculty' }).lean();
+  const card = resolveHomeFaculty(setting?.value).find((item) => item.slug === slug);
+  return card ? facultyCardToProfile(card) : null;
+}
+
 catalogRouter.get(
   '/teachers/:id',
   asyncHandler(async (req, res) => {
-    if (!/^[a-f\d]{24}$/i.test(String(req.params.id))) throw notFound('Teacher not found');
+    const id = String(req.params.id ?? '').trim();
+    const isObjectId = /^[a-f\d]{24}$/i.test(id);
     const { UserModel, CourseModel, BatchModel, ReviewModel } = await import('../models/index.js');
-    const teacher = await UserModel.findOne({
-      _id: req.params.id,
-      role: 'teacher',
-      teacherStatus: 'approved',
-      status: 'active',
-    })
-      .select('name headline bio avatar createdAt')
-      .lean();
-    if (!teacher) throw notFound('Teacher not found');
+    const teacher = isObjectId
+      ? await UserModel.findOne({
+          _id: id,
+          role: 'teacher',
+          teacherStatus: 'approved',
+          status: 'active',
+        })
+          .select('name headline bio avatar createdAt')
+          .lean()
+      : null;
+    if (!teacher) {
+      const faculty = await loadFacultyProfile(id);
+      if (faculty) return res.json(faculty);
+      throw notFound('Teacher not found');
+    }
     const courses = await CourseModel.find({ teachers: teacher._id, status: 'published' })
       .select('teachers title slug price pricingType discountPercent ratingAvg ratingCount enrollmentCount subtitle category subjects targetExam language thumbnail')
       .lean();

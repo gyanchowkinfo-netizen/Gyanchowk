@@ -30,7 +30,7 @@ export function BatchCategories({
             <StaggerItem key={c.name}>
               <button
                 type="button"
-                className="group gc-card flex w-full flex-col items-start gap-2 p-4 text-left transition-[transform,border-color] duration-300 hover:-translate-y-1 hover:border-gc-gold/50"
+                className="group gc-card flex w-full flex-col items-start gap-2 p-4 text-left transition-[transform,border-color] duration-300 hover:-translate-y-1 hover:border-gc-blue/50"
                 onClick={() => onSelect(c.name)}
               >
                 <BookOpen className="text-gc-gold transition-transform duration-300 group-hover:scale-105" size={18} />

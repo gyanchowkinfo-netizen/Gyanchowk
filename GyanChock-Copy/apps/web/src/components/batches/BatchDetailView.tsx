@@ -78,7 +78,7 @@ function EnrollCta({
   }
   if (active) {
     return (
-      <Link href={courseId ? `/student/learning/${courseId}` : '/student/batches'} className="gc-btn-gold mt-4 inline-flex w-full justify-center">
+      <Link href={courseId ? `/student/learning/${courseId}` : '/student/batches'} className="gc-btn-primary mt-4 inline-flex w-full justify-center">
         Continue learning <span className="gc-btn-arrow">→</span>
       </Link>
     );
@@ -116,7 +116,7 @@ export function BatchDetailView({ slug }: { slug: string }) {
   if (!batch) {
     return (
       <PageContainer>
-        <EmptyState title="Batch not found" action={{ href: '/batches', label: 'Browse batches' }} />
+        <EmptyState title="Batch not found" action={{ href: '/courses', label: 'Browse courses' }} />
       </PageContainer>
     );
   }
@@ -193,7 +193,7 @@ export function BatchDetailView({ slug }: { slug: string }) {
               {(batch.teachers ?? []).map((t) => (
                 <li key={t._id ?? t.name}>
                   {t._id ? (
-                    <Link href={`/teachers/${t._id}`} className="gc-card flex items-center gap-3 p-3 hover:border-gc-gold">
+                    <Link href={`/teachers/${t._id}`} className="gc-card flex items-center gap-3 p-3 hover:border-gc-blue">
                       <Avatar name={t.name} src={t.avatar?.url} size={40} />
                       <span>
                         <span className="block font-medium">{t.name}</span>
@@ -328,7 +328,7 @@ export function BatchDetailView({ slug }: { slug: string }) {
                   ? `/checkout/${batch._id}?type=batch`
                   : `/login?next=${encodeURIComponent(`/checkout/${batch._id}?type=batch`)}`
             }
-            className="gc-btn-gold"
+            className="gc-btn-primary"
           >
             {data.enrollment?.status === 'active' && !data.enrollment.expired ? 'Continue' : data.enrollment?.expired ? 'Renew' : 'Enroll'}
           </Link>

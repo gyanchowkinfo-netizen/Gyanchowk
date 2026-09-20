@@ -7,11 +7,11 @@ import { Reveal, StaggerContainer, StaggerItem, TiltCard } from '@/components/mo
 
 const resources = [
   { icon: Map, title: 'Roadmaps', body: 'Step-by-step recorded learning maps.', href: '/career/roadmaps' },
-  { icon: FileText, title: 'Interview preparation', body: 'Career articles on interviews and readiness.', href: '/career#articles' },
-  { icon: ScrollText, title: 'Resume resources', body: 'Guides from the career desk when published.', href: '/career#articles' },
+  { icon: FileText, title: 'Interview preparation', body: 'Practice with the live test engine by career track.', href: '/career/interview' },
+  { icon: ScrollText, title: 'Resume builder', body: 'Form-driven resume with live preview and PDF export.', href: '/career/resume' },
   { icon: Newspaper, title: 'Career guides', body: 'Practical articles on skills and opportunity.', href: '/career#articles' },
-  { icon: Landmark, title: 'Scholarships', body: 'Scholarship notes appear when the CMS publishes them.', href: '/career#articles' },
-  { icon: Trophy, title: 'Competitive exams', body: 'Batches and courses for exam-focused recorded prep.', href: '/batches' },
+  { icon: Landmark, title: 'Scholarships', body: 'Browse eligibility, amounts, and apply links.', href: '/career/scholarships' },
+  { icon: Trophy, title: 'Government exams', body: 'Courses and mocks tagged for government exam tracks.', href: '/career/government-exams' },
   { icon: BookMarked, title: 'Programming resources', body: 'Recorded courses for applied programming.', href: '/courses' },
   { icon: GraduationCap, title: 'Career articles', body: 'The full published career library.', href: '/career#articles' },
 ];
@@ -21,7 +21,7 @@ export function CareerResources() {
     <section id="resources">
       <PageContainer>
         <Reveal>
-          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-gc-gold">Resources</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-gc-blue">Resources</p>
         </Reveal>
         <Reveal delay={0.04}>
           <h2 className="mt-2 font-display text-3xl text-gc-black">Tools that actually go somewhere</h2>
@@ -32,7 +32,7 @@ export function CareerResources() {
             return (
               <StaggerItem key={item.title}>
                 <TiltCard intensity={4}>
-                  <Link href={item.href} className="gc-card flex h-full flex-col p-5 hover:border-gc-gold">
+                  <Link href={item.href} className="gc-card flex h-full flex-col p-5 hover:border-gc-blue">
                     <Icon className="text-gc-gold" size={20} aria-hidden />
                     <h3 className="mt-3 font-display text-lg">{item.title}</h3>
                     <p className="mt-2 flex-1 text-sm text-gc-mute">{item.body}</p>

@@ -71,8 +71,8 @@ authRouter.post(
   '/forgot-password',
   validate(forgotPasswordSchema),
   asyncHandler(async (req, res) => {
-    const result = await requestPasswordReset(req.body.email);
-    res.json({ ok: true, ...(result.resetToken ? { resetToken: result.resetToken } : {}) });
+    await requestPasswordReset(req.body.email);
+    res.json({ ok: true });
   }),
 );
 
@@ -125,6 +125,16 @@ authRouter.patch(
       state: z.string().max(80).optional(),
       city: z.string().max(80).optional(),
       language: z.string().max(20).optional(),
+      expertise: z.array(z.string()).optional(),
+      avatar: z.object({ publicId: z.string(), url: z.string().optional() }).optional(),
+      payoutBank: z
+        .object({
+          accountName: z.string().optional(),
+          ifsc: z.string().optional(),
+          accountLast4: z.string().optional(),
+          upi: z.string().optional(),
+        })
+        .optional(),
       teacherDocuments: z
         .array(z.object({ publicId: z.string(), url: z.string().optional(), name: z.string().optional() }))
         .optional(),

@@ -120,6 +120,7 @@ export function BatchSearch({
               onChange={(e) => onChange({ q: e.target.value })}
               placeholder="Search by name, course, exam or teacher"
               aria-label="Filter batches"
+              suppressHydrationWarning
             />
           </label>
           <Select value={filters.sort} onChange={(e) => onChange({ sort: e.target.value })} className="md:w-52" id="batch-sort">

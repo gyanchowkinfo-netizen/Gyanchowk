@@ -25,9 +25,9 @@ export function BlogHero({
         <div className="relative grid items-center gap-10 lg:grid-cols-2">
           <Parallax speed={0.08}>
             <Reveal>
-              <p className="mb-3 text-xs font-semibold uppercase tracking-[0.35em] text-gc-gold">Knowledge hub</p>
+              <p className="gc-kicker mb-3">Knowledge hub</p>
             </Reveal>
-            <h1 className="font-display text-4xl font-semibold leading-tight md:text-6xl">
+            <h1 className="font-display text-[2rem] font-semibold leading-tight tracking-tight text-gc-black sm:text-4xl md:text-6xl">
               <TextReveal text="Ideas That Help You Learn Better." />
             </h1>
             <Reveal delay={0.08}>
@@ -37,7 +37,7 @@ export function BlogHero({
               </p>
             </Reveal>
             <ScaleIn className="mt-8">
-              <form onSubmit={onSearch} className="flex max-w-xl gap-2">
+              <form onSubmit={onSearch} className="flex w-full max-w-xl flex-col gap-2 sm:flex-row">
                 <label className="relative flex-1">
                   <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gc-mute" size={16} aria-hidden />
                   <input
@@ -46,14 +46,15 @@ export function BlogHero({
                     onChange={(e) => onQuery(e.target.value)}
                     placeholder="Search articles, tags or topics"
                     aria-label="Search articles"
+                    suppressHydrationWarning
                   />
                 </label>
-                <button className="gc-btn-gold shrink-0" type="submit">
+                <button className="gc-btn-primary w-full shrink-0 sm:w-auto" type="submit" suppressHydrationWarning>
                   Search
                 </button>
               </form>
             </ScaleIn>
-            <div className="mt-6 flex flex-wrap gap-3">
+            <div className="mt-6 flex w-full flex-col gap-3 sm:flex-row sm:flex-wrap">
               <MagneticButton href="#articles">Explore Articles</MagneticButton>
               <Link href="#topics" className="gc-btn-ghost">
                 Browse topics

@@ -25,6 +25,7 @@ const courseSchema = new Schema(
     category: { type: String, index: true },
     subjects: [{ type: String, index: true }],
     examCategories: [{ type: String, index: true }],
+    careerTrack: { type: String, index: true },
     targetClass: { type: String, index: true },
     targetExam: { type: String, index: true },
     language: { type: String, default: 'en', index: true },

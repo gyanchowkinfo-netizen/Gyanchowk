@@ -9,6 +9,7 @@ import { Input, Select } from '@/components/ui/Input';
 import { toast } from '@/lib/toast';
 import { ConfirmDialog } from '@/components/ui/Overlay';
 import { PasswordStrengthIndicator } from '@/components/auth/PasswordStrength';
+import { subscribeWebPush } from '@/lib/push';
 
 export default function StudentSettingsPage() {
   const { user, refresh, logout } = useAuth();
@@ -125,7 +126,23 @@ export default function StudentSettingsPage() {
         <label className="flex items-center gap-2 text-sm">
           <input type="checkbox" name="push" defaultChecked={Boolean(prefs.data?.prefs.push)} /> Push (when configured)
         </label>
-        <Button type="submit">Save preferences</Button>
+        <div className="flex flex-wrap gap-2">
+          <Button type="submit">Save preferences</Button>
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={async () => {
+              try {
+                await subscribeWebPush();
+                toast.success('Browser notifications enabled');
+              } catch (err) {
+                toast.error(err instanceof Error ? err.message : 'Could not enable push');
+              }
+            }}
+          >
+            Enable browser notifications
+          </Button>
+        </div>
       </form>
       <div className="gc-card space-y-3 p-5">
         <h2 className="font-display text-2xl text-gc-black">Sessions</h2>

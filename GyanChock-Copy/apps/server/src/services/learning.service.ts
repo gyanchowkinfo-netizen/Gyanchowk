@@ -12,6 +12,7 @@ import {
 import { env } from '../config/env.js';
 import { badRequest, notFound } from '../utils/errors.js';
 import { notify } from './notification.service.js';
+import { sendCertificateEmail } from './email.service.js';
 
 export async function maybeIssueCertificate(userId: string, courseId: string) {
   const course = await CourseModel.findById(courseId);
@@ -37,7 +38,12 @@ export async function maybeIssueCertificate(userId: string, courseId: string) {
     body: `Your certificate for ${course.title} is ready.`,
     type: 'certificate',
     href: `/verify/certificate/${cert.certificateId}`,
+    channels: ['inApp', 'push'],
   });
+  const student = await UserModel.findById(userId).select('email name').lean();
+  if (student?.email) {
+    await sendCertificateEmail(student.email, student.name, course.title, cert.certificateId);
+  }
   return cert;
 }
 

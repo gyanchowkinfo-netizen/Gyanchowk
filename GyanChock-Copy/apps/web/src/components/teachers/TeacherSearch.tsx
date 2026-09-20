@@ -84,6 +84,7 @@ export function TeacherSearch({
               onChange={(e) => onChange({ q: e.target.value })}
               placeholder="Search by name, headline or subject"
               aria-label="Filter teachers"
+              suppressHydrationWarning
             />
           </label>
           <Select value={filters.sort} onChange={(e) => onChange({ sort: e.target.value })} className="md:w-48" id="teacher-sort">

@@ -19,7 +19,7 @@ export function CareerCTA() {
                 <span className="gc-card px-3 py-2 text-xs">Certificate</span>
               </FloatingElement>
               <Reveal>
-                <p className="text-xs uppercase tracking-[0.3em] text-gc-gold">Start with direction</p>
+                <p className="text-xs uppercase tracking-[0.22em] text-white/70">Start with direction</p>
               </Reveal>
               <Reveal delay={0.05}>
                 <h2 className="mt-3 font-display text-3xl text-white md:text-5xl">Your future starts with the right direction.</h2>

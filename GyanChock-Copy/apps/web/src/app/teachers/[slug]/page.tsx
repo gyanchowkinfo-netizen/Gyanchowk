@@ -6,7 +6,7 @@ import { TeacherProfileView, type TeacherProfilePayload } from '@/components/tea
 import { staticParams } from '@/lib/static-params';
 
 export const dynamic = 'force-static';
-export const dynamicParams = false;
+export const dynamicParams = true;
 export const revalidate = 120;
 
 export function generateStaticParams() {
@@ -51,7 +51,7 @@ export default async function TeacherProfilePage({ params }: { params: Promise<{
         name: t.name,
         description: t.headline || t.bio,
         image: t.avatar?.url,
-        url: `${APP}/teachers/${t._id}`,
+        url: `${APP}/teachers/${slug}`,
         jobTitle: t.headline || 'Teacher',
         worksFor: { '@type': 'EducationalOrganization', name: 'Gyan Chowk', url: APP },
       },
@@ -61,7 +61,7 @@ export default async function TeacherProfilePage({ params }: { params: Promise<{
         itemListElement: [
           { '@type': 'ListItem', position: 1, name: 'Home', item: APP },
           { '@type': 'ListItem', position: 2, name: 'Teachers', item: `${APP}/teachers` },
-          { '@type': 'ListItem', position: 3, name: t.name, item: `${APP}/teachers/${t._id}` },
+          { '@type': 'ListItem', position: 3, name: t.name, item: `${APP}/teachers/${slug}` },
         ],
       },
     ];

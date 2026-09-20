@@ -35,7 +35,7 @@ export default function MentorshipListPage() {
       <ul className="space-y-3">
         {(mine.data?.items ?? []).map((m) => (
           <li key={m._id}>
-            <Link href={`/student/mentorship/${m._id}`} className="gc-card flex items-center gap-3 p-4 hover:border-gc-gold">
+            <Link href={`/student/mentorship/${m._id}`} className="gc-card flex items-center gap-3 p-4 hover:border-gc-blue">
               <Avatar name={m.mentor?.name} src={m.mentor?.avatar?.url} />
               <div className="flex-1">
                 <p>{m.mentor?.name ?? 'Mentor'}</p>

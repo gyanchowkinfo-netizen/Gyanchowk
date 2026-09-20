@@ -21,7 +21,7 @@ export default function StudentLearningIndex() {
         {courses.map((c) =>
           c ? (
             <li key={c._id}>
-              <Link href={`/student/learning/${c._id}`} className="gc-card block p-5 hover:border-gc-gold">
+              <Link href={`/student/learning/${c._id}`} className="gc-card block p-5 hover:border-gc-blue">
                 {c.title}
               </Link>
             </li>

@@ -38,11 +38,25 @@ export default function CertificatesPage() {
                   <p className="font-display text-lg">{c.course?.title ?? 'Certificate'}</p>
                   <p className="text-xs text-gc-mute">{c.issuedAt ? new Date(c.issuedAt).toLocaleDateString() : ''}</p>
                   <div className="mt-4 flex flex-wrap gap-2">
-                    <a className="gc-btn-gold" href={`/verify/certificate/${vid}`}>
+                    <a className="gc-btn-primary" href={`/verify/certificate/${vid}`}>
                       Public verify
                     </a>
                     <Button variant="ghost" type="button" onClick={() => void share(vid)}>
                       Share
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      type="button"
+                      onClick={async () => {
+                        try {
+                          const { downloadPdf } = await import('@/lib/api');
+                          await downloadPdf(`/api/learning/certificates/${vid}/pdf`, `${vid}.pdf`);
+                        } catch (err) {
+                          toast.error(err instanceof Error ? err.message : 'Download failed');
+                        }
+                      }}
+                    >
+                      Download PDF
                     </Button>
                   </div>
                 </article>

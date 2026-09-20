@@ -26,8 +26,8 @@ export function BatchBenefits() {
             return (
               <StaggerItem key={f.title}>
                 <article className="gc-card group h-full p-5 transition-transform duration-300 hover:-translate-y-1">
-                  <Icon className="text-gc-gold transition-transform duration-300 group-hover:scale-105 group-hover:rotate-6" size={20} />
-                  <h3 className="mt-3 font-display text-lg text-gc-gold">{f.title}</h3>
+                  <Icon className="text-gc-blue transition-transform duration-300 group-hover:scale-105 group-hover:rotate-6" size={20} />
+                  <h3 className="mt-3 font-display text-lg font-semibold text-gc-black">{f.title}</h3>
                   <p className="mt-2 text-sm text-gc-mist">{f.body}</p>
                 </article>
               </StaggerItem>

@@ -2,6 +2,7 @@
 
 import { FormEvent, useState } from 'react';
 import { api } from '@/lib/api';
+import { PageContainer, PageHeader, Breadcrumbs } from '@/components/layout/Page';
 import { FadeIn } from '@/components/motion';
 
 export default function ContactPage() {
@@ -26,18 +27,19 @@ export default function ContactPage() {
     }
   }
   return (
-    <main className="mx-auto max-w-lg px-4 py-16">
+    <PageContainer className="max-w-2xl">
+      <Breadcrumbs items={[{ href: '/', label: 'Home' }, { label: 'Contact' }]} />
       <FadeIn>
-        <h1 className="font-display text-4xl text-gc-black">Contact</h1>
+        <PageHeader title="Contact" subtitle="Write to the Gyan Chowk team. Messages are delivered to platform admins." />
       </FadeIn>
-      <form onSubmit={onSubmit} className="mt-8 space-y-4 gc-card p-6">
-        <input className="gc-input" required name="name" placeholder="Name" />
-        <input className="gc-input" required type="email" name="email" placeholder="Email" />
-        <textarea className="gc-input min-h-32" required name="message" placeholder="How can we help?" />
-        <button className="gc-btn-gold w-full">Send</button>
-        {error ? <p className="text-sm text-red-400">{error}</p> : null}
-        {sent ? <p className="text-sm text-emerald-400">Message delivered to Gyan Chowk admins.</p> : null}
+      <form onSubmit={onSubmit} className="gc-card space-y-4 p-5 sm:p-6">
+        <input className="gc-input" required name="name" placeholder="Name" suppressHydrationWarning />
+        <input className="gc-input" required type="email" name="email" placeholder="Email" suppressHydrationWarning />
+        <textarea className="gc-input min-h-32" required name="message" placeholder="How can we help?" suppressHydrationWarning />
+        <button className="gc-btn-primary w-full" suppressHydrationWarning>Send</button>
+        {error ? <p className="text-sm text-[color:var(--gyan-error)]">{error}</p> : null}
+        {sent ? <p className="text-sm text-[color:var(--gyan-success)]">Message delivered to Gyan Chowk admins.</p> : null}
       </form>
-    </main>
+    </PageContainer>
   );
 }

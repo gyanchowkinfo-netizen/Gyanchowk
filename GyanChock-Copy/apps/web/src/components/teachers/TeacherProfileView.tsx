@@ -70,9 +70,10 @@ export function TeacherProfileView({
   }
 
   const courses = query.data?.courses ?? [];
-  const batches = query.data?.batches ?? [];
   const reviews = query.data?.reviews ?? [];
   const subjects = teacher.subjects?.length ? teacher.subjects : teacher.categories ?? [];
+  const qualifications = teacher.qualifications ?? [];
+  const languages = teacher.languages ?? [];
   const achievements = [
     teacher.courseCount ? `${teacher.courseCount} published course${teacher.courseCount === 1 ? '' : 's'}` : null,
     teacher.enrollmentCount ? `${teacher.enrollmentCount} verified enrollment${teacher.enrollmentCount === 1 ? '' : 's'}` : null,
@@ -83,15 +84,39 @@ export function TeacherProfileView({
     <PageContainer>
       <ScrollProgress />
       <Breadcrumbs items={[{ href: '/', label: 'Home' }, { href: '/teachers', label: 'Teachers' }, { label: teacher.name }]} />
-      <TeacherProfileHero teacher={teacher} />
+      <TeacherProfileHero teacher={teacher} hasCourses={courses.length > 0} />
 
       <AnimatedSection>
         <h2 className="mt-12 font-display text-2xl text-gc-black">Profile</h2>
-        <p className="mt-3 max-w-3xl text-gc-mist">{teacher.bio || 'This teacher has not added a public bio yet.'}</p>
+        <p className="mt-3 max-w-3xl whitespace-pre-wrap text-gc-mist">
+          {teacher.bio || teacher.details || 'This teacher has not added a public bio yet.'}
+        </p>
+        {teacher.details && teacher.bio ? (
+          <p className="mt-4 max-w-3xl whitespace-pre-wrap text-gc-mist">{teacher.details}</p>
+        ) : null}
+        {teacher.experience ? (
+          <p className="mt-4 max-w-3xl text-sm text-gc-mist">
+            <span className="font-medium text-gc-black">Experience: </span>
+            {teacher.experience}
+          </p>
+        ) : null}
         {teacher.createdAt ? (
           <p className="mt-2 text-sm text-gc-mute">On Gyan Chowk since {new Date(teacher.createdAt).toLocaleDateString()}</p>
         ) : null}
       </AnimatedSection>
+
+      {qualifications.length ? (
+        <AnimatedSection>
+          <h2 className="mt-10 font-display text-2xl text-gc-black">Qualifications</h2>
+          <ul className="mt-3 flex flex-wrap gap-2">
+            {qualifications.map((item) => (
+              <li key={item} className="gc-card px-4 py-2 text-sm">
+                {item}
+              </li>
+            ))}
+          </ul>
+        </AnimatedSection>
+      ) : null}
 
       <AnimatedSection>
         <h2 className="mt-10 font-display text-2xl text-gc-black">Subjects</h2>
@@ -108,6 +133,19 @@ export function TeacherProfileView({
         )}
       </AnimatedSection>
 
+      {languages.length ? (
+        <AnimatedSection>
+          <h2 className="mt-10 font-display text-2xl text-gc-black">Languages</h2>
+          <ul className="mt-3 flex flex-wrap gap-2">
+            {languages.map((item) => (
+              <li key={item} className="gc-card px-4 py-2 text-sm">
+                {item}
+              </li>
+            ))}
+          </ul>
+        </AnimatedSection>
+      ) : null}
+
       {achievements.length ? (
         <AnimatedSection>
           <h2 className="mt-10 font-display text-2xl text-gc-black">Achievements</h2>
@@ -121,27 +159,9 @@ export function TeacherProfileView({
         </AnimatedSection>
       ) : null}
 
-      <TeacherCourses courses={courses} />
+      {courses.length ? <TeacherCourses courses={courses} /> : null}
 
-      <AnimatedSection>
-        <h2 className="mt-10 font-display text-2xl text-gc-black">Batches</h2>
-        {batches.length ? (
-          <ul className="mt-3 space-y-2">
-            {batches.map((b) => (
-              <li key={b._id}>
-                <Link href={`/batches/${b.slug}`} className="gc-card block p-4 transition-transform duration-300 hover:-translate-y-0.5 hover:border-gc-gold">
-                  {b.name}
-                  <span className="ml-2 text-xs text-gc-mute">{b.status}</span>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="mt-3 text-sm text-gc-mute">No open batches assigned to this teacher.</p>
-        )}
-      </AnimatedSection>
-
-      <TeacherReviews reviews={reviews} />
+      {reviews.length ? <TeacherReviews reviews={reviews} /> : null}
 
       <AnimatedSection>
         <div className="mt-12 gc-card flex flex-wrap items-center justify-between gap-4 p-6">
@@ -149,7 +169,7 @@ export function TeacherProfileView({
             <p className="font-display text-2xl text-gc-black">Start learning with {teacher.name.split(' ')[0]}</p>
             <p className="text-sm text-gc-mute">Enrollment unlocks after Razorpay verification on paid courses.</p>
           </div>
-          <Link href="/courses" className="gc-btn-gold">
+          <Link href="/courses" className="gc-btn-primary">
             Browse courses <span className="gc-btn-arrow">→</span>
           </Link>
         </div>

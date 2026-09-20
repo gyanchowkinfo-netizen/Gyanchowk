@@ -37,7 +37,7 @@ export function WhyGyanChowk() {
     <section id="why">
       <PageContainer>
         <Reveal>
-          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-gc-gold">Why Gyan Chowk</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-gc-blue">Why Gyan Chowk</p>
         </Reveal>
         <Reveal delay={0.04}>
           <h2 className="mt-2 font-display text-3xl text-gc-black md:text-4xl">A complete recorded learning stack</h2>
@@ -49,8 +49,8 @@ export function WhyGyanChowk() {
               <StaggerItem key={item.title} className="h-full">
                 <TiltCard intensity={4} className="h-full">
                   <article className="gc-card flex h-full flex-col p-5">
-                    <Icon className="text-gc-gold" size={20} aria-hidden />
-                    <h3 className="mt-3 font-display text-lg">{item.title}</h3>
+                    <Icon className="text-gc-blue" size={20} aria-hidden />
+                    <h3 className="mt-3 font-display text-lg font-semibold text-gc-black">{item.title}</h3>
                     <p className="mt-2 flex-1 text-sm text-gc-mute">{item.body}</p>
                   </article>
                 </TiltCard>

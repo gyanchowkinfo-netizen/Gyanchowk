@@ -14,6 +14,7 @@ import {
   walletRouter,
 } from './finance.routes.js';
 import { adminRouter, careerRouter, cmsRouter } from './admin.routes.js';
+import { bannerRouter } from './banner.routes.js';
 
 export const api = Router();
 
@@ -39,4 +40,5 @@ api.use('/payouts', payoutRouter);
 api.use('/notifications', notificationRouter);
 api.use('/admin', adminRouter);
 api.use('/cms', cmsRouter);
+api.use('/banners', bannerRouter);
 api.use('/career', careerRouter);

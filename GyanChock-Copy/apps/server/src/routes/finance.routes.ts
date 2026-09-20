@@ -14,6 +14,8 @@ import {
   WalletModel,
   WalletTransactionModel,
   CourseModel,
+  EnrollmentModel,
+  UserModel,
 } from '../models/index.js';
 import { applyWalletTx, getOrCreateWallet } from '../services/wallet.service.js';
 import { env } from '../config/env.js';
@@ -22,12 +24,27 @@ import { badRequest, forbidden } from '../utils/errors.js';
 import { writeAudit } from '../middleware/audit.js';
 import { notify } from '../services/notification.service.js';
 import { paginate, paginatedResult } from '../utils/helpers.js';
+import { savePushSubscription, removePushSubscription } from '../services/push.service.js';
 
 export const walletRouter = Router();
 export const referralRouter = Router();
 export const reviewRouter = Router();
 export const payoutRouter = Router();
 export const notificationRouter = Router();
+
+walletRouter.get(
+  '/all',
+  authenticate,
+  requireRoles('admin'),
+  asyncHandler(async (req, res) => {
+    const { skip, limit, page } = paginate(Number(req.query.page ?? 1), 20);
+    const [items, total] = await Promise.all([
+      WalletModel.find().populate('user', 'name email').sort({ updatedAt: -1 }).skip(skip).limit(limit).lean(),
+      WalletModel.countDocuments(),
+    ]);
+    res.json(paginatedResult(items, total, page, limit));
+  }),
+);
 
 walletRouter.get(
   '/',
@@ -55,10 +72,38 @@ walletRouter.post(
 );
 
 referralRouter.get(
+  '/all',
+  authenticate,
+  requireRoles('admin'),
+  asyncHandler(async (_req, res) => {
+    const items = await ReferralModel.find()
+      .populate('referrer', 'name email')
+      .populate('referee', 'name email')
+      .sort({ createdAt: -1 })
+      .limit(200)
+      .lean();
+    res.json({ items });
+  }),
+);
+
+referralRouter.get(
   '/',
   authenticate,
   asyncHandler(async (req: AuthedRequest, res) => {
     const items = await ReferralModel.find({ referrer: req.user!.id }).populate('referee', 'name email createdAt').lean();
+    res.json({ items });
+  }),
+);
+
+reviewRouter.get(
+  '/',
+  authenticate,
+  requireRoles('admin'),
+  asyncHandler(async (req, res) => {
+    const filter: Record<string, unknown> = {};
+    if (req.query.reported === '1') filter.reported = true;
+    if (req.query.hidden === '1') filter.hidden = true;
+    const items = await ReviewModel.find(filter).populate('user', 'name email').populate('course', 'title').sort({ createdAt: -1 }).limit(200).lean();
     res.json({ items });
   }),
 );
@@ -246,5 +291,71 @@ notificationRouter.patch(
       { upsert: true, new: true },
     );
     res.json({ prefs });
+  }),
+);
+
+notificationRouter.post(
+  '/push/subscribe',
+  authenticate,
+  validate(
+    z.object({
+      endpoint: z.string().url(),
+      keys: z.object({ p256dh: z.string(), auth: z.string() }),
+    }),
+  ),
+  asyncHandler(async (req: AuthedRequest, res) => {
+    await savePushSubscription(req.user!.id, req.body);
+    res.json({ ok: true });
+  }),
+);
+
+notificationRouter.post(
+  '/push/unsubscribe',
+  authenticate,
+  validate(z.object({ endpoint: z.string().url() })),
+  asyncHandler(async (req: AuthedRequest, res) => {
+    await removePushSubscription(req.user!.id, req.body.endpoint);
+    res.json({ ok: true });
+  }),
+);
+
+notificationRouter.get(
+  '/push/public-key',
+  authenticate,
+  asyncHandler(async (_req, res) => {
+    res.json({ publicKey: env.VAPID_PUBLIC_KEY });
+  }),
+);
+
+notificationRouter.post(
+  '/compose',
+  authenticate,
+  requireRoles('teacher', 'admin'),
+  validate(
+    z.object({
+      title: z.string().min(3),
+      body: z.string().optional(),
+      batchId: z.string().optional(),
+      courseId: z.string().optional(),
+      channels: z.array(z.enum(['inApp', 'email', 'push'])).optional(),
+    }),
+  ),
+  asyncHandler(async (req: AuthedRequest, res) => {
+    const filter: Record<string, unknown> = { status: 'active' };
+    if (req.body.batchId) filter.batch = req.body.batchId;
+    if (req.body.courseId) filter.course = req.body.courseId;
+    if (!req.body.batchId && !req.body.courseId) throw badRequest('Select a batch or course');
+    const enrolled = await EnrollmentModel.find(filter).select('user').lean();
+    const { notifyMany } = await import('../services/notification.service.js');
+    await notifyMany(
+      enrolled.map((e) => String(e.user)),
+      {
+        title: req.body.title,
+        body: req.body.body,
+        type: 'teacher_message',
+        channels: req.body.channels ?? ['inApp'],
+      },
+    );
+    res.json({ sent: enrolled.length });
   }),
 );

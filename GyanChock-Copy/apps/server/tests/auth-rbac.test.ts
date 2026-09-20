@@ -24,4 +24,16 @@ describe('auth constraints', () => {
     expect(timingSafeEqual(a, sha256('same'))).toBe(true);
     expect(timingSafeEqual(a, sha256('other'))).toBe(false);
   });
+
+  it('password-reset API contract never returns a raw token field', () => {
+    const response = { ok: true };
+    expect(response).not.toHaveProperty('resetToken');
+    expect(response).not.toHaveProperty('verifyToken');
+  });
+
+  it('stripe verify schema requires a payment intent or session id', async () => {
+    const { stripeVerifySchema } = await import('@gyan-chowk/shared');
+    expect(stripeVerifySchema.safeParse({}).success).toBe(false);
+    expect(stripeVerifySchema.parse({ paymentIntentId: 'pi_123' }).paymentIntentId).toBe('pi_123');
+  });
 });

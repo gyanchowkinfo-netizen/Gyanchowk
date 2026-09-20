@@ -22,15 +22,15 @@ export function AboutCTA() {
                 <h2 className="font-display text-3xl text-white md:text-5xl">Be part of the Gyan Chowk learning journey.</h2>
               </Reveal>
               <Reveal delay={0.08}>
-                <p className="mt-4 text-white/80">Start with a recorded course or join a structured batch.</p>
+                <p className="mt-4 text-white/80">Start with a recorded course built for serious learners.</p>
               </Reveal>
-              <div className="mt-8 flex flex-wrap justify-center gap-3">
+              <div className="mt-8 flex w-full flex-col items-stretch justify-center gap-3 sm:flex-row sm:flex-wrap sm:items-center">
                 <Reveal delay={0.12}>
                   <MagneticButton href="/courses" variant="secondary">Explore Courses</MagneticButton>
                 </Reveal>
                 <Reveal delay={0.16}>
-                  <Link href="/batches" className="gc-btn-ghost-inverse">
-                    Explore Batches
+                  <Link href="/register" className="gc-btn-ghost-inverse">
+                    Create account
                   </Link>
                 </Reveal>
               </div>

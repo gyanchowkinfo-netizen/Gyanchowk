@@ -21,7 +21,7 @@ export function CareerExplorer({
     <section id="explore" className="relative">
       <PageContainer>
         <Reveal>
-          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-gc-gold">Explore your future</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-gc-blue">Explore your future</p>
         </Reveal>
         <Reveal delay={0.04}>
           <h2 className="mt-2 font-display text-3xl text-gc-black md:text-4xl">Find a direction that fits your learning</h2>
@@ -38,7 +38,7 @@ export function CareerExplorer({
                 <button
                   type="button"
                   onClick={() => onCategory(cat.name)}
-                  className="gc-card flex h-full w-full flex-col p-5 text-left hover:border-gc-gold"
+                  className="gc-card flex h-full w-full flex-col p-5 text-left hover:border-gc-blue"
                 >
                   <Compass className="text-gc-gold" size={20} aria-hidden />
                   <h3 className="mt-3 font-display text-xl">{cat.name}</h3>
@@ -52,7 +52,7 @@ export function CareerExplorer({
           ))}
           <StaggerItem>
             <TiltCard intensity={4}>
-              <Link href="#roadmaps" className="gc-card flex h-full flex-col p-5 hover:border-gc-gold">
+              <Link href="#roadmaps" className="gc-card flex h-full flex-col p-5 hover:border-gc-blue">
                 <Map className="text-gc-gold" size={20} aria-hidden />
                 <h3 className="mt-3 font-display text-xl">Learning roadmaps</h3>
                 <p className="mt-2 text-sm text-gc-mute">
@@ -66,7 +66,7 @@ export function CareerExplorer({
           </StaggerItem>
           <StaggerItem>
             <TiltCard intensity={4}>
-              <Link href="#articles" className="gc-card flex h-full flex-col p-5 hover:border-gc-gold">
+              <Link href="#articles" className="gc-card flex h-full flex-col p-5 hover:border-gc-blue">
                 <Briefcase className="text-gc-gold" size={20} aria-hidden />
                 <h3 className="mt-3 font-display text-xl">Career articles</h3>
                 <p className="mt-2 text-sm text-gc-mute">
@@ -80,7 +80,7 @@ export function CareerExplorer({
           </StaggerItem>
           <StaggerItem>
             <TiltCard intensity={4}>
-              <Link href="/courses" className="gc-card flex h-full flex-col p-5 hover:border-gc-gold">
+              <Link href="/courses" className="gc-card flex h-full flex-col p-5 hover:border-gc-blue">
                 <Sparkles className="text-gc-gold" size={20} aria-hidden />
                 <h3 className="mt-3 font-display text-xl">Recorded courses</h3>
                 <p className="mt-2 text-sm text-gc-mute">

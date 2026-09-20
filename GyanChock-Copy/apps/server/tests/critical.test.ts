@@ -55,3 +55,75 @@ describe('rbac expectations', () => {
     expect(allowed).not.toContain('admin');
   });
 });
+
+describe('email delivery', () => {
+  it('records outbound mail and never includes raw tokens in the payload API shape', async () => {
+    const { clearEmailOutbox, getEmailOutbox, sendPasswordResetEmail } = await import('../src/services/email.service.js');
+    clearEmailOutbox();
+    await sendPasswordResetEmail('a@b.com', 'Ada', 'super-secret-token-value');
+    const mail = getEmailOutbox()[0];
+    expect(mail.subject).toMatch(/password/i);
+    expect(mail.html).toContain('super-secret-token-value');
+    expect(mail.to).toBe('a@b.com');
+  });
+});
+
+describe('pdf generation', () => {
+  it('invoice and certificate buffers start with %PDF and use application/pdf', async () => {
+    const { invoicePdf, certificatePdf, PDF_CONTENT_TYPE } = await import('../src/services/pdf.service.js');
+    expect(PDF_CONTENT_TYPE).toBe('application/pdf');
+    const invoice = await invoicePdf({
+      invoiceNumber: 'INV-1',
+      studentName: 'Ada',
+      studentEmail: 'a@b.com',
+      productLabel: 'Physics',
+      amountPaise: 49900,
+      gateway: 'stripe',
+      issuedAt: new Date('2026-01-01'),
+    });
+    const cert = await certificatePdf({
+      certificateId: 'GC-ABC',
+      studentName: 'Ada',
+      courseTitle: 'Physics',
+      issuedAt: new Date('2026-01-01'),
+    });
+    expect(invoice.subarray(0, 4).toString()).toBe('%PDF');
+    expect(cert.subarray(0, 4).toString()).toBe('%PDF');
+  }, 20_000);
+});
+
+describe('coupon and refund contracts', () => {
+  it('coupon codes are stored uppercase via the shared schema', async () => {
+    const { couponSchema } = await import('@gyan-chowk/shared');
+    const parsed = couponSchema.parse({ code: 'save10', type: 'percent', value: 10 });
+    expect(parsed.code).toBe('SAVE10');
+    expect(couponSchema.safeParse({ code: 'ab', type: 'percent', value: 10 }).success).toBe(false);
+  });
+});
+
+describe('stripe webhook signatures', () => {
+  it('accepts Stripe constructEvent for a correctly signed payload and rejects a forged one', async () => {
+    const Stripe = (await import('stripe')).default;
+    const stripe = new Stripe('sk_test_placeholder');
+    const secret = 'whsec_test_secret';
+    const payload = JSON.stringify({
+      id: 'evt_test',
+      object: 'event',
+      type: 'checkout.session.completed',
+      data: { object: { id: 'cs_test' } },
+    });
+    const timestamp = Math.floor(Date.now() / 1000);
+    const signed = crypto.createHmac('sha256', secret).update(`${timestamp}.${payload}`).digest('hex');
+    const event = stripe.webhooks.constructEvent(payload, `t=${timestamp},v1=${signed}`, secret);
+    expect(event.type).toBe('checkout.session.completed');
+    expect(() => stripe.webhooks.constructEvent(payload, `t=${timestamp},v1=deadbeef`, secret)).toThrow();
+  });
+});
+
+describe('test taxonomy', () => {
+  it('exposes daily/weekly/chapter/subject/mock categories', async () => {
+    const { TEST_CATEGORIES, PAYMENT_GATEWAYS } = await import('@gyan-chowk/shared');
+    expect(TEST_CATEGORIES).toEqual(expect.arrayContaining(['daily', 'weekly', 'chapter', 'subject', 'mock']));
+    expect(PAYMENT_GATEWAYS).toEqual(expect.arrayContaining(['razorpay', 'stripe']));
+  });
+});

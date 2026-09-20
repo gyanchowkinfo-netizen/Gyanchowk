@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useAuth, type SessionUser } from './auth';
 
 export function useDebounce<T>(value: T, ms = 350): T {
   const [v, setV] = useState(value);
@@ -45,4 +46,23 @@ declare global {
   interface Window {
     Razorpay?: new (opts: Record<string, unknown>) => { open: () => void; on: (e: string, cb: (r: unknown) => void) => void };
   }
+}
+
+export { apiQueryRetry, isUnauthorizedError } from './apiQuery';
+
+/** Wait for panel session check before calling protected `/api/*` routes. */
+export function useAuthQueryEnabled() {
+  const { user, loading } = useAuth();
+  return !loading && Boolean(user);
+}
+
+export function canAccessPanel(
+  user: SessionUser | null,
+  role: 'student' | 'teacher' | 'admin',
+  loading: boolean,
+) {
+  if (loading || !user) return false;
+  if (user.role !== role) return false;
+  if (role === 'teacher' && user.teacherStatus !== 'approved') return false;
+  return true;
 }

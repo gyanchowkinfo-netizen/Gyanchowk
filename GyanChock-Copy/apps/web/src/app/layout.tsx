@@ -1,5 +1,4 @@
-import type { Metadata } from 'next';
-import { Plus_Jakarta_Sans, Sora } from 'next/font/google';
+import type { Metadata, Viewport } from 'next';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { AnnouncementBar } from '@/components/layout/AnnouncementBar';
@@ -8,14 +7,12 @@ import { Providers } from '@/components/providers';
 import { PageTransition } from '@/components/motion';
 import './globals.css';
 
-const jakarta = Plus_Jakarta_Sans({
-  subsets: ['latin'],
-  variable: '--font-plus-jakarta',
-});
-const sora = Sora({
-  subsets: ['latin'],
-  variable: '--font-sora',
-});
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover',
+  themeColor: '#f6f4ee',
+};
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'),
@@ -41,8 +38,16 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${jakarta.variable} ${sora.variable}`}>
-      <body className="font-sans antialiased">
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
+        <link
+          rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600;700&display=swap"
+        />
+      </head>
+      <body className="overflow-x-hidden font-sans antialiased" suppressHydrationWarning>
         <Providers>
           <AnnouncementBar />
           <Navbar />

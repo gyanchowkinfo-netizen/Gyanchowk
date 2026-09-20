@@ -3,14 +3,16 @@ import { cn } from '@/lib/format';
 export function StatusBadge({ status }: { status: string }) {
   const tone =
     /active|published|answered|paid|present|open|approved|captured|success/i.test(status)
-      ? 'border-emerald-500/40 text-emerald-300'
+      ? 'border-emerald-200 bg-[color:var(--gyan-success-soft)] text-[color:var(--gyan-success)]'
       : /pending|draft|scheduled|requested/i.test(status)
-        ? 'border-gc-gold/40 text-gc-gold'
+        ? 'border-amber-200 bg-[color:var(--gyan-warning-soft)] text-[color:var(--gyan-warning)]'
         : /fail|reject|suspend|closed|refund|absent/i.test(status)
-          ? 'border-red-400/40 text-red-300'
-          : 'border-gc-line text-gc-mist';
+          ? 'border-red-200 bg-[color:var(--gyan-error-soft)] text-[color:var(--gyan-error)]'
+          : 'border-gc-line bg-[color:var(--gyan-primary-soft)] text-gc-mist';
   return (
-    <span className={cn('inline-flex rounded-full border px-2.5 py-0.5 text-xs capitalize', tone)}>{status.replaceAll('_', ' ')}</span>
+    <span className={cn('inline-flex rounded-full border px-2.5 py-0.5 text-xs font-medium capitalize', tone)}>
+      {status.replaceAll('_', ' ')}
+    </span>
   );
 }
 
@@ -37,7 +39,7 @@ export function ProgressBar({ value }: { value: number }) {
   const v = Math.max(0, Math.min(100, value));
   return (
     <div className="h-2 w-full overflow-hidden rounded-full bg-gc-navy" role="progressbar" aria-valuenow={v} aria-valuemin={0} aria-valuemax={100}>
-      <div className="h-full bg-gradient-to-r from-gc-blue to-gc-gold" style={{ width: `${v}%` }} />
+      <div className="h-full bg-gc-blue" style={{ width: `${v}%` }} />
     </div>
   );
 }
@@ -68,9 +70,9 @@ export function Avatar({ name, src, size = 40 }: { name?: string; src?: string; 
 export function Alert({ kind = 'info', children }: { kind?: 'info' | 'error' | 'success'; children: React.ReactNode }) {
   const cls =
     kind === 'error'
-      ? 'border-red-400/40 text-red-200'
+      ? 'border-[color:var(--gyan-error)]/30 bg-[color:var(--gyan-error-soft)] text-[color:var(--gyan-error)]'
       : kind === 'success'
-        ? 'border-emerald-400/40 text-emerald-200'
-        : 'border-gc-line text-gc-mist';
-  return <div className={cn('rounded-xl border px-4 py-3 text-sm', cls)}>{children}</div>;
+        ? 'border-[color:var(--gyan-success)]/30 bg-[color:var(--gyan-success-soft)] text-[color:var(--gyan-success)]'
+        : 'border-gc-line bg-[color:var(--gyan-primary-soft)] text-gc-mist';
+  return <div className={cn('rounded-[12px] border px-4 py-3 text-sm', cls)}>{children}</div>;
 }

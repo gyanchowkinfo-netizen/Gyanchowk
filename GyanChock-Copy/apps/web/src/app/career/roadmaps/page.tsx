@@ -11,7 +11,7 @@ export default async function RoadmapsPage() {
       <PageHeader title="Roadmaps" subtitle="Structured recorded-learning paths published by the career desk." />
       <div className="grid gap-4 md:grid-cols-2">
         {roadmaps.map((r) => (
-          <Link key={r.slug} href={`/career/roadmaps/${r.slug}`} className="gc-card p-5 hover:border-gc-gold">
+          <Link key={r.slug} href={`/career/roadmaps/${r.slug}`} className="gc-card p-5 hover:border-gc-blue">
             <h2 className="font-display text-xl">{r.title}</h2>
             {r.description ? <p className="mt-2 text-sm text-gc-mute">{r.description}</p> : null}
           </Link>

@@ -3,7 +3,7 @@
 import { cn } from '@/lib/format';
 import type { ButtonHTMLAttributes } from 'react';
 
-type Variant = 'primary' | 'secondary' | 'gold' | 'blue' | 'ghost' | 'danger';
+type Variant = 'primary' | 'secondary' | 'gold' | 'blue' | 'ghost' | 'danger' | 'outline';
 
 export function Button({
   variant = 'primary',
@@ -19,10 +19,11 @@ export function Button({
     gold: 'gc-btn-secondary',
     blue: 'gc-btn-primary',
     ghost: 'gc-btn-ghost',
-    danger: 'gc-btn border border-[color:var(--gyan-error)] text-[color:var(--gyan-error)] hover:bg-[color:color-mix(in_srgb,var(--gyan-error)_8%,transparent)]',
+    outline: 'gc-btn-outline',
+    danger: 'gc-btn border border-[color:var(--gyan-error)] bg-[color:var(--gyan-error-soft)] text-[color:var(--gyan-error)] hover:bg-[color:color-mix(in_srgb,var(--gyan-error)_12%,white)]',
   };
   return (
-    <button className={cn(styles[variant], className)} disabled={disabled || loading} {...props}>
+    <button className={cn(styles[variant], className)} disabled={disabled || loading} {...props} suppressHydrationWarning>
       {loading ? 'Please wait…' : children}
     </button>
   );

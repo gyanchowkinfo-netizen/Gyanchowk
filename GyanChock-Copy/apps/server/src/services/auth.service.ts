@@ -5,7 +5,6 @@ import {
   registerSchema,
   type AuthUser,
 } from '@gyan-chowk/shared';
-import { env } from '../config/env.js';
 import {
   ReferralModel,
   SessionModel,
@@ -23,6 +22,7 @@ import {
   verifyRefreshToken,
 } from '../utils/crypto.js';
 import { notify } from './notification.service.js';
+import { sendPasswordResetEmail, sendVerifyEmail } from './email.service.js';
 
 const LOCK_AFTER = 8;
 const LOCK_MS = 15 * 60 * 1000;
@@ -104,11 +104,12 @@ export async function registerUser(
     title: 'Welcome to Gyan Chowk',
     body: 'Verify your email to start learning.',
     type: 'welcome',
+    channels: ['inApp'],
   });
+  await sendVerifyEmail(user.email, user.name, emailToken);
 
   return {
     user: toAuthUser(user),
-    verifyToken: env.NODE_ENV === 'production' ? undefined : emailToken,
     message:
       data.role === 'teacher'
         ? 'Teacher account created. Verify email and wait for admin approval.'
@@ -256,8 +257,9 @@ export async function requestPasswordReset(email: string) {
     user.passwordResetTokenHash = sha256(token);
     user.passwordResetExpires = new Date(Date.now() + 1000 * 60 * 30);
     await user.save();
+    await sendPasswordResetEmail(user.email, user.name, token);
   }
-  return { ok: true, resetToken: env.NODE_ENV === 'production' ? undefined : user ? token : undefined };
+  return { ok: true };
 }
 
 export async function resetPassword(token: string, password: string) {

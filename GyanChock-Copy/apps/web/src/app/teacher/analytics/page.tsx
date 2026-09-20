@@ -5,6 +5,8 @@ import { api } from '@/lib/api';
 import { formatPaise } from '@/lib/format';
 import { ErrorState, LoadingState } from '@/components/ui/States';
 import { CountUp } from '@/components/motion';
+import { PageHeader } from '@/components/panel/ResourceManager';
+import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 
 export default function TeacherAnalyticsPage() {
   const earnings = useQuery({
@@ -24,8 +26,7 @@ export default function TeacherAnalyticsPage() {
   const summary = Object.fromEntries((earnings.data?.summary ?? []).map((s) => [s._id, s.total]));
   return (
     <div>
-      <h1 className="font-display text-3xl text-gc-black">Analytics</h1>
-      <p className="mt-2 text-sm text-gc-mute">Counts and rupees from live APIs. No placeholder charts.</p>
+      <PageHeader title="Analytics" subtitle="Earnings, doubts, and catalogue counts from live APIs." />
       <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <div className="gc-card p-4">
           <p className="text-xs text-gc-mute">Courses in catalogue (page total)</p>
@@ -46,6 +47,22 @@ export default function TeacherAnalyticsPage() {
         <div className="gc-card p-4">
           <p className="text-xs text-gc-mute">Paid out</p>
           <p className="font-display text-2xl">{formatPaise(Number(summary.paid ?? 0))}</p>
+        </div>
+      </div>
+      <div className="gc-card mt-6 p-4">
+        <p className="mb-3 text-sm text-gc-mute">Earnings by status</p>
+        <div className="h-56">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart
+              data={(earnings.data?.summary ?? []).map((s) => ({ status: s._id, rupees: Math.round(s.total / 100) }))}
+            >
+              <CartesianGrid strokeDasharray="3 3" stroke="#2a3d5c" />
+              <XAxis dataKey="status" stroke="#c9a227" />
+              <YAxis stroke="#c9a227" />
+              <Tooltip />
+              <Bar dataKey="rupees" fill="#c9a227" />
+            </BarChart>
+          </ResponsiveContainer>
         </div>
       </div>
     </div>

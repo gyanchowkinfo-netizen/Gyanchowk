@@ -18,7 +18,7 @@ export function BlogCategories({
     <section id="topics">
       <PageContainer>
         <Reveal>
-          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-gc-gold">Categories</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-gc-blue">Categories</p>
         </Reveal>
         <Reveal delay={0.04}>
           <h2 className="mt-2 font-display text-3xl text-gc-black">Learn by topic</h2>
@@ -30,7 +30,7 @@ export function BlogCategories({
                 <button
                   type="button"
                   onClick={() => onSelect(tag.name === active ? '' : tag.name)}
-                  className={`gc-card w-full p-5 text-left hover:border-gc-gold ${active === tag.name ? 'border-gc-gold' : ''}`}
+                  className={`gc-card w-full p-5 text-left hover:border-gc-blue ${active === tag.name ? 'border-gc-gold' : ''}`}
                   aria-pressed={active === tag.name}
                 >
                   <h3 className="font-display text-lg">{tag.name}</h3>

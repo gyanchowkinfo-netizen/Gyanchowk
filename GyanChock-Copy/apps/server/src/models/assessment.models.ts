@@ -5,6 +5,7 @@ import {
   QUESTION_TYPES,
   RANK_SCOPES,
   SUBMISSION_STATUSES,
+  TEST_CATEGORIES,
   TEST_STATUSES,
 } from '@gyan-chowk/shared';
 
@@ -48,6 +49,10 @@ const testSchema = new Schema(
     title: { type: String, required: true },
     course: { type: Schema.Types.ObjectId, ref: 'Course', index: true },
     batch: { type: Schema.Types.ObjectId, ref: 'Batch', index: true },
+    subjectId: { type: Schema.Types.ObjectId, ref: 'Subject', index: true },
+    chapterId: { type: Schema.Types.ObjectId, ref: 'Chapter', index: true },
+    category: { type: String, enum: TEST_CATEGORIES, default: 'mock', index: true },
+    careerTrack: { type: String, index: true },
     createdBy: { type: Schema.Types.ObjectId, ref: 'User' },
     status: { type: String, enum: TEST_STATUSES, default: 'draft', index: true },
     durationMin: { type: Number, required: true },

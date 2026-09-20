@@ -19,7 +19,7 @@ export default function StudentAssignmentsPage() {
       <ul className="mt-6 space-y-3">
         {(data?.items ?? []).map((a) => (
           <li key={a._id}>
-            <Link href={`/student/assignments/${a._id}`} className="gc-card block p-5 hover:border-gc-gold">
+            <Link href={`/student/assignments/${a._id}`} className="gc-card block p-5 hover:border-gc-blue">
               <p className="font-display text-lg">{a.title}</p>
               <p className="text-xs text-gc-mute">
                 Deadline {a.deadline ? new Date(a.deadline).toLocaleString() : '—'} · {a.totalMarks ?? '—'} marks

@@ -13,7 +13,7 @@ export function BatchCTA() {
           <Parallax speed={0.1}>
             <div className="relative mx-auto max-w-2xl text-center">
               <Reveal>
-                <p className="text-xs uppercase tracking-[0.3em] text-gc-gold">Ready to start your preparation?</p>
+                <p className="text-xs uppercase tracking-[0.22em] text-white/70">Ready to start your preparation?</p>
               </Reveal>
               <Reveal delay={0.05}>
                 <h2 className="mt-3 font-display text-3xl text-white md:text-5xl">Choose a structured learning path</h2>
@@ -23,7 +23,7 @@ export function BatchCTA() {
                   Start learning with Gyan Chowk recorded batches. Paid access unlocks only after Razorpay verification.
                 </p>
               </Reveal>
-              <div className="mt-8 flex flex-wrap justify-center gap-3">
+              <div className="mt-8 flex w-full flex-col items-stretch justify-center gap-3 sm:flex-row sm:flex-wrap sm:items-center">
                 <Reveal delay={0.12}>
                   <MagneticButton href="#all-batches" variant="secondary">Explore batches</MagneticButton>
                 </Reveal>

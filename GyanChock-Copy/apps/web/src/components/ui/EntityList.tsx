@@ -21,11 +21,13 @@ export function EntityList({
   path,
   columns,
   empty,
+  actions,
 }: {
   title: string;
   path: string;
   columns?: Array<{ key: string; label: string; render?: (row: Record<string, unknown>) => React.ReactNode }>;
   empty?: string;
+  actions?: React.ReactNode;
 }) {
   const [page, setPage] = useState(1);
   const [q, setQ] = useState('');
@@ -45,16 +47,19 @@ export function EntityList({
           .slice(0, 5)
           .map((key) => ({
             key,
-            label: key,
+            label: key.replace(/([A-Z])/g, ' $1').replace(/^./, (s) => s.toUpperCase()),
             render: key === 'status' ? (row: Record<string, unknown>) => statusCell(row.status) : undefined,
           }))
       : [{ key: 'title', label: 'Title' }]);
 
   return (
     <section>
-      <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
-        <h1 className="font-display text-3xl text-gc-black">{title}</h1>
-        <Input aria-label="Search" placeholder="Search" value={q} onChange={(e) => setQ(e.target.value)} className="max-w-xs" />
+      <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between">
+        <h1 className="font-display text-2xl text-gc-black sm:text-3xl">{title}</h1>
+        <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:flex-wrap sm:items-center">
+          {actions}
+          <Input aria-label="Search" placeholder="Search" value={q} onChange={(e) => setQ(e.target.value)} className="w-full sm:max-w-xs" />
+        </div>
       </div>
       {isLoading ? <LoadingState /> : null}
       {error ? <ErrorState message={(error as Error).message} onRetry={() => void refetch()} /> : null}

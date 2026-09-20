@@ -12,13 +12,13 @@ export function CareerArticleCard({ article }: { article: CareerArticle }) {
   const mins = readingMinutes(`${article.excerpt ?? ''} ${article.body ?? ''}`);
   return (
     <TiltCard intensity={4} className="h-full">
-      <Link href={`/career/${article.slug}`} className="gc-card group flex h-full flex-col overflow-hidden p-0 hover:border-gc-gold">
+      <Link href={`/career/${article.slug}`} className="gc-card group flex h-full flex-col overflow-hidden p-0 hover:border-gc-blue">
         <div className="relative h-40 overflow-hidden">
           <CoverMedia src={article.cover?.url} alt="" className="transition-transform duration-300 group-hover:scale-[1.04]" />
         </div>
         <div className="flex flex-1 flex-col p-5">
           {article.category ? <p className="text-xs uppercase tracking-widest text-gc-glow">{article.category}</p> : null}
-          <h3 className="mt-2 font-display text-lg group-hover:text-gc-gold">{article.title}</h3>
+          <h3 className="mt-2 font-display text-lg group-hover:text-gc-blue">{article.title}</h3>
           {article.excerpt ? <p className="mt-2 line-clamp-2 flex-1 text-sm text-gc-mute">{article.excerpt}</p> : null}
           <p className="mt-4 text-xs text-gc-mute">
             {[formatDate(article.createdAt), `${mins} min read`].filter(Boolean).join(' · ')}
@@ -48,7 +48,7 @@ export function CareerArticles({
         <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
           <div>
             <Reveal>
-              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-gc-gold">Career articles</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-gc-blue">Career articles</p>
             </Reveal>
             <Reveal delay={0.04}>
               <h2 className="mt-2 font-display text-3xl text-gc-black">

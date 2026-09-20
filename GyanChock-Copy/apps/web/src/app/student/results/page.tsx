@@ -20,7 +20,7 @@ export default function StudentResultsPage() {
       <ul className="mt-6 space-y-3">
         {(data?.items ?? []).map((r) => (
           <li key={r._id}>
-            <Link href={`/student/results/${r._id}`} className="gc-card block p-4 hover:border-gc-gold">
+            <Link href={`/student/results/${r._id}`} className="gc-card block p-4 hover:border-gc-blue">
               Score {r.score} · {r.percentage}% · AIR {r.rankAllIndia ?? '—'}
             </Link>
           </li>

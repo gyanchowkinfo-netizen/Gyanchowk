@@ -14,15 +14,21 @@ import {
 } from '@/components/motion';
 import type { TeacherCardData } from '@/lib/types';
 
-export function TeacherProfileHero({ teacher }: { teacher: TeacherCardData }) {
+export function TeacherProfileHero({
+  teacher,
+  hasCourses = true,
+}: {
+  teacher: TeacherCardData;
+  hasCourses?: boolean;
+}) {
   const subjects = teacher.subjects?.length ? teacher.subjects : teacher.categories ?? [];
   return (
-    <section className="relative grid gap-8 overflow-hidden rounded-3xl border border-gc-line bg-gc-ink/50 p-6 md:grid-cols-[280px_1fr] md:p-8">
+    <section className="relative grid gap-8 overflow-hidden rounded-3xl border border-gc-line bg-white p-5 sm:p-6 md:grid-cols-[280px_1fr] md:p-8">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_0%,rgba(30,111,255,0.14),transparent_46%)]" />
       <ScaleIn>
         <TiltCard intensity={5} className="relative mx-auto w-fit">
-          <div className="relative rounded-[2rem] bg-gradient-to-br from-gc-gold/40 via-gc-blue/30 to-transparent p-[2px] shadow-[0_24px_60px_rgba(0,0,0,0.35)]">
-            <div className="rounded-[1.9rem] bg-gc-navy p-3">
+          <div className="relative rounded-[2rem] bg-gradient-to-br from-gc-blue/25 via-gc-gold/20 to-transparent p-[2px] shadow-lg">
+            <div className="rounded-[1.9rem] bg-white p-3">
               <Avatar name={teacher.name} src={teacher.avatar?.url} size={196} />
             </div>
           </div>
@@ -45,12 +51,12 @@ export function TeacherProfileHero({ teacher }: { teacher: TeacherCardData }) {
       </ScaleIn>
       <div className="relative">
         <Reveal>
-          <p className="text-xs uppercase tracking-[0.3em] text-gc-gold">Approved faculty</p>
+          <p className="gc-kicker">Approved faculty</p>
         </Reveal>
-        <h1 className="mt-2 font-display text-4xl md:text-5xl">
+        <h1 className="mt-2 font-display text-3xl font-semibold tracking-tight text-gc-black sm:text-4xl md:text-5xl">
           <TextReveal text={teacher.name} />
         </h1>
-        {teacher.headline ? <p className="mt-2 text-lg text-gc-gold">{teacher.headline}</p> : null}
+        {teacher.headline ? <p className="mt-2 text-lg text-gc-blue">{teacher.headline}</p> : null}
         <Reveal delay={0.06}>
           <p className="mt-4 max-w-2xl text-gc-mist">{teacher.bio}</p>
         </Reveal>
@@ -81,11 +87,13 @@ export function TeacherProfileHero({ teacher }: { teacher: TeacherCardData }) {
           ))}
         </StaggerContainer>
         <Reveal delay={0.08}>
-          <div className="mt-6 flex flex-wrap gap-3">
-            <Link href="#teacher-courses" className="gc-btn-gold">
-              View courses <span className="gc-btn-arrow">→</span>
-            </Link>
-            <Link href="/register" className="gc-btn-ghost">
+          <div className="mt-6 flex w-full flex-col gap-3 sm:flex-row sm:flex-wrap">
+            {hasCourses ? (
+              <Link href="#teacher-courses" className="gc-btn-primary w-full sm:w-auto">
+                View courses <span className="gc-btn-arrow">→</span>
+              </Link>
+            ) : null}
+            <Link href="/register" className={hasCourses ? 'gc-btn-ghost w-full sm:w-auto' : 'gc-btn-primary w-full sm:w-auto'}>
               Start learning
             </Link>
           </div>

@@ -112,10 +112,11 @@ export function uploadSignature(folder: string, resourceType: 'image' | 'video' 
   const timestamp = Math.round(Date.now() / 1000);
   const eager =
     resourceType === 'video' ? 'sp_hd/m3u8' : undefined;
+  const deliveryType = folder === 'banners' ? 'upload' : 'authenticated';
   const params: Record<string, string | number> = {
     timestamp,
     folder: `gyan-chowk/${folder}`,
-    type: 'authenticated',
+    type: deliveryType,
   };
   if (eager) params.eager = eager;
   const signature = getCloudinary().utils.api_sign_request(
@@ -128,6 +129,7 @@ export function uploadSignature(folder: string, resourceType: 'image' | 'video' 
     folder: params.folder,
     eager,
     resourceType,
+    type: deliveryType,
     cloudName: getCloudinary().config().cloud_name,
     apiKey: getCloudinary().config().api_key,
   };

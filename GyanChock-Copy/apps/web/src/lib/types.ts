@@ -65,6 +65,9 @@ export interface TeacherCardData {
   name: string;
   headline?: string;
   bio?: string;
+  details?: string;
+  experience?: string;
+  qualifications?: string[];
   avatar?: { url?: string };
   createdAt?: string;
   courseCount?: number;
@@ -96,6 +99,135 @@ export interface PublicPlatformStats {
   teachers: number;
   courses: number;
   batches: number;
+}
+
+export interface HomeHighlight {
+  value: string;
+  title: string;
+  description: string;
+}
+
+export type DiscoveryTone = 'navy' | 'blue' | 'violet' | 'cyan' | 'warm';
+
+export interface HomeDiscoveryPath {
+  name: string;
+  href: string;
+  body: string;
+  tone: DiscoveryTone;
+  icon?: string;
+}
+
+export interface HomePlatformFeature {
+  title: string;
+  body: string;
+  icon: string;
+  tone?: DiscoveryTone;
+}
+
+export interface HomeFacultyCard {
+  slug: string;
+  name: string;
+  headline: string;
+  bio: string;
+  details?: string;
+  experience?: string;
+  subjects: string[];
+  qualifications?: string[];
+  languages?: string[];
+  href: string;
+  imageUrl: string;
+  courseCount: number;
+  enrollmentCount: number;
+  ratingAvg: number;
+  ratingCount: number;
+}
+
+export interface HomeSectionCopy {
+  kicker: string;
+  title: string;
+  subtitle: string;
+}
+
+export interface HomeSectionCopyMap {
+  discovery: HomeSectionCopy;
+  featured: HomeSectionCopy;
+  platform: HomeSectionCopy;
+  mentorship: HomeSectionCopy;
+  faculty: HomeSectionCopy;
+}
+
+export const TEST_SUBSCRIPTION_ICONS = [
+  'ClipboardCheck',
+  'BookOpen',
+  'Layers',
+  'LibraryBig',
+  'Files',
+  'TrendingUp',
+  'Target',
+  'Timer',
+  'PenLine',
+  'ChartNoAxesCombined',
+  'GraduationCap',
+  'BarChart3',
+  'Landmark',
+  'Building2',
+  'TrainFront',
+  'Award',
+] as const;
+export type TestSubscriptionIcon = (typeof TEST_SUBSCRIPTION_ICONS)[number];
+
+export type TestPrimeVariant = 'blue' | 'navy' | 'warm' | 'gold' | 'cyan';
+export type TestPrimePosition = 'top-left' | 'top-right' | 'mid-left' | 'mid-right' | 'bottom-left' | 'bottom-right';
+
+export interface TestSubscriptionBenefit {
+  id: string;
+  value: string;
+  title: string;
+  description: string;
+  icon: TestSubscriptionIcon;
+  variant: TestPrimeVariant;
+  order: number;
+  isActive: boolean;
+}
+
+export interface TestPrimeFloatingCard {
+  id: string;
+  icon: TestSubscriptionIcon;
+  title: string;
+  description: string;
+  position: TestPrimePosition;
+  order: number;
+  isActive: boolean;
+}
+
+export interface TestPrimeExamBadge {
+  id: string;
+  name: string;
+  icon: TestSubscriptionIcon;
+  variant: TestPrimeVariant;
+  position: TestPrimePosition;
+  order: number;
+  isActive: boolean;
+}
+
+export interface HomeTestSubscription {
+  isActive: boolean;
+  eyebrow: string;
+  badgeLabel: string;
+  title: string;
+  highlightedTitle: string;
+  description: string;
+  motivationalText: string;
+  primaryButtonText: string;
+  primaryButtonLink: string;
+  secondaryButtonText: string;
+  secondaryButtonLink: string;
+  heroImage: string;
+  heroImageAlt: string;
+  backgroundImage: string;
+  benefits: TestSubscriptionBenefit[];
+  floatingCards: TestPrimeFloatingCard[];
+  examBadges: TestPrimeExamBadge[];
 }
 
 export interface CmsPage {

@@ -52,6 +52,31 @@ const userSchema = new Schema(
     twoFactorEnabled: { type: Boolean, default: false },
     twoFactorSecret: { type: String, select: false },
     wishlist: [{ type: Schema.Types.ObjectId, ref: 'Course' }],
+    expertise: [String],
+    payoutBank: {
+      accountName: String,
+      ifsc: String,
+      accountLast4: String,
+      upi: String,
+    },
+    pushSubscriptions: [
+      {
+        endpoint: { type: String, required: true },
+        keys: {
+          p256dh: String,
+          auth: String,
+        },
+        createdAt: { type: Date, default: Date.now },
+      },
+    ],
+    recentViews: [
+      {
+        course: { type: Schema.Types.ObjectId, ref: 'Course' },
+        slug: String,
+        title: String,
+        viewedAt: { type: Date, default: Date.now },
+      },
+    ],
     metadata: { type: Schema.Types.Mixed },
   },
   { timestamps: true },

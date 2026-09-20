@@ -24,3 +24,18 @@ export async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
   }
   return data;
 }
+
+export async function downloadPdf(path: string, filename: string) {
+  const res = await fetch(`${API_URL}${path}`, { credentials: 'include' });
+  if (!res.ok) {
+    const data = (await res.json().catch(() => ({}))) as { error?: string };
+    throw new Error(data.error || `Download failed (${res.status})`);
+  }
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}

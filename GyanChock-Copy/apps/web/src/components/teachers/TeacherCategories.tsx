@@ -23,7 +23,7 @@ export function TeacherCategories({
             <StaggerItem key={c.name}>
               <button
                 type="button"
-                className="group gc-card flex w-full items-center gap-3 p-4 text-left transition-[transform,background-color] duration-300 hover:-translate-y-1 hover:border-gc-gold/50"
+                className="group gc-card flex w-full items-center gap-3 p-4 text-left transition-[transform,background-color] duration-300 hover:-translate-y-1 hover:border-gc-blue/50"
                 onClick={() => onSelect(c.name)}
               >
                 <BookMarked className="shrink-0 text-gc-gold transition-transform duration-300 group-hover:scale-105" size={18} />

@@ -13,7 +13,7 @@ export function CareerRoadmaps({ items, loading }: { items: CareerRoadmap[]; loa
         <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
           <div>
             <Reveal>
-              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-gc-gold">Roadmaps</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-gc-blue">Roadmaps</p>
             </Reveal>
             <Reveal delay={0.04}>
               <h2 className="mt-2 font-display text-3xl text-gc-black">Structured learning maps</h2>
@@ -33,7 +33,7 @@ export function CareerRoadmaps({ items, loading }: { items: CareerRoadmap[]; loa
             {items.map((item) => (
               <StaggerItem key={item.slug}>
                 <TiltCard intensity={4}>
-                  <Link href={`/career/roadmaps/${item.slug}`} className="gc-card block h-full p-5 hover:border-gc-gold">
+                  <Link href={`/career/roadmaps/${item.slug}`} className="gc-card block h-full p-5 hover:border-gc-blue">
                     <h3 className="font-display text-xl">{item.title}</h3>
                     {item.description ? <p className="mt-2 text-sm text-gc-mute">{item.description}</p> : null}
                     <p className="mt-4 text-sm text-gc-glow">

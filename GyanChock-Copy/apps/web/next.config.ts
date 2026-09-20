@@ -10,7 +10,7 @@ function apiOrigin(): string {
 }
 
 const nextConfig: NextConfig = {
-  transpilePackages: ['@gyan-chowk/shared', 'three', '@react-three/fiber'],
+  transpilePackages: ['@gyan-chowk/shared'],
   images: {
     unoptimized: true,
     remotePatterns: [

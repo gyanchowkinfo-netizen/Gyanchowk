@@ -194,6 +194,22 @@ mentorshipRouter.get(
 );
 
 mentorshipRouter.get(
+  '/',
+  authenticate,
+  teacherOrAdmin,
+  asyncHandler(async (req: AuthedRequest, res) => {
+    const filter: Record<string, unknown> = req.user!.role === 'admin' ? {} : { mentor: req.user!.id };
+    const items = await MentorshipModel.find(filter)
+      .populate('mentor', 'name headline')
+      .populate('student', 'name email')
+      .sort({ createdAt: -1 })
+      .limit(200)
+      .lean();
+    res.json({ items });
+  }),
+);
+
+mentorshipRouter.get(
   '/:id',
   authenticate,
   asyncHandler(async (req: AuthedRequest, res) => {

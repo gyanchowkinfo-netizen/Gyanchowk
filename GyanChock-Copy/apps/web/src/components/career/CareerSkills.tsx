@@ -2,7 +2,8 @@
 
 import { Code2, Folders, Lightbulb, MessageSquare, Route, Search, Target, Users } from 'lucide-react';
 import { PageContainer } from '@/components/layout/Page';
-import { Reveal, StaggerContainer, StaggerItem, TiltCard } from '@/components/motion';
+import { Reveal, StaggerContainer, StaggerItem } from '@/components/motion';
+import { CardIcon, CARD_ICON_CYCLE } from '@/components/ui/CardIcon';
 
 const skills = [
   { icon: Code2, title: 'Programming', body: 'Recorded lessons and assignments for applied coding practice.' },
@@ -20,7 +21,7 @@ export function CareerSkills() {
     <section id="skills">
       <PageContainer>
         <Reveal>
-          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-gc-gold">Skills that move you forward</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-gc-blue">Skills that move you forward</p>
         </Reveal>
         <Reveal delay={0.04}>
           <h2 className="mt-2 font-display text-3xl text-gc-black md:text-4xl">Practice the skills a career actually uses</h2>
@@ -31,17 +32,17 @@ export function CareerSkills() {
           </p>
         </Reveal>
         <StaggerContainer className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {skills.map((skill) => {
+          {skills.map((skill, i) => {
             const Icon = skill.icon;
             return (
               <StaggerItem key={skill.title}>
-                <TiltCard intensity={4}>
-                  <article className="gc-card h-full p-5">
-                    <Icon className="text-gc-gold" size={20} aria-hidden />
-                    <h3 className="mt-3 font-display text-lg">{skill.title}</h3>
-                    <p className="mt-2 text-sm text-gc-mute">{skill.body}</p>
-                  </article>
-                </TiltCard>
+                <article className="gc-card gc-card-lift h-full p-5">
+                  <CardIcon variant={CARD_ICON_CYCLE[i % CARD_ICON_CYCLE.length]}>
+                    <Icon />
+                  </CardIcon>
+                  <h3 className="mt-3 font-display text-lg">{skill.title}</h3>
+                  <p className="mt-2 text-sm text-gc-mute">{skill.body}</p>
+                </article>
               </StaggerItem>
             );
           })}

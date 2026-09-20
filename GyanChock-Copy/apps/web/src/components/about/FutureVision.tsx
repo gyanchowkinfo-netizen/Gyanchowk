@@ -24,7 +24,7 @@ export function FutureVision({ title, body }: { title: string; body: string }) {
     <section id="future">
       <PageContainer>
         <Reveal>
-          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-gc-gold">Where we&apos;re going</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-gc-blue">Where we&apos;re going</p>
         </Reveal>
         <Reveal delay={0.04}>
           <h2 className="mt-2 font-display text-3xl text-gc-black">{title}</h2>
@@ -51,7 +51,7 @@ export function FutureVision({ title, body }: { title: string; body: string }) {
               >
                 <span className="absolute -left-8 top-4 h-3 w-3 rounded-full border border-gc-gold bg-gc-navy" />
                 <article className="gc-card p-4">
-                  <h3 className="font-display text-lg text-gc-gold">{step.title}</h3>
+                  <h3 className="font-display text-lg font-semibold text-gc-black">{step.title}</h3>
                   <p className="mt-1 text-sm text-gc-mist">{step.body}</p>
                 </article>
               </motion.li>

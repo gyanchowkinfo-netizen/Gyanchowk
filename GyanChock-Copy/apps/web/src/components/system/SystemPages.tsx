@@ -14,8 +14,8 @@ export function SystemPage({
 }) {
   return (
     <main className="mx-auto max-w-lg px-4 py-24 text-center">
-      <p className="text-gc-gold">{code}</p>
-      <h1 className="mt-2 font-display text-3xl">{title}</h1>
+      <p className="font-display text-sm font-semibold text-gc-blue">{code}</p>
+      <h1 className="mt-2 font-display text-3xl font-semibold text-gc-black">{title}</h1>
       {body ? <p className="mt-3 text-sm text-gc-mute">{body}</p> : null}
       <div className="mt-6">{action}</div>
     </main>
@@ -29,7 +29,7 @@ export function NotFoundPage() {
       title="This page is off the chowk."
       body="The link may be expired or the content was unpublished."
       action={
-        <Link href="/" className="gc-btn-gold inline-flex">
+        <Link href="/" className="gc-btn-primary inline-flex">
           Back home
         </Link>
       }
@@ -44,7 +44,7 @@ export function UnauthorizedPage() {
       title="Sign in required"
       body="This area is private. Student, teacher and admin panels are not indexed."
       action={
-        <Link href="/login" className="gc-btn-gold inline-flex">
+        <Link href="/login" className="gc-btn-primary inline-flex">
           Log in
         </Link>
       }
@@ -106,7 +106,7 @@ export function NetworkErrorPage({ onRetry }: { onRetry?: () => void }) {
       body="We could not reach the Gyan Chowk API. Check your connection, then retry."
       action={
         onRetry ? (
-          <button className="gc-btn-gold" onClick={onRetry}>
+          <button className="gc-btn-primary" onClick={onRetry}>
             Retry
           </button>
         ) : null

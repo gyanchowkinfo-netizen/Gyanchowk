@@ -71,8 +71,8 @@ export default function TeacherHome() {
   return (
     <div className="space-y-8">
       <div>
-        <p className="text-sm text-gc-mute">Welcome</p>
-        <h1 className="font-display text-3xl text-gc-black">{user?.name ?? 'Teacher'}</h1>
+        <p className="text-sm text-gc-mute">{user?.teacherStatus === 'approved' ? 'Teaching workspace' : 'Welcome'}</p>
+        <h1 className="font-display text-3xl font-semibold tracking-tight text-gc-black">{user?.name ?? 'Teacher'}</h1>
         {user?.teacherStatus ? <div className="mt-2"><StatusBadge status={user.teacherStatus} /></div> : null}
       </div>
       {pending ? (
@@ -81,17 +81,17 @@ export default function TeacherHome() {
         </Alert>
       ) : null}
       <div className="grid gap-4 md:grid-cols-3">
-        <Link href="/teacher/doubts" className="gc-card p-5 hover:border-gc-gold">
+        <Link href="/teacher/doubts" className="gc-card p-5 hover:border-gc-blue">
           <p className="text-xs text-gc-mute">Assigned doubts</p>
           <p className="mt-2 font-display text-3xl">
             <CountUp value={Number(doubts.data?.total ?? doubts.data?.items?.length ?? 0)} />
           </p>
         </Link>
-        <Link href="/teacher/earnings" className="gc-card p-5 hover:border-gc-gold">
+        <Link href="/teacher/earnings" className="gc-card p-5 hover:border-gc-blue">
           <p className="text-xs text-gc-mute">Available earnings</p>
           <p className="mt-2 font-display text-2xl">{formatPaise(Number(summary.available ?? 0))}</p>
         </Link>
-        <Link href="/teacher/courses" className="gc-card p-5 hover:border-gc-gold">
+        <Link href="/teacher/courses" className="gc-card p-5 hover:border-gc-blue">
           <p className="text-xs text-gc-mute">Commission</p>
           <p className="mt-2 font-display text-2xl">{earnings.data?.commissionPercent ?? '—'}%</p>
         </Link>

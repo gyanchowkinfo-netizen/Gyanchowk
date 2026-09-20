@@ -40,7 +40,7 @@ export function Modal({
         >
           <button className="absolute inset-0" aria-label="Close" onClick={onClose} />
           <motion.div
-            className="relative z-10 w-full max-w-lg rounded-2xl border border-gc-line bg-gc-navy p-5 shadow-glow"
+            className="relative z-10 w-full max-w-lg rounded-t-[20px] border border-gc-line bg-white p-5 shadow-lg sm:rounded-[20px] sm:p-6"
             initial={{ opacity: 0, y: 16, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 12 }}
@@ -81,14 +81,14 @@ export function Drawer({
         >
           <button className="flex-1" aria-label="Close filters" onClick={onClose} />
           <motion.aside
-            className="h-full w-full max-w-sm overflow-y-auto border-l border-gc-line bg-gc-navy p-5"
+            className="h-full w-full max-w-sm overflow-y-auto border-l border-gc-line bg-white p-5"
             initial={{ x: '100%', opacity: 1 }}
             animate={{ x: 0, opacity: 1 }}
             exit={{ x: '100%', opacity: 1 }}
             transition={{ duration: duration.normal, ease: ease.smooth }}
           >
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="font-display text-lg text-gc-gold">{title}</h2>
+              <h2 className="font-display text-lg text-gc-black">{title}</h2>
               <Button variant="ghost" onClick={onClose}>
                 Close
               </Button>
@@ -121,11 +121,11 @@ export function ConfirmDialog({
   return (
     <Modal open={open} title={title} onClose={onClose}>
       <p className="text-sm text-gc-mist">{body}</p>
-      <div className="mt-5 flex justify-end gap-2">
-        <Button variant="ghost" onClick={onClose}>
+      <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+        <Button variant="ghost" className="w-full sm:w-auto" onClick={onClose}>
           Cancel
         </Button>
-        <Button variant="danger" loading={loading} onClick={onConfirm}>
+        <Button variant="danger" className="w-full sm:w-auto" loading={loading} onClick={onConfirm}>
           {confirmLabel}
         </Button>
       </div>
@@ -136,17 +136,17 @@ export function ConfirmDialog({
 export function ToastViewport() {
   const { items, dismiss } = useToastStore();
   return (
-    <div className="pointer-events-none fixed bottom-20 right-4 z-[60] space-y-2 sm:bottom-6" aria-live="polite">
+    <div className="pointer-events-none fixed inset-x-4 bottom-[calc(var(--bottom-nav)+0.5rem)] z-[60] space-y-2 sm:inset-x-auto sm:bottom-6 sm:right-4" aria-live="polite">
       <AnimatePresence>
         {items.map((t) => (
           <motion.button
             key={t.id}
-            className={`pointer-events-auto block rounded-xl border px-4 py-3 text-sm ${
+            className={`pointer-events-auto block w-full rounded-xl border px-4 py-3 text-left text-sm shadow-md sm:w-auto ${
               t.kind === 'error'
-                ? 'border-red-400/40 bg-gc-navy text-red-200'
+                ? 'border-[color:var(--gyan-error)]/30 bg-[color:var(--gyan-error-soft)] text-[color:var(--gyan-error)]'
                 : t.kind === 'success'
-                  ? 'border-emerald-400/40 bg-gc-navy text-emerald-200'
-                  : 'border-gc-line bg-gc-navy text-gc-mist'
+                  ? 'border-[color:var(--gyan-success)]/30 bg-[color:var(--gyan-success-soft)] text-[color:var(--gyan-success)]'
+                  : 'border-gc-line bg-white text-gc-black'
             }`}
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}

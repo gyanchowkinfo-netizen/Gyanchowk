@@ -21,7 +21,7 @@ export default function HelpPage() {
         ].map(([t, b]) => (
           <StaggerItem key={t}>
             <article className="gc-card p-5">
-              <h2 className="text-gc-gold">{t}</h2>
+              <h2 className="font-display text-lg font-semibold text-gc-black">{t}</h2>
               <p className="mt-2 text-sm text-gc-mist">{b}</p>
             </article>
           </StaggerItem>

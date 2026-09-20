@@ -1,0 +1,144 @@
+.section {
+  padding: 1.5rem 1rem 4rem;
+}
+
+.inner {
+  position: relative;
+  max-width: 52rem;
+  margin: 0 auto;
+  padding: 2.5rem 1.25rem 2.75rem;
+  text-align: center;
+}
+
+.kickerRow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.85rem;
+}
+
+.kickerLine {
+  display: block;
+  width: 2.4rem;
+  height: 1px;
+  background: color-mix(in srgb, #c4a05a 55%, #d9cbb8);
+}
+
+.kicker {
+  margin: 0;
+  padding: 0.38rem 0.9rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, #f4ead8 72%, white);
+  color: #b08a4a;
+  font-size: 0.68rem;
+  font-weight: 650;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.title {
+  margin: 1.35rem 0 0;
+  color: #2c241c;
+  font-family: var(--font-display), "Instrument Serif", Georgia, serif;
+  font-size: clamp(2rem, 4.4vw, 3.55rem);
+  font-weight: 400;
+  letter-spacing: -0.04em;
+  line-height: 1.12;
+}
+
+.accent {
+  color: #c08a3c;
+}
+
+.body {
+  margin: 1.05rem auto 0;
+  max-width: 34rem;
+  color: #7a7268;
+  font-size: clamp(0.98rem, 1.2vw, 1.12rem);
+  line-height: 1.7;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-top: 1.85rem;
+}
+
+.primary,
+.ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  min-height: 3rem;
+  padding: 0.72rem 1.35rem;
+  border-radius: 999px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  text-decoration: none;
+  transition:
+    transform 240ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 240ms ease,
+    background 240ms ease,
+    border-color 240ms ease;
+}
+
+.primary {
+  background: #c4964a;
+  color: #fffaf2;
+  box-shadow: 0 12px 28px color-mix(in srgb, #c4964a 32%, transparent);
+}
+
+.ghost {
+  border: 1.5px solid color-mix(in srgb, #c4964a 38%, #e8dcc8);
+  background: color-mix(in srgb, #fffdf8 70%, transparent);
+  color: #9a7b4f;
+}
+
+.primary:hover {
+  transform: translateY(-1px);
+  background: #b8873d;
+  box-shadow: 0 16px 32px color-mix(in srgb, #c4964a 38%, transparent);
+}
+
+.ghost:hover {
+  transform: translateY(-1px);
+  background: #fff;
+  border-color: color-mix(in srgb, #c4964a 55%, #e8dcc8);
+}
+
+.primary:focus-visible,
+.ghost:focus-visible {
+  outline: 2px solid #c4964a;
+  outline-offset: 3px;
+}
+
+@media (min-width: 640px) {
+  .section {
+    padding: 1.5rem 1.5rem 5.5rem;
+  }
+
+  .inner {
+    padding: 3rem 2rem 3.25rem;
+  }
+}
+
+@media (max-width: 639px) {
+  .primary,
+  .ghost {
+    width: 100%;
+    max-width: 20rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .primary,
+  .ghost {
+    transition: none !important;
+    transform: none !important;
+  }
+}

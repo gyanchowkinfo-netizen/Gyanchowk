@@ -119,7 +119,59 @@ const certificateSchema = new Schema(
 );
 certificateSchema.index({ user: 1, course: 1 }, { unique: true, sparse: true });
 
+const videoBookmarkSchema = new Schema(
+  {
+    user: { type: Schema.Types.ObjectId, ref: 'User', required: true, index: true },
+    video: { type: Schema.Types.ObjectId, ref: 'Video', required: true, index: true },
+    timestampSec: { type: Number, required: true, min: 0 },
+    label: String,
+  },
+  { timestamps: true },
+);
+videoBookmarkSchema.index({ user: 1, video: 1, timestampSec: 1 });
+
+const videoNoteSchema = new Schema(
+  {
+    user: { type: Schema.Types.ObjectId, ref: 'User', required: true, index: true },
+    video: { type: Schema.Types.ObjectId, ref: 'Video', required: true, index: true },
+    timestampSec: { type: Number, required: true, min: 0 },
+    body: { type: String, required: true, maxlength: 4000 },
+  },
+  { timestamps: true },
+);
+videoNoteSchema.index({ user: 1, video: 1, createdAt: -1 });
+
+const studentDownloadSchema = new Schema(
+  {
+    user: { type: Schema.Types.ObjectId, ref: 'User', required: true, index: true },
+    video: { type: Schema.Types.ObjectId, ref: 'Video', required: true, index: true },
+    course: { type: Schema.Types.ObjectId, ref: 'Course' },
+    title: String,
+    bytes: { type: Number, default: 0 },
+    wrappedKey: { type: String, required: true },
+    expiresAt: { type: Date, required: true, index: true },
+  },
+  { timestamps: true },
+);
+studentDownloadSchema.index({ user: 1, video: 1 }, { unique: true });
+
+const resumeDraftSchema = new Schema(
+  {
+    user: { type: Schema.Types.ObjectId, ref: 'User', required: true, unique: true },
+    contact: { name: String, email: String, phone: String, location: String },
+    education: [{ school: String, detail: String, year: String }],
+    skills: [String],
+    experience: [{ title: String, org: String, detail: String }],
+    projects: [{ name: String, detail: String }],
+  },
+  { timestamps: true },
+);
+
 export const EnrollmentModel = mongoose.model('Enrollment', enrollmentSchema);
+export const VideoBookmarkModel = mongoose.model('VideoBookmark', videoBookmarkSchema);
+export const VideoNoteModel = mongoose.model('VideoNote', videoNoteSchema);
+export const StudentDownloadModel = mongoose.model('StudentDownload', studentDownloadSchema);
+export const ResumeDraftModel = mongoose.model('ResumeDraft', resumeDraftSchema);
 export const ProgressModel = mongoose.model('Progress', progressSchema);
 export const VideoProgressModel = mongoose.model('VideoProgress', videoProgressSchema);
 export const StudyMaterialModel = mongoose.model('StudyMaterial', studyMaterialSchema);

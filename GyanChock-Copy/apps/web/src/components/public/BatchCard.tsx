@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { formatPrice, cn } from '@/lib/format';
 import { Rating, StatusBadge } from '@/components/ui/Badge';
 import type { BatchCardData } from '@/lib/types';
-import { StaggerContainer, StaggerItem, TiltCard } from '@/components/motion';
+import { StaggerContainer, StaggerItem } from '@/components/motion';
 
 function durationLabel(batch: BatchCardData) {
   if (batch.durationDays) return `${batch.durationDays} days`;
@@ -19,10 +19,10 @@ export function BatchCard({ batch, featured }: { batch: BatchCardData; featured?
   const teachers = (batch.teachers ?? []).map((t) => t.name).filter(Boolean).join(', ');
   const duration = durationLabel(batch);
   return (
-    <TiltCard intensity={5} className="h-full">
+    <article className="h-full">
       <Link
         href={`/batches/${batch.slug}`}
-        className={cn('gc-card group relative flex h-full flex-col overflow-hidden hover:border-gc-gold', featured ? 'p-0' : 'p-0')}
+        className={cn('gc-card group relative flex h-full flex-col overflow-hidden hover:border-gc-blue', featured ? 'p-0' : 'p-0')}
       >
         <div className="relative h-40 overflow-hidden bg-gradient-to-br from-gc-blue/25 to-gc-navy">
           {batch.thumbnail?.url ? (
@@ -39,8 +39,8 @@ export function BatchCard({ batch, featured }: { batch: BatchCardData; featured?
           </span>
         </div>
         <div className={cn('flex flex-1 flex-col p-5', featured && 'p-6')}>
-          <h3 className={cn('font-display group-hover:text-gc-gold', featured ? 'text-2xl' : 'text-xl')}>{batch.name}</h3>
-          {course ? <p className="mt-1 text-sm text-gc-gold">{course}</p> : null}
+          <h3 className={cn('font-display font-semibold text-gc-black group-hover:text-gc-blue', featured ? 'text-xl' : 'text-lg')}>{batch.name}</h3>
+          {course ? <p className="mt-1 text-sm text-gc-blue">{course}</p> : null}
           <p className="mt-1 text-xs text-gc-mute">
             {[exam, batch.targetClass, batch.language].filter(Boolean).join(' · ')}
           </p>
@@ -62,24 +62,24 @@ export function BatchCard({ batch, featured }: { batch: BatchCardData; featured?
           </div>
           <div className="mt-4 flex items-end justify-between gap-2">
             <p>
-              <span className="font-display text-lg text-gc-gold">{formatPrice(batch.price, batch.discountPercent)}</span>
+              <span className="font-display text-lg font-semibold text-gc-black">{formatPrice(batch.price, batch.discountPercent)}</span>
               {batch.discountPercent ? (
                 <span className="ml-2 text-xs text-gc-mute line-through">{formatPrice(batch.price, 0)}</span>
               ) : null}
             </p>
-            <span className="gc-btn-gold px-3 py-1.5 text-xs">
-              View batch <span className="gc-btn-arrow">→</span>
+            <span className="text-sm font-semibold text-gc-blue">
+              View <span className="gc-btn-arrow">→</span>
             </span>
           </div>
         </div>
       </Link>
-    </TiltCard>
+    </article>
   );
 }
 
 export function BatchGrid({ batches }: { batches: BatchCardData[] }) {
   return (
-    <StaggerContainer className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+    <StaggerContainer className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
       {batches.map((b) => (
         <StaggerItem key={b._id} className="h-full">
           <BatchCard batch={b} />

@@ -13,7 +13,7 @@ export function BecomeTeacherCTA() {
           <Parallax speed={0.1}>
             <div className="relative mx-auto max-w-2xl text-center">
               <Reveal>
-                <p className="text-xs uppercase tracking-[0.3em] text-gc-gold">Share your knowledge</p>
+                <p className="text-xs uppercase tracking-[0.22em] text-white/70">Share your knowledge</p>
               </Reveal>
               <Reveal delay={0.05}>
                 <h2 className="mt-3 font-display text-3xl text-white md:text-5xl">Become a Gyan Chowk teacher</h2>

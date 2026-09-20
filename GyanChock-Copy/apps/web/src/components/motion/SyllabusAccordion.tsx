@@ -8,9 +8,11 @@ import { useMotionPrefs } from '@/components/motion';
 export function SyllabusAccordion({
   chapters,
   lessons,
+  onPreview,
 }: {
   chapters: Array<{ _id: string; name: string }>;
-  lessons: Array<{ _id: string; title: string; isDemo?: boolean; chapter?: string }>;
+  lessons: Array<{ _id: string; title: string; isDemo?: boolean; chapter?: string; video?: string }>;
+  onPreview?: (lesson: { _id: string; title: string; isDemo?: boolean; video?: string }) => void;
 }) {
   const { reduce } = useMotionPrefs();
   const [open, setOpen] = useState<string | null>(chapters[0]?._id ?? null);
@@ -19,8 +21,13 @@ export function SyllabusAccordion({
     return (
       <ul className="space-y-2">
         {lessons.map((l) => (
-          <li key={l._id} className="gc-card px-4 py-3 text-sm transition hover:border-gc-gold">
-            {l.title} {l.isDemo ? <span className="text-gc-gold">· demo</span> : null}
+          <li key={l._id} className="gc-card px-4 py-3 text-sm transition hover:border-gc-blue">
+            {l.title}{' '}
+            {l.isDemo ? (
+              <button type="button" className="text-gc-gold" onClick={() => onPreview?.(l)}>
+                · watch preview
+              </button>
+            ) : null}
           </li>
         ))}
       </ul>
@@ -62,7 +69,12 @@ export function SyllabusAccordion({
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: i * 0.04, duration: duration.fast }}
                     >
-                      {l.title} {l.isDemo ? <span className="text-gc-gold">· demo</span> : null}
+                      {l.title}{' '}
+                      {l.isDemo ? (
+                        <button type="button" className="text-gc-gold" onClick={() => onPreview?.(l)}>
+                          · watch preview
+                        </button>
+                      ) : null}
                     </motion.li>
                   ))}
                 </motion.ul>

@@ -14,9 +14,9 @@ export function FeaturedArticle({ post }: { post: BlogPost }) {
     <section id="featured" className="relative">
       <PageContainer>
         <Reveal>
-          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-gc-gold">Featured article</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-gc-blue">Featured article</p>
         </Reveal>
-        <div className="mt-6 grid items-center gap-8 overflow-hidden rounded-3xl border border-gc-line bg-gc-ink/50 lg:grid-cols-2">
+        <div className="mt-6 grid items-center gap-8 overflow-hidden rounded-3xl border border-gc-line bg-white lg:grid-cols-2">
           <Reveal>
             <div className="relative aspect-[16/10] overflow-hidden lg:aspect-auto lg:h-full lg:min-h-[320px]">
               <CoverMedia src={post.cover?.url} alt={post.title} sizes="(max-width: 1024px) 100vw, 50vw" className="origin-center" />
@@ -32,7 +32,7 @@ export function FeaturedArticle({ post }: { post: BlogPost }) {
                   .filter(Boolean)
                   .join(' · ')}
               </p>
-              <Link href={`/blog/${post.slug}`} className="gc-btn-gold mt-6 inline-flex">
+              <Link href={`/blog/${post.slug}`} className="gc-btn-primary mt-6 inline-flex">
                 Read Article
               </Link>
             </div>

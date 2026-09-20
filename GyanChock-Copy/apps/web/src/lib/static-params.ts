@@ -7,6 +7,7 @@ export async function staticParams(
   sourceField: string = 'slug',
   paramName: string = 'slug',
 ): Promise<Array<Record<string, string>>> {
+  if (process.env.NODE_ENV !== 'production') return [];
   try {
     const res = await fetch(`${API_URL}${path}`, { signal: AbortSignal.timeout(12_000) });
     if (!res.ok) return [];

@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { QUESTION_TYPES } from '@gyan-chowk/shared';
+import { QUESTION_TYPES, TEST_CATEGORIES } from '@gyan-chowk/shared';
 import { authenticate, requireRoles, teacherOrAdmin, type AuthedRequest } from '../middleware/auth.js';
 import { asyncHandler } from '../middleware/error.js';
 import { validate } from '../middleware/validate.js';
@@ -74,12 +74,34 @@ questionRouter.get(
   '/',
   authenticate,
   teacherOrAdmin,
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (req: AuthedRequest, res) => {
     const filter: Record<string, unknown> = {};
     if (req.query.bank) filter.bank = req.query.bank;
     if (req.query.course) filter.course = req.query.course;
+    if (req.user!.role === 'teacher') filter.createdBy = req.user!.id;
     const items = await QuestionModel.find(filter).limit(200).lean();
     res.json({ items });
+  }),
+);
+
+questionRouter.patch(
+  '/:id',
+  authenticate,
+  teacherOrAdmin,
+  asyncHandler(async (req: AuthedRequest, res) => {
+    const question = await QuestionModel.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    if (!question) throw notFound('Question not found');
+    res.json({ question });
+  }),
+);
+
+questionRouter.delete(
+  '/:id',
+  authenticate,
+  teacherOrAdmin,
+  asyncHandler(async (req, res) => {
+    await QuestionModel.findByIdAndDelete(req.params.id);
+    res.json({ ok: true });
   }),
 );
 
@@ -89,8 +111,11 @@ testRouter.get(
   asyncHandler(async (req: AuthedRequest, res) => {
     const filter: Record<string, unknown> = {};
     if (req.user!.role === 'student') filter.status = { $in: ['scheduled', 'live', 'ended'] };
+    if (req.user!.role === 'teacher') filter.createdBy = req.user!.id;
     if (req.query.course) filter.course = req.query.course;
     if (req.query.batch) filter.batch = req.query.batch;
+    if (req.query.category) filter.category = req.query.category;
+    if (req.query.careerTrack) filter.careerTrack = req.query.careerTrack;
     const items = await TestModel.find(filter).sort({ startsAt: -1 }).lean();
     res.json({ items });
   }),
@@ -105,6 +130,10 @@ testRouter.post(
       title: z.string(),
       course: z.string().optional(),
       batch: z.string().optional(),
+      subjectId: z.string().optional(),
+      chapterId: z.string().optional(),
+      category: z.enum(TEST_CATEGORIES).optional(),
+      careerTrack: z.string().optional(),
       durationMin: z.number().int().positive(),
       negativeMarking: z.boolean().optional(),
       randomQuestions: z.boolean().optional(),
@@ -138,6 +167,20 @@ testRouter.post(
       });
     }
     res.status(201).json({ test });
+  }),
+);
+
+testRouter.patch(
+  '/:id',
+  authenticate,
+  teacherOrAdmin,
+  asyncHandler(async (req: AuthedRequest, res) => {
+    const test = await TestModel.findById(req.params.id);
+    if (!test) throw notFound('Test not found');
+    if (req.user!.role !== 'admin' && String(test.createdBy) !== req.user!.id) throw notFound('Test not found');
+    Object.assign(test, req.body);
+    await test.save();
+    res.json({ test });
   }),
 );
 

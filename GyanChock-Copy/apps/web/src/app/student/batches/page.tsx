@@ -1,6 +1,5 @@
 'use client';
 
-import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { EmptyState, ErrorState, LoadingState } from '@/components/ui/States';
@@ -27,16 +26,14 @@ export default function StudentBatchesPage() {
         {batches.map((e) => (
           <li key={e._id} className="gc-card flex items-center justify-between p-5">
             <div>
-              <Link href={`/batches/${e.batch!.slug}`} className="font-display text-lg text-gc-gold">
-                {e.batch!.name}
-              </Link>
+              <p className="font-display text-lg text-gc-gold">{e.batch!.name}</p>
               {e.batch!.status ? <div className="mt-2"><StatusBadge status={e.batch!.status} /></div> : null}
             </div>
           </li>
         ))}
       </ul>
       {!isLoading && !batches.length ? (
-        <EmptyState title="You are not in a batch yet" action={{ href: '/batches', label: 'See batches' }} />
+        <EmptyState title="You are not in a batch yet" action={{ href: '/courses', label: 'Browse courses' }} />
       ) : null}
     </div>
   );

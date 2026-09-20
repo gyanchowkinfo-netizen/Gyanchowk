@@ -4,21 +4,6 @@ import dynamic from 'next/dynamic';
 import type { ReactNode } from 'react';
 import { BrandLogo } from '@/components/brand/BrandLogo';
 import { FloatingElement, ImageReveal, useMotionPrefs } from '@/components/motion';
-const EducationCanvas = dynamic(
-  () =>
-    import('./Scenes').then((m) => {
-      function Inner() {
-        const { EducationScene, ThreeCanvasWrapper } = m;
-        return (
-          <ThreeCanvasWrapper className="absolute inset-0">
-            <EducationScene />
-          </ThreeCanvasWrapper>
-        );
-      }
-      return Inner;
-    }),
-  { ssr: false },
-);
 
 const TeachersCanvas = dynamic(
   () =>
@@ -129,7 +114,7 @@ function SceneFrame({
   logo?: boolean;
 }) {
   return (
-    <ImageReveal className="relative aspect-square max-h-[460px] w-full max-w-[460px]">
+    <ImageReveal className="relative aspect-square max-h-[320px] w-full max-w-[460px] sm:max-h-[460px]">
       <div className="relative h-full overflow-hidden rounded-3xl border border-gc-line bg-gc-ink/70 shadow-glow">
         {allow3d ? canvas : fallback}
         {allow3d && logo ? (
@@ -143,18 +128,26 @@ function SceneFrame({
 }
 
 export function HeroVisual() {
-  const { allow3d } = useMotionPrefs();
   return (
-    <ImageReveal className="relative aspect-square max-h-[440px] w-full max-w-[440px]">
-      <div className="relative h-full overflow-hidden rounded-3xl border border-gc-line bg-gc-ink/70 shadow-glow">
-        {allow3d ? <EducationCanvas /> : <FallbackOrbit />}
-        {allow3d ? (
-          <div className="pointer-events-none absolute inset-0 grid place-items-center">
-            <BrandLogo size={168} />
-          </div>
-        ) : null}
+    <div className="relative overflow-hidden rounded-[28px] border border-gc-line bg-[color:var(--gyan-surface)] p-5 sm:p-7">
+      <div className="mb-6 flex items-center justify-between">
+        <p className="text-sm text-gc-mute">Gyan Chowk</p>
+        <span className="h-2 w-2 rounded-full bg-gc-black/40" />
       </div>
-    </ImageReveal>
+      <div className="space-y-5 text-left">
+        <div>
+          <p className="text-xs text-gc-mute">You</p>
+          <p className="mt-1 text-[15px] text-gc-black">Walk me through projectile motion, then give me a 10-question test.</p>
+        </div>
+        <div className="rounded-2xl bg-[color:var(--gyan-background)] p-4">
+          <p className="text-xs text-gc-mute">Lesson</p>
+          <p className="mt-1 text-[15px] leading-relaxed text-gc-black">
+            A projectile follows a parabola under gravity. Watch the recorded chapter, then sit a ranked paper — answers stay on the server.
+          </p>
+        </div>
+      </div>
+      <p className="mt-6 border-t border-gc-line pt-4 text-sm text-gc-mute">Ask a doubt · Continue a lesson · Start a test</p>
+    </div>
   );
 }
 
@@ -172,7 +165,7 @@ export function CareerHeroVisual() {
 export function TeachersHeroVisual() {
   const { allow3d } = useMotionPrefs();
   return (
-    <ImageReveal className="relative aspect-square max-h-[460px] w-full max-w-[460px]">
+    <ImageReveal className="relative aspect-square max-h-[320px] w-full max-w-[460px] sm:max-h-[460px]">
       <div className="relative h-full overflow-hidden rounded-3xl border border-gc-line bg-gc-ink/70 shadow-glow">
         {allow3d ? <TeachersCanvas /> : <FallbackOrbit />}
         {allow3d ? (

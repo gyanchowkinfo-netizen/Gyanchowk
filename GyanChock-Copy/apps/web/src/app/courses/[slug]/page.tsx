@@ -16,6 +16,7 @@ import { LoadingState, ErrorState, EmptyState } from '@/components/ui/States';
 import type { CourseCardData } from '@/lib/types';
 import { AnimatedSection, ScrollProgress, ScaleIn, StaggerContainer, StaggerItem, TextReveal } from '@/components/motion';
 import { SyllabusAccordion } from '@/components/motion/SyllabusAccordion';
+import { VideoPlayer } from '@/components/player/VideoPlayer';
 
 interface Course extends CourseCardData {
   description?: string;
@@ -34,6 +35,7 @@ export default function CourseDetailPage() {
   const { user } = useAuth();
   const router = useRouter();
   const [saving, setSaving] = useState(false);
+  const [previewId, setPreviewId] = useState<string | null>(null);
   const { data, error, isLoading, refetch } = useQuery({
     queryKey: ['course', slug],
     queryFn: () =>
@@ -46,6 +48,7 @@ export default function CourseDetailPage() {
       }>(`/api/courses/${slug}`),
   });
   const course = data?.course;
+  const demoLesson = (data?.lessons ?? []).find((l) => l.isDemo && l.video);
 
   useEffect(() => {
     if (course) rememberCourse(course.slug, course.title);
@@ -107,7 +110,13 @@ export default function CourseDetailPage() {
           <AnimatedSection>
             <h2 className="mt-10 font-display text-2xl text-gc-black">Syllabus</h2>
             <div className="mt-3">
-              <SyllabusAccordion chapters={data.chapters ?? []} lessons={data.lessons ?? []} />
+              <SyllabusAccordion
+                chapters={data.chapters ?? []}
+                lessons={data.lessons ?? []}
+                onPreview={(lesson) => {
+                  if (lesson.video) setPreviewId(String(lesson.video));
+                }}
+              />
             </div>
           </AnimatedSection>
           <AnimatedSection>
@@ -152,10 +161,20 @@ export default function CourseDetailPage() {
           <Button className="mt-4 w-full" onClick={() => void enroll()}>
             Enroll now <span className="gc-btn-arrow">→</span>
           </Button>
+          {demoLesson?.video ? (
+            <Button variant="ghost" className="mt-2 w-full" onClick={() => setPreviewId(String(demoLesson.video))}>
+              Watch free preview
+            </Button>
+          ) : null}
           <Button variant="ghost" className="mt-2 w-full" loading={saving} onClick={() => void saveWishlist()}>
             Save for later
           </Button>
-          <p className="mt-3 text-xs text-gc-mute">Paid access unlocks only after Razorpay verification on the server.</p>
+          <p className="mt-3 text-xs text-gc-mute">Paid access unlocks only after payment verification on the server.</p>
+          {previewId ? (
+            <div className="mt-4">
+              <VideoPlayer videoId={previewId} />
+            </div>
+          ) : null}
         </aside>
       </div>
       {(data.related ?? []).length ? (

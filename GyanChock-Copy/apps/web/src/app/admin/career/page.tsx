@@ -13,6 +13,10 @@ export default function AdminCareerPage() {
     queryKey: ['career-articles'],
     queryFn: () => api<{ items: Array<{ _id: string; title: string; slug: string }> }>('/api/career/articles'),
   });
+  const scholarships = useQuery({
+    queryKey: ['career-scholarships-admin'],
+    queryFn: () => api<{ items: Array<{ _id: string; title: string; amount?: string }> }>('/api/career/admin/scholarships'),
+  });
   const roadmaps = useQuery({
     queryKey: ['career-roadmaps'],
     queryFn: () => api<{ items: Array<{ _id: string; title: string; slug: string }> }>('/api/career/roadmaps'),
@@ -105,6 +109,46 @@ export default function AdminCareerPage() {
         {(roadmaps.data?.items ?? []).map((a) => (
           <li key={a._id} className="gc-card p-3">
             {a.title} · /career/roadmaps/{a.slug}
+          </li>
+        ))}
+      </ul>
+      <form
+        className="gc-card space-y-3 p-5"
+        onSubmit={async (e) => {
+          e.preventDefault();
+          const f = new FormData(e.currentTarget);
+          try {
+            await api('/api/career/admin/scholarships', {
+              method: 'POST',
+              body: JSON.stringify({
+                title: f.get('title'),
+                eligibility: f.get('eligibility'),
+                amount: f.get('amount'),
+                deadline: f.get('deadline') || undefined,
+                applyUrl: f.get('applyUrl') || undefined,
+                published: true,
+              }),
+            });
+            toast.success('Scholarship published');
+            await scholarships.refetch();
+            e.currentTarget.reset();
+          } catch (err) {
+            toast.error(err instanceof Error ? err.message : 'Failed');
+          }
+        }}
+      >
+        <h2 className="font-display text-xl">New scholarship</h2>
+        <Input name="title" label="Title" required />
+        <Input name="amount" label="Amount" />
+        <Input name="deadline" type="date" label="Deadline" />
+        <Input name="applyUrl" label="Apply URL" />
+        <Textarea name="eligibility" label="Eligibility" />
+        <Button type="submit">Publish scholarship</Button>
+      </form>
+      <ul className="space-y-2 text-sm">
+        {(scholarships.data?.items ?? []).map((s) => (
+          <li key={s._id} className="gc-card p-3">
+            {s.title} {s.amount ? `· ${s.amount}` : ''}
           </li>
         ))}
       </ul>

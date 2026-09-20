@@ -108,7 +108,7 @@ function RegisterForm() {
         Register
       </Button>
       <p className="text-center text-sm text-gc-mute">
-        Already have an account? <Link href="/login" className="text-gc-gold">Sign in</Link>
+        Already have an account? <Link href="/login" className="font-semibold text-gc-blue">Sign in</Link>
       </p>
     </form>
   );

@@ -25,7 +25,7 @@ export function Vision({ title, body }: { title: string; body: string }) {
     <section id="vision">
       <PageContainer>
         <Reveal>
-          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-gc-gold">Our vision</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-gc-blue">Our vision</p>
         </Reveal>
         <Reveal delay={0.04}>
           <h2 className="mt-2 font-display text-3xl text-gc-black md:text-4xl">{title}</h2>
@@ -52,8 +52,8 @@ export function Vision({ title, body }: { title: string; body: string }) {
                   viewport={{ once: true, amount: 0.5 }}
                   transition={{ duration: 0.4, delay: reduce ? 0 : i * 0.05 }}
                 >
-                  <Icon className="text-gc-gold" size={18} aria-hidden />
-                  <h3 className="mt-3 font-display text-lg text-gc-gold">{stage.title}</h3>
+                  <Icon className="text-gc-blue" size={18} aria-hidden />
+                  <h3 className="mt-3 font-display text-lg font-semibold text-gc-black">{stage.title}</h3>
                   <p className="mt-2 text-sm text-gc-mute">{stage.body}</p>
                 </motion.li>
               );

@@ -21,7 +21,7 @@ export function ArticleGrid({
     <section id="articles">
       <PageContainer>
         <Reveal>
-          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-gc-gold">Latest articles</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-gc-blue">Latest articles</p>
         </Reveal>
         <Reveal delay={0.04}>
           <h2 className="mt-2 font-display text-3xl text-gc-black">

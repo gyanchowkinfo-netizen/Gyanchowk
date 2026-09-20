@@ -28,7 +28,7 @@ export function CareerPath() {
     <section id="career-paths" className="relative">
       <PageContainer>
         <Reveal>
-          <p className="text-center text-xs font-semibold uppercase tracking-[0.3em] text-gc-gold">Choose your career path</p>
+          <p className="text-center text-xs font-semibold uppercase tracking-[0.22em] text-gc-blue">Choose your career path</p>
         </Reveal>
         <Reveal delay={0.04}>
           <h2 className="mt-2 text-center font-display text-3xl text-gc-black md:text-4xl">From learning to opportunity</h2>

@@ -1,8 +1,9 @@
 import crypto from 'node:crypto';
 import mongoose from 'mongoose';
-import { createOrderSchema, razorpayVerifySchema } from '@gyan-chowk/shared';
+import { createOrderSchema, razorpayVerifySchema, stripeVerifySchema } from '@gyan-chowk/shared';
 import { env } from '../config/env.js';
 import { getRazorpay, isRazorpayConfigured } from '../config/razorpay.js';
+import { getStripe, isStripeConfigured } from '../config/stripe.js';
 import {
   BatchModel,
   CouponModel,
@@ -12,12 +13,14 @@ import {
   ReferralModel,
   RefundModel,
   TeacherEarningModel,
+  UserModel,
 } from '../models/index.js';
 import { badRequest, conflict, forbidden, notFound } from '../utils/errors.js';
 import { applyDiscount, rupeesToPaise } from '../utils/helpers.js';
 import { createEnrollment, hasActiveEnrollment } from './enrollment.service.js';
 import { applyWalletTx } from './wallet.service.js';
 import { notify } from './notification.service.js';
+import { sendPaymentSuccessEmail, sendRefundEmail } from './email.service.js';
 import { writeAudit } from '../middleware/audit.js';
 
 function productPrice(product: {
@@ -93,6 +96,7 @@ export async function createOrder(userId: string, body: unknown) {
   }
   const payablePaise = Math.max(0, paise - couponResult.discountPaise - walletPaise);
   const receipt = `gc_${Date.now()}_${userId.slice(-6)}`;
+  const gateway = data.gateway === 'stripe' ? 'stripe' : 'razorpay';
 
   const order = await OrderModel.create({
     user: userId,
@@ -106,11 +110,53 @@ export async function createOrder(userId: string, body: unknown) {
     couponCode: couponResult.coupon?.code,
     status: payablePaise === 0 ? 'captured' : 'created',
     receipt,
+    gateway: payablePaise === 0 ? gateway : gateway,
   });
 
   if (payablePaise === 0) {
     await fulfillOrder(String(order._id));
-    return { order, razorpay: null, freeWithWallet: true };
+    return { order, razorpay: null, stripe: null, freeWithWallet: true };
+  }
+
+  if (gateway === 'stripe') {
+    if (!isStripeConfigured()) {
+      throw badRequest('Stripe is not configured on this server');
+    }
+    const productName =
+      'title' in product && typeof product.title === 'string'
+        ? product.title
+        : 'name' in product && typeof product.name === 'string'
+          ? product.name
+          : 'Gyan Chowk enrollment';
+    const session = await getStripe().checkout.sessions.create({
+      mode: 'payment',
+      success_url: `${env.NEXT_PUBLIC_APP_URL.replace(/\/$/, '')}/payment/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${env.NEXT_PUBLIC_APP_URL.replace(/\/$/, '')}/payment/failed`,
+      client_reference_id: String(order._id),
+      metadata: { orderId: String(order._id), userId, productType: data.productType, productId: data.productId },
+      line_items: [
+        {
+          quantity: 1,
+          price_data: {
+            currency: 'inr',
+            unit_amount: payablePaise,
+            product_data: { name: productName },
+          },
+        },
+      ],
+    });
+    order.stripeCheckoutSessionId = session.id;
+    if (typeof session.payment_intent === 'string') order.stripePaymentIntentId = session.payment_intent;
+    await order.save();
+    return {
+      order,
+      razorpay: null,
+      stripe: {
+        checkoutUrl: session.url,
+        sessionId: session.id,
+        publishableKey: env.STRIPE_PUBLISHABLE_KEY,
+      },
+    };
   }
 
   if (!isRazorpayConfigured()) {
@@ -134,6 +180,7 @@ export async function createOrder(userId: string, body: unknown) {
       currency: 'INR',
       keyId: env.RAZORPAY_KEY_ID,
     },
+    stripe: null,
   };
 }
 
@@ -153,6 +200,64 @@ export async function verifyCheckout(userId: string, body: unknown) {
     orderId: String(order._id),
     razorpayPaymentId: data.razorpay_payment_id,
     razorpaySignature: data.razorpay_signature,
+    gateway: 'razorpay',
+  });
+  return { ok: true };
+}
+
+export async function verifyStripeCheckout(userId: string, body: unknown) {
+  const data = stripeVerifySchema.parse(body);
+  if (!isStripeConfigured()) throw badRequest('Stripe is not configured');
+  const stripe = getStripe();
+  let order = await OrderModel.findOne({ stripePaymentIntentId: data.paymentIntentId, user: userId });
+  if (!order) {
+    const sessions = await stripe.checkout.sessions.list({ payment_intent: data.paymentIntentId, limit: 1 });
+    const sessionId = sessions.data[0]?.id;
+    if (sessionId) order = await OrderModel.findOne({ stripeCheckoutSessionId: sessionId, user: userId });
+  }
+  if (!order && data.paymentIntentId.startsWith('cs_')) {
+    order = await OrderModel.findOne({ stripeCheckoutSessionId: data.paymentIntentId, user: userId });
+  }
+  if (!order) throw notFound('Order not found');
+  if (order.status === 'captured') return { ok: true, alreadyProcessed: true };
+
+  let stripePaymentId = order.stripePaymentIntentId;
+  if (order.stripeCheckoutSessionId) {
+    const session = await stripe.checkout.sessions.retrieve(order.stripeCheckoutSessionId);
+    if (session.payment_status !== 'paid') throw badRequest('Payment not completed');
+    if (typeof session.payment_intent === 'string') {
+      order.stripePaymentIntentId = session.payment_intent;
+      stripePaymentId = session.payment_intent;
+      await order.save();
+    }
+  } else {
+    const pi = await stripe.paymentIntents.retrieve(data.paymentIntentId);
+    if (pi.status !== 'succeeded') throw badRequest('Payment not completed');
+    stripePaymentId = pi.id;
+  }
+
+  await capturePayment({
+    orderId: String(order._id),
+    stripePaymentId: stripePaymentId || data.paymentIntentId,
+    gateway: 'stripe',
+  });
+  return { ok: true };
+}
+
+export async function fulfillStripeSession(sessionId: string) {
+  const order = await OrderModel.findOne({ stripeCheckoutSessionId: sessionId });
+  if (!order) return { ignored: true as const };
+  if (order.status === 'captured') return { ok: true, alreadyProcessed: true };
+  const session = await getStripe().checkout.sessions.retrieve(sessionId);
+  if (session.payment_status !== 'paid') return { ignored: true as const };
+  const paymentIntent = typeof session.payment_intent === 'string' ? session.payment_intent : undefined;
+  if (paymentIntent) order.stripePaymentIntentId = paymentIntent;
+  await order.save();
+  await capturePayment({
+    orderId: String(order._id),
+    stripePaymentId: paymentIntent ?? sessionId,
+    gateway: 'stripe',
+    raw: session,
   });
   return { ok: true };
 }
@@ -167,6 +272,12 @@ export function verifyWebhookSignature(rawBody: string, signature: string | unde
   if (expected !== signature) throw forbidden('Invalid webhook signature');
 }
 
+export function verifyStripeWebhookSignature(rawBody: string, signature: string | undefined) {
+  if (!env.STRIPE_WEBHOOK_SECRET) throw forbidden('Webhook secret missing');
+  if (!signature) throw forbidden('Missing webhook signature');
+  return getStripe().webhooks.constructEvent(rawBody, signature, env.STRIPE_WEBHOOK_SECRET);
+}
+
 export async function handleWebhook(event: { event?: string; payload?: { payment?: { entity?: Record<string, unknown> } } }) {
   const payment = event.payload?.payment?.entity;
   if (!payment) return { ignored: true };
@@ -178,6 +289,7 @@ export async function handleWebhook(event: { event?: string; payload?: { payment
     await capturePayment({
       orderId: String(order._id),
       razorpayPaymentId: String(payment.id),
+      gateway: 'razorpay',
       raw: payment,
     });
   }
@@ -189,6 +301,28 @@ export async function handleWebhook(event: { event?: string; payload?: { payment
       title: 'Payment failed',
       body: 'Your Gyan Chowk payment could not be completed.',
       type: 'payment_failure',
+      channels: ['inApp', 'email'],
+    });
+  }
+  return { ok: true };
+}
+
+export async function handleStripeWebhook(event: unknown) {
+  const typed = event as { type?: string; data?: { object?: Record<string, unknown> } };
+  if (typed.type === 'checkout.session.completed') {
+    const session = typed.data?.object as { id?: string; payment_status?: string } | undefined;
+    if (session?.id) await fulfillStripeSession(session.id);
+  }
+  if (typed.type === 'payment_intent.succeeded') {
+    const pi = typed.data?.object as { id?: string } | undefined;
+    if (!pi?.id) return { ignored: true };
+    const order = await OrderModel.findOne({ stripePaymentIntentId: pi.id });
+    if (!order || order.status === 'captured') return { ok: true };
+    await capturePayment({
+      orderId: String(order._id),
+      stripePaymentId: pi.id,
+      gateway: 'stripe',
+      raw: pi,
     });
   }
   return { ok: true };
@@ -196,12 +330,20 @@ export async function handleWebhook(event: { event?: string; payload?: { payment
 
 async function capturePayment(input: {
   orderId: string;
-  razorpayPaymentId: string;
+  razorpayPaymentId?: string;
   razorpaySignature?: string;
+  stripePaymentId?: string;
+  gateway?: 'razorpay' | 'stripe';
   raw?: unknown;
 }) {
-  const existing = await PaymentModel.findOne({ razorpayPaymentId: input.razorpayPaymentId });
-  if (existing) return existing;
+  if (input.razorpayPaymentId) {
+    const existing = await PaymentModel.findOne({ razorpayPaymentId: input.razorpayPaymentId });
+    if (existing) return existing;
+  }
+  if (input.stripePaymentId) {
+    const existing = await PaymentModel.findOne({ stripePaymentId: input.stripePaymentId });
+    if (existing) return existing;
+  }
 
   const session = await mongoose.startSession();
   session.startTransaction();
@@ -210,9 +352,10 @@ async function capturePayment(input: {
     if (!order) throw notFound('Order not found');
     if (order.status === 'captured') {
       await session.abortTransaction();
-      return existing;
+      return null;
     }
     const invoiceNumber = `INV-${Date.now()}`;
+    const gateway = input.gateway ?? order.gateway ?? 'razorpay';
     const [payment] = await PaymentModel.create(
       [
         {
@@ -220,6 +363,8 @@ async function capturePayment(input: {
           user: order.user,
           razorpayPaymentId: input.razorpayPaymentId,
           razorpaySignature: input.razorpaySignature,
+          stripePaymentId: input.stripePaymentId,
+          gateway,
           amountPaise: order.payablePaise,
           status: 'captured',
           invoiceNumber,
@@ -229,6 +374,7 @@ async function capturePayment(input: {
       { session },
     );
     order.status = 'captured';
+    order.gateway = gateway;
     await order.save({ session });
     if (order.coupon) {
       await CouponModel.updateOne({ _id: order.coupon }, { $inc: { usedCount: 1 } }).session(session);
@@ -348,7 +494,17 @@ export async function fulfillOrder(orderId: string, paymentId?: string) {
     body: 'You are enrolled. Start learning on Gyan Chowk.',
     type: 'payment_success',
     href: '/student/courses',
+    channels: ['inApp', 'push'],
   });
+  const buyer = await UserModel.findById(order.user).select('email name').lean();
+  if (buyer?.email) {
+    await sendPaymentSuccessEmail(
+      buyer.email,
+      buyer.name,
+      `INR ${(order.payablePaise / 100).toFixed(2)}`,
+      String(order._id),
+    );
+  }
 }
 
 export async function enrollFree(userId: string, productType: 'course' | 'batch', productId: string) {
@@ -401,11 +557,19 @@ export async function refundPayment(adminId: string, paymentId: string, reason: 
   if (!order) throw notFound('Order not found');
 
   let razorpayRefundId: string | undefined;
+  let stripeRefundId: string | undefined;
   if (isRazorpayConfigured() && payment.razorpayPaymentId) {
     const rzp = await getRazorpay().payments.refund(payment.razorpayPaymentId, {
       amount: payment.amountPaise,
     });
     razorpayRefundId = rzp.id;
+  }
+  if (isStripeConfigured() && (payment.stripePaymentId || order.stripePaymentIntentId)) {
+    const refund = await getStripe().refunds.create({
+      payment_intent: String(payment.stripePaymentId || order.stripePaymentIntentId),
+      amount: payment.amountPaise,
+    });
+    stripeRefundId = refund.id;
   }
 
   const refund = await RefundModel.create({
@@ -414,6 +578,7 @@ export async function refundPayment(adminId: string, paymentId: string, reason: 
     user: order.user,
     amountPaise: payment.amountPaise,
     razorpayRefundId,
+    stripeRefundId,
     reason,
     status: 'processed',
     processedBy: adminId,
@@ -446,7 +611,12 @@ export async function refundPayment(adminId: string, paymentId: string, reason: 
     title: 'Refund processed',
     body: 'Your refund has been credited to your wallet.',
     type: 'refund',
+    channels: ['inApp', 'push'],
   });
+  const student = await UserModel.findById(order.user).select('email name').lean();
+  if (student?.email) {
+    await sendRefundEmail(student.email, student.name, `INR ${(payment.amountPaise / 100).toFixed(2)}`);
+  }
   return refund;
 }
 

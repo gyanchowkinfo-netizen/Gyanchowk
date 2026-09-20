@@ -62,6 +62,8 @@ export const courseFilterSchema = paginationQuerySchema.extend({
   minRating: z.coerce.number().min(0).max(5).optional(),
   type: z.string().optional(),
   mine: z.enum(['1', '0']).optional(),
+  careerTrack: z.string().optional(),
+  status: z.string().optional(),
 });
 
 export const batchFilterSchema = paginationQuerySchema.extend({
@@ -83,6 +85,55 @@ export const createOrderSchema = z.object({
   productId: objectIdSchema,
   couponCode: z.string().trim().max(40).optional(),
   walletAmount: z.coerce.number().min(0).optional(),
+  gateway: z.enum(['razorpay', 'stripe']).optional(),
+});
+
+export const stripeVerifySchema = z.object({
+  paymentIntentId: z.string().min(1),
+});
+
+export const pushSubscriptionSchema = z.object({
+  endpoint: z.string().url(),
+  keys: z.object({
+    p256dh: z.string().min(1),
+    auth: z.string().min(1),
+  }),
+});
+
+export const videoBookmarkSchema = z.object({
+  videoId: objectIdSchema,
+  timestampSec: z.number().min(0),
+  label: z.string().trim().max(120).optional(),
+});
+
+export const videoNoteSchema = z.object({
+  videoId: objectIdSchema,
+  timestampSec: z.number().min(0),
+  body: z.string().trim().min(1).max(4000),
+});
+
+export const scholarshipSchema = z.object({
+  title: z.string().trim().min(3).max(160),
+  eligibility: z.string().trim().max(2000).optional(),
+  amount: z.string().trim().max(80).optional(),
+  deadline: z.coerce.date().optional(),
+  applyUrl: z.string().url().optional(),
+  published: z.boolean().optional(),
+});
+
+export const resumeDraftSchema = z.object({
+  contact: z
+    .object({
+      name: z.string().optional(),
+      email: z.string().optional(),
+      phone: z.string().optional(),
+      location: z.string().optional(),
+    })
+    .optional(),
+  education: z.array(z.object({ school: z.string(), detail: z.string().optional(), year: z.string().optional() })).optional(),
+  skills: z.array(z.string()).optional(),
+  experience: z.array(z.object({ title: z.string(), org: z.string().optional(), detail: z.string().optional() })).optional(),
+  projects: z.array(z.object({ name: z.string(), detail: z.string().optional() })).optional(),
 });
 
 export const razorpayVerifySchema = z.object({

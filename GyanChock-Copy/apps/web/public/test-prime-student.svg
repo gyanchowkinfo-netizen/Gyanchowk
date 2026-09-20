@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 720" fill="none" role="img" aria-labelledby="tpTitle tpDesc">
+  <title id="tpTitle">Gyan Chowk student preparing for mock tests</title>
+  <desc id="tpDesc">Original Gyan Chowk illustration of a female student holding notebooks and a backpack.</desc>
+  <ellipse cx="286" cy="686" rx="148" ry="18" fill="#26352D" opacity="0.08"/>
+  <path d="M168 430c18 92 48 168 118 214 70-46 102-124 118-214-22-18-76-30-118-30s-96 12-118 30Z" fill="#1F2E28"/>
+  <path d="M186 428c16 78 40 148 98 196 58-48 84-120 98-196-18-14-62-24-98-24s-80 10-98 24Z" fill="#2C4036"/>
+  <path d="M214 252c-38 22-58 70-52 128 8 18 44 32 114 32s108-14 116-32c8-60-16-108-56-128-18-8-78-10-122 0Z" fill="#3F5A48"/>
+  <path d="M228 268c-18 16-28 52-22 102 22 10 56 16 90 16 36 0 70-6 92-16 6-50-6-86-24-102-22-12-92-14-136 0Z" fill="#F3EFE4"/>
+  <path d="M248 372c8 38 22 62 48 78 26-16 40-40 48-78-14-6-54-8-96 0Z" fill="#E7E0D0"/>
+  <rect x="198" y="318" width="28" height="132" rx="10" fill="#1A2A38"/>
+  <path d="M226 318h86c10 0 18 8 18 18v96c0 10-8 18-18 18h-86V318Z" fill="#243B2F"/>
+  <path d="M232 330h74v8H232zM232 348h74v8H232zM232 366h58v8H232z" fill="#F4E7C3" opacity="0.85"/>
+  <rect x="318" y="332" width="74" height="108" rx="8" fill="#F7F1E4" stroke="#C9BFA8" stroke-width="3"/>
+  <path d="M326 348h58M326 366h58M326 384h46" stroke="#D9CDB6" stroke-width="4" stroke-linecap="round"/>
+  <rect x="304" y="324" width="70" height="118" rx="8" fill="#16324A"/>
+  <path d="M314 344h50M314 362h50M314 380h38" stroke="#F4E7C3" stroke-width="3" stroke-linecap="round" opacity="0.7"/>
+  <path d="M392 236c18 34 16 86-8 118-8 6-22 8-22 8s-4-54 4-92c6-24 16-40 26-34Z" fill="#1A2A38"/>
+  <path d="M168 248c-10 48 6 102 28 128 8-36 10-86 4-122-20-10-28-14-32-6Z" fill="#1A2A38"/>
+  <path d="M214 96c-18 8-48 42-42 92 4 28 18 46 38 54 8-30 18-70 40-92-8-28-22-58-36-54Z" fill="#2A211C"/>
+  <path d="M248 72c52-18 118 8 132 58 10 36-8 62-18 72-22 8-40-12-70-18-36-8-70 6-88 22-8-30 2-68 8-86 8-22 18-42 36-48Z" fill="#3A2C26"/>
+  <path d="M300 78c36 6 78 32 84 70 4 28-10 50-24 58-16-22-28-48-54-70-4-20-8-42-6-58Z" fill="#2F241F"/>
+  <ellipse cx="292" cy="168" rx="62" ry="74" fill="#E8C3A6"/>
+  <path d="M248 148c8 18 22 28 48 30 28 2 48-8 58-22-8 36-28 64-56 64s-52-22-50-72Z" fill="#DDB392"/>
+  <path d="M270 186c10 10 28 14 44 8" stroke="#C48B6A" stroke-width="3" stroke-linecap="round"/>
+  <path d="M318 164c8 4 16 4 22-2" stroke="#5C4030" stroke-width="3" stroke-linecap="round"/>
+  <path d="M258 164c8 4 14 4 20-2" stroke="#5C4030" stroke-width="3" stroke-linecap="round"/>
+  <circle cx="274" cy="160" r="4.5" fill="#2A211C"/>
+  <circle cx="322" cy="160" r="4.5" fill="#2A211C"/>
+  <path d="M288 176c8 8 20 8 28 0" stroke="#B56A55" stroke-width="3" stroke-linecap="round"/>
+  <path d="M236 118c28-18 86-22 122 6 8 22-6 40-18 46-22-18-54-28-92-22-10-8-14-18-12-30Z" fill="#3A2C26"/>
+  <path d="M220 200c-4 36 8 64 28 72 6-28 10-52 8-78-14-4-32 0-36 6Z" fill="#3A2C26"/>
+  <path d="M348 198c8 32 4 62-8 78 22-10 32-40 28-74-8-6-18-8-20-4Z" fill="#2F241F"/>
+  <path d="M196 430c20 78 44 148 96 186h-28c-54-40-78-112-92-186Z" fill="#17241E"/>
+  <path d="M372 428c-16 78-38 146-90 188h24c56-42 80-114 92-188H372Z" fill="#17241E"/>
+</svg>

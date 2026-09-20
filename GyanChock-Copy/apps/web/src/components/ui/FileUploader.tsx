@@ -22,6 +22,7 @@ export function FileUploader({
         type="file"
         accept={accept}
         className="sr-only"
+        suppressHydrationWarning
         onChange={(e) => {
           const f = e.target.files?.[0];
           if (!f) return;

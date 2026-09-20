@@ -111,16 +111,34 @@ const cmsPageSchema = new Schema(
 
 const bannerSchema = new Schema(
   {
-    title: String,
-    subtitle: String,
+    title: { type: String, required: true, trim: true, maxlength: 160 },
+    subtitle: { type: String, trim: true, maxlength: 280 },
     image: { publicId: String, url: String },
-    href: String,
-    placement: { type: String, enum: ['hero', 'home_mid', 'offer'], default: 'hero' },
-    active: { type: Boolean, default: true },
+    mobileImage: { publicId: String, url: String },
+    ctaText: { type: String, trim: true, maxlength: 40 },
+    ctaUrl: { type: String, trim: true, maxlength: 500 },
+    href: { type: String, trim: true, maxlength: 500 },
+    placement: {
+      type: String,
+      enum: ['hero', 'home', 'home_mid', 'offer', 'top', 'announcement'],
+      default: 'hero',
+      index: true,
+    },
+    bannerType: {
+      type: String,
+      enum: ['promo', 'course', 'exam', 'announcement', 'general'],
+      default: 'promo',
+    },
+    active: { type: Boolean, default: true, index: true },
     order: { type: Number, default: 0 },
+    sortOrder: { type: Number, default: 0, index: true },
+    startAt: Date,
+    endAt: Date,
   },
   { timestamps: true },
 );
+bannerSchema.index({ active: 1, sortOrder: 1, order: 1 });
+bannerSchema.index({ active: 1, startAt: 1, endAt: 1 });
 
 const settingSchema = new Schema(
   {
@@ -152,6 +170,18 @@ export const NotificationPreferenceModel = mongoose.model(
   'NotificationPreference',
   notificationPreferenceSchema,
 );
+const scholarshipSchema = new Schema(
+  {
+    title: { type: String, required: true },
+    eligibility: String,
+    amount: String,
+    deadline: Date,
+    applyUrl: String,
+    published: { type: Boolean, default: false, index: true },
+  },
+  { timestamps: true },
+);
+
 export const CareerArticleModel = mongoose.model('CareerArticle', careerArticleSchema);
 export const RoadmapModel = mongoose.model('Roadmap', roadmapSchema);
 export const BlogModel = mongoose.model('Blog', blogSchema);
@@ -160,3 +190,4 @@ export const CMSPageModel = mongoose.model('CMSPage', cmsPageSchema);
 export const BannerModel = mongoose.model('Banner', bannerSchema);
 export const SettingModel = mongoose.model('Setting', settingSchema);
 export const AuditLogModel = mongoose.model('AuditLog', auditLogSchema);
+export const ScholarshipModel = mongoose.model('Scholarship', scholarshipSchema);

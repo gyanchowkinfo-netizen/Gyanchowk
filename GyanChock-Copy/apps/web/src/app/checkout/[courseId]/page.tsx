@@ -22,6 +22,7 @@ function CheckoutInner() {
   const [coupon, setCoupon] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [gateway, setGateway] = useState<'razorpay' | 'stripe'>('razorpay');
 
   const course = useQuery({
     enabled: type === 'course',
@@ -63,16 +64,22 @@ function CheckoutInner() {
       }
       const order = await api<{
         razorpay: { orderId: string; amount: number; currency: string; keyId: string } | null;
+        stripe?: { checkoutUrl?: string | null; sessionId?: string; publishableKey?: string } | null;
         freeWithWallet?: boolean;
       }>('/api/payments/orders', {
         method: 'POST',
-        body: JSON.stringify({ productType: type, productId: courseId, couponCode: coupon || undefined }),
+        body: JSON.stringify({ productType: type, productId: courseId, couponCode: coupon || undefined, gateway }),
       });
-      if (order.freeWithWallet || !order.razorpay) {
+      if (order.freeWithWallet || (!order.razorpay && !order.stripe?.checkoutUrl)) {
         router.push('/payment/success');
         return;
       }
-      if (!order.razorpay.keyId) {
+      if (gateway === 'stripe') {
+        if (!order.stripe?.checkoutUrl) throw new Error('Stripe is not configured on the server. Enrollment was not unlocked.');
+        window.location.href = order.stripe.checkoutUrl;
+        return;
+      }
+      if (!order.razorpay?.keyId) {
         throw new Error('Razorpay is not configured on the server. Enrollment was not unlocked.');
       }
       await loadRazorpay();
@@ -110,13 +117,24 @@ function CheckoutInner() {
           <p>{title ?? 'Loading…'}</p>
           <p className="text-2xl text-gc-black">{price === 0 ? 'Free' : formatInr(price)}</p>
           <Input label="Coupon" value={coupon} onChange={(e) => setCoupon(e.target.value)} placeholder="Optional code" />
-          <p className="text-xs text-gc-mute">Cards/UPI via Razorpay. Wallet balance can offset payable amount on the server.</p>
+          <p className="text-xs text-gc-mute">Cards/UPI via Razorpay or Stripe. Wallet balance can offset payable amount on the server.</p>
+          <fieldset className="space-y-2 text-sm">
+            <legend className="text-gc-mist">Gateway</legend>
+            <label className="flex items-center gap-2">
+              <input type="radio" name="gateway" checked={gateway === 'razorpay'} onChange={() => setGateway('razorpay')} />
+              Razorpay
+            </label>
+            <label className="flex items-center gap-2">
+              <input type="radio" name="gateway" checked={gateway === 'stripe'} onChange={() => setGateway('stripe')} />
+              Stripe
+            </label>
+          </fieldset>
         </div>
         <div className="gc-card space-y-3 p-5">
           <h2 className="text-gc-gold">Pay securely</h2>
           {error ? <Alert kind="error">{error}</Alert> : null}
           <Button className="w-full" loading={busy} type="submit">
-            {price === 0 ? 'Enroll free' : 'Pay with Razorpay'}
+            {price === 0 ? 'Enroll free' : gateway === 'stripe' ? 'Pay with Stripe' : 'Pay with Razorpay'}
           </Button>
           <p className="text-xs text-gc-mute">Success is confirmed only after signature/webhook verification.</p>
         </div>

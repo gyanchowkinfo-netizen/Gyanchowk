@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { FormEvent, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
@@ -7,6 +8,12 @@ import { Button } from '@/components/ui/Button';
 import { Input, Textarea, Select } from '@/components/ui/Input';
 import { toast } from '@/lib/toast';
 import { Alert } from '@/components/ui/Badge';
+import { HomeDiscoveryEditor } from '@/components/admin/HomeDiscoveryEditor';
+import { HomeHighlightsEditor } from '@/components/admin/HomeHighlightsEditor';
+import { HomeFacultyEditor } from '@/components/admin/HomeFacultyEditor';
+import { HomeTestSubscriptionEditor } from '@/components/admin/HomeTestSubscriptionEditor';
+import { HomePlatformEditor } from '@/components/admin/HomePlatformEditor';
+import { HomeSectionCopyEditor } from '@/components/admin/HomeSectionCopyEditor';
 
 export default function CmsPage() {
   const cms = useQuery({
@@ -64,24 +71,37 @@ export default function CmsPage() {
         ))}
       </ul>
 
-      <form
-        className="gc-card grid gap-3 p-5"
-        onSubmit={(e) => {
-          e.preventDefault();
-          const f = new FormData(e.currentTarget);
-          void post(
-            '/banners',
-            { title: f.get('title'), subtitle: f.get('subtitle'), href: f.get('href'), active: true },
-            'Banner saved',
-          );
-        }}
-      >
-        <h2 className="font-display text-xl text-gc-black">Banner</h2>
-        <Input name="title" label="Title" required />
-        <Input name="subtitle" label="Subtitle" />
-        <Input name="href" label="Link" placeholder="/courses" />
-        <Button type="submit">Add banner</Button>
-      </form>
+      <HomeHighlightsEditor />
+
+      <HomeSectionCopyEditor />
+
+      <HomeDiscoveryEditor />
+
+      <HomePlatformEditor />
+
+      <HomeTestSubscriptionEditor />
+
+      <HomeFacultyEditor />
+
+      <div className="gc-card grid gap-3 p-5">
+        <h2 className="font-display text-xl text-gc-black">Featured courses catalogue</h2>
+        <p className="text-sm text-gc-mute">
+          Create and edit courses, set prices, publish, feature, and upload cover images for the homepage Featured courses section.
+        </p>
+        <Link href="/admin/courses" className="gc-btn-primary w-fit">
+          Manage courses
+        </Link>
+      </div>
+
+      <div className="gc-card grid gap-3 p-5">
+        <h2 className="font-display text-xl text-gc-black">Banners</h2>
+        <p className="text-sm text-gc-mute">
+          Home-page promotions, schedules and images are managed in Banner Management — including desktop/mobile artwork and carousel order.
+        </p>
+        <Link href="/admin/banners" className="gc-btn-primary w-fit">
+          Open Banner Management
+        </Link>
+      </div>
 
       <form
         className="gc-card grid gap-3 p-5"

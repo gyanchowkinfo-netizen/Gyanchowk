@@ -318,7 +318,7 @@ export function MagneticButton({
   }
 
   const props = {
-    className: cn(variant === 'secondary' ? 'gc-btn-secondary' : 'gc-btn-primary', 'inline-flex', className),
+    className: cn(variant === 'secondary' ? 'gc-btn-secondary' : 'gc-btn-primary', 'inline-flex w-full sm:w-auto', className),
     onMouseMove: onMove,
     onMouseLeave: () => {
       x.set(0);
@@ -334,7 +334,7 @@ export function MagneticButton({
     );
   }
   return (
-    <button type="button" {...props}>
+    <button type="button" {...props} suppressHydrationWarning>
       {inner}
     </button>
   );

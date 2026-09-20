@@ -51,11 +51,11 @@ function LoginForm() {
         Sign in
       </Button>
       <p className="text-center text-sm text-gc-mute">
-        <Link href="/forgot-password" className="text-gc-glow">
+        <Link href="/forgot-password" className="text-gc-black underline-offset-4 hover:underline">
           Forgot password
         </Link>
         {' · '}
-        <Link href="/register" className="text-gc-gold">
+        <Link href="/register" className="text-gc-black underline-offset-4 hover:underline">
           Create account
         </Link>
       </p>

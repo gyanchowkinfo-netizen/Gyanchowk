@@ -6,13 +6,16 @@ import { I18nProvider } from '@/i18n/provider';
 import { ToastViewport } from '@/components/ui/Overlay';
 import { useEffect } from 'react';
 import { hydrateCompare } from '@/lib/compare';
+import { apiQueryRetry } from '@/lib/apiQuery';
 import { MotionProvider } from '@/components/motion';
 
 export function Providers({ children }: { children: ReactNode }) {
   const [client] = useState(
     () =>
       new QueryClient({
-        defaultOptions: { queries: { staleTime: 20_000, refetchOnWindowFocus: false, retry: 1 } },
+        defaultOptions: {
+          queries: { staleTime: 20_000, refetchOnWindowFocus: false, retry: apiQueryRetry },
+        },
       }),
   );
   useEffect(() => {

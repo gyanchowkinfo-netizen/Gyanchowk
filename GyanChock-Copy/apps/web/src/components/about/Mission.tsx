@@ -11,7 +11,7 @@ export function Mission({ title, body }: { title: string; body: string }) {
         <div className="grid items-center gap-10 lg:grid-cols-[1.2fr_0.8fr]">
           <div>
             <Reveal>
-              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-gc-gold">Our mission</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-gc-blue">Our mission</p>
             </Reveal>
             <h2 className="mt-3 font-display text-3xl text-gc-black md:text-5xl">
               <TextReveal text={title} />

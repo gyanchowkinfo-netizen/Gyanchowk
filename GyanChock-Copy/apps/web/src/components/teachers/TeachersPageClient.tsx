@@ -6,7 +6,7 @@ import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { useDebounce } from '@/lib/hooks';
 import { ScrollProgress } from '@/components/motion';
-import type { TeacherCardData, TeacherCatalogStats, TeacherFacet } from '@/lib/types';
+import type { HomeFacultyCard, TeacherCardData, TeacherCatalogStats, TeacherFacet } from '@/lib/types';
 import { TeachersHero } from './TeachersHero';
 import { TeacherSearch, type TeacherFiltersState } from './TeacherSearch';
 import { FeaturedTeachers } from './FeaturedTeachers';
@@ -66,6 +66,10 @@ function TeachersExperience() {
     queryKey: ['teachers-catalog'],
     queryFn: () => api<Catalog>('/api/catalog/teachers?limit=100'),
   });
+  const cms = useQuery({
+    queryKey: ['cms-public'],
+    queryFn: () => api<{ faculty?: HomeFacultyCard[] }>('/api/cms/public'),
+  });
 
   function syncUrl(next: TeacherFiltersState, nextPage = 1) {
     const u = new URLSearchParams();
@@ -94,7 +98,44 @@ function TeachersExperience() {
     syncUrl(next, 1);
   }
 
-  const filtered = useMemo(() => {
+  const cmsFacultySource = cms.data?.faculty ?? [];
+  const usingCmsFaculty = !cms.isLoading && cmsFacultySource.length > 0;
+
+  const cmsFaculty = useMemo(() => {
+    let items = cmsFacultySource;
+    if (dq) {
+      const rx = new RegExp(dq.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
+      items = items.filter(
+        (t) =>
+          rx.test(t.name) ||
+          rx.test(t.headline ?? '') ||
+          rx.test(t.bio ?? '') ||
+          (t.subjects ?? []).some((s) => rx.test(s)),
+      );
+    }
+    if (filters.subject) {
+      const s = filters.subject.toLowerCase();
+      items = items.filter(
+        (t) => (t.subjects ?? []).some((x) => x.toLowerCase() === s) || (t.headline ?? '').toLowerCase() === s,
+      );
+    }
+    return items;
+  }, [cmsFacultySource, dq, filters.subject]);
+
+  const cmsSubjects = useMemo<TeacherFacet[]>(() => {
+    const counts = new Map<string, number>();
+    for (const teacher of cmsFacultySource) {
+      const labels = teacher.subjects?.length ? teacher.subjects : teacher.headline ? [teacher.headline] : [];
+      for (const label of labels) {
+        const name = label.trim();
+        if (!name) continue;
+        counts.set(name, (counts.get(name) ?? 0) + 1);
+      }
+    }
+    return [...counts.entries()].map(([name, count]) => ({ name, count }));
+  }, [cmsFacultySource]);
+
+  const catalogTeachers = useMemo(() => {
     let items = catalog.data?.items ?? [];
     if (dq) {
       const rx = new RegExp(dq.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
@@ -127,9 +168,10 @@ function TeachersExperience() {
     return sortTeachers(items, filters.sort);
   }, [catalog.data?.items, dq, filters.subject, filters.exam, filters.language, filters.minRating, filters.sort]);
 
-  const pages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const list = usingCmsFaculty ? cmsFaculty : catalogTeachers;
+  const pages = usingCmsFaculty ? 1 : Math.max(1, Math.ceil(list.length / PAGE_SIZE));
   const currentPage = Math.min(page, pages);
-  const pageItems = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+  const pageItems = usingCmsFaculty ? list : list.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
   function onHeroSearch(e: FormEvent) {
     e.preventDefault();
@@ -145,9 +187,9 @@ function TeachersExperience() {
         <TeacherSearch
           filters={filters}
           facets={{
-            subjects: catalog.data?.facets?.subjects ?? [],
-            exams: catalog.data?.facets?.exams ?? [],
-            languages: catalog.data?.facets?.languages ?? [],
+            subjects: usingCmsFaculty ? cmsSubjects : catalog.data?.facets?.subjects ?? [],
+            exams: usingCmsFaculty ? [] : catalog.data?.facets?.exams ?? [],
+            languages: usingCmsFaculty ? [] : catalog.data?.facets?.languages ?? [],
           }}
           drawer={drawer}
           onDrawer={setDrawer}
@@ -155,21 +197,36 @@ function TeachersExperience() {
           onClear={clear}
         />
       </div>
-      <FeaturedTeachers teachers={(catalog.data?.featured ?? []).slice(0, 6)} />
+      {usingCmsFaculty ? null : <FeaturedTeachers teachers={(catalog.data?.featured ?? []).slice(0, 6)} />}
       <TeacherStats stats={catalog.data?.stats} />
       <TeacherExpertise />
       <TeacherCategories
-        categories={catalog.data?.facets?.categories?.length ? catalog.data.facets.categories : catalog.data?.facets?.subjects ?? []}
+        categories={
+          usingCmsFaculty
+            ? cmsSubjects
+            : catalog.data?.facets?.categories?.length
+              ? catalog.data.facets.categories
+              : catalog.data?.facets?.subjects ?? []
+        }
         onSelect={(name) => {
           patch({ subject: name });
           document.getElementById('all-teachers')?.scrollIntoView({ behavior: 'smooth' });
         }}
       />
       <TeacherGrid
-        teachers={pageItems}
-        loading={catalog.isLoading}
-        error={catalog.isError ? 'Unable to load teachers. Please try again.' : undefined}
-        onRetry={() => void catalog.refetch()}
+        teachers={usingCmsFaculty ? [] : (pageItems as TeacherCardData[])}
+        faculty={usingCmsFaculty ? (pageItems as HomeFacultyCard[]) : undefined}
+        loading={cms.isLoading || (!usingCmsFaculty && catalog.isLoading)}
+        error={
+          usingCmsFaculty
+            ? cms.isError
+              ? 'Unable to load teachers. Please try again.'
+              : undefined
+            : catalog.isError
+              ? 'Unable to load teachers. Please try again.'
+              : undefined
+        }
+        onRetry={() => void (usingCmsFaculty ? cms.refetch() : catalog.refetch())}
         onClear={clear}
         page={currentPage}
         pages={pages}

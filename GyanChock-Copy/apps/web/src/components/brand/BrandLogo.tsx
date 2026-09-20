@@ -1,20 +1,29 @@
 import Image from 'next/image';
 import Link from 'next/link';
+import { cn } from '@/lib/format';
 
-export function BrandLogo({ size = 44, withWordmark = false }: { size?: number; withWordmark?: boolean }) {
+export function BrandLogo({
+  size = 40,
+  withWordmark = false,
+  imageClassName,
+}: {
+  size?: number;
+  withWordmark?: boolean;
+  imageClassName?: string;
+}) {
   return (
-    <Link href="/" className="flex items-center gap-3">
+    <Link href="/" className="flex shrink-0 items-center gap-2.5" aria-label="Gyan Chowk home">
       <Image
         src="/g1.png"
         alt="Gyan Chowk"
-        width={size * 2.4}
+        width={Math.round(size * 2.4)}
         height={size}
-        className="h-11 w-auto object-contain drop-shadow-[0_0_18px_color-mix(in_srgb,var(--gyan-primary-light)_35%,transparent)]"
+        className={cn('h-9 w-auto object-contain sm:h-10', imageClassName)}
         priority
       />
       {withWordmark ? (
-        <span className="hidden font-display text-lg font-semibold tracking-wide sm:block">
-          <span className="text-gc-glow">GYAN</span> <span className="text-gc-gold">CHOWK</span>
+        <span className="hidden font-display text-base font-semibold tracking-tight sm:block">
+          <span className="text-gc-blue">Gyan</span> <span className="text-[color:var(--gyan-secondary-dark)]">Chowk</span>
         </span>
       ) : null}
     </Link>

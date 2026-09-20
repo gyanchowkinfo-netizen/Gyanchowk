@@ -15,9 +15,9 @@ export function CareerHero() {
         <div className="relative grid items-center gap-10 lg:grid-cols-2">
           <Parallax speed={0.08}>
             <Reveal>
-              <p className="mb-3 text-xs font-semibold uppercase tracking-[0.35em] text-gc-gold">Career guidance</p>
+              <p className="gc-kicker mb-3">Career guidance</p>
             </Reveal>
-            <h1 className="font-display text-4xl font-semibold leading-tight md:text-6xl">
+            <h1 className="font-display text-[2rem] font-semibold leading-tight tracking-tight text-gc-black sm:text-4xl md:text-6xl">
               <TextReveal text="Build Skills. Shape Your Future." />
             </h1>
             <Reveal delay={0.08}>
@@ -26,7 +26,7 @@ export function CareerHero() {
                 opportunity.
               </p>
             </Reveal>
-            <div className="mt-8 flex flex-wrap gap-3">
+            <div className="mt-8 flex w-full flex-col gap-3 sm:flex-row sm:flex-wrap">
               <ScaleIn>
                 <MagneticButton href="#career-paths">Explore Career Paths</MagneticButton>
               </ScaleIn>

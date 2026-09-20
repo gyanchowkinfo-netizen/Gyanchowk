@@ -24,7 +24,7 @@ export function BlogCTA() {
               <Reveal delay={0.08}>
                 <p className="mt-4 text-white/80">Move from reading to a structured recorded course or batch.</p>
               </Reveal>
-              <div className="mt-8 flex flex-wrap justify-center gap-3">
+              <div className="mt-8 flex w-full flex-col items-stretch justify-center gap-3 sm:flex-row sm:flex-wrap sm:items-center">
                 <Reveal delay={0.12}>
                   <MagneticButton href="/courses" variant="secondary">Explore Courses</MagneticButton>
                 </Reveal>

@@ -15,7 +15,7 @@ export function Input({
   return (
     <label className="block space-y-1.5 text-sm" htmlFor={fid}>
       {label ? <span className="text-gc-mist">{label}</span> : null}
-      <input id={fid} className={cn('gc-input', error && 'border-red-400', className)} {...props} />
+      <input id={fid} className={cn('gc-input', error && 'border-red-400', className)} {...props} suppressHydrationWarning />
       {error ? <span className="text-xs text-red-400">{error}</span> : null}
     </label>
   );
@@ -39,11 +39,13 @@ export function PasswordInput({
           type={visible ? 'text' : 'password'}
           className={cn('gc-input pr-12', error && 'border-red-400', className)}
           {...props}
+          suppressHydrationWarning
         />
         <button
           type="button"
-          className="absolute inset-y-0 right-0 grid w-12 place-items-center text-gc-mute hover:text-gc-gold"
+          className="absolute inset-y-0 right-0 grid w-12 place-items-center text-gc-mute hover:text-gc-blue"
           aria-label={visible ? 'Hide password' : 'Show password'}
+          suppressHydrationWarning
           onClick={() => setVisible((v) => !v)}
         >
           {visible ? <EyeOff size={18} /> : <Eye size={18} />}
@@ -65,7 +67,7 @@ export function Textarea({
   return (
     <label className="block space-y-1.5 text-sm" htmlFor={fid}>
       {label ? <span className="text-gc-mist">{label}</span> : null}
-      <textarea id={fid} className={cn('gc-input min-h-28', className)} {...props} />
+      <textarea id={fid} className={cn('gc-input min-h-28', className)} {...props} suppressHydrationWarning />
       {error ? <span className="text-xs text-red-400">{error}</span> : null}
     </label>
   );
@@ -83,7 +85,7 @@ export function Select({
   return (
     <label className="block space-y-1.5 text-sm" htmlFor={fid}>
       {label ? <span className="text-gc-mist">{label}</span> : null}
-      <select id={fid} className={cn('gc-input', className)} {...props}>
+      <select id={fid} className={cn('gc-input', className)} {...props} suppressHydrationWarning>
         {children}
       </select>
       {error ? <span className="text-xs text-red-400">{error}</span> : null}

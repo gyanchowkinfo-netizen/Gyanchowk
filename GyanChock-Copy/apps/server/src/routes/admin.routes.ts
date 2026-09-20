@@ -18,15 +18,31 @@ import {
   FAQModel,
   OrderModel,
   PaymentModel,
+  ReviewModel,
   RoadmapModel,
+  ScholarshipModel,
   SettingModel,
+  SessionModel,
   TeacherPayoutModel,
   UserModel,
+  TestModel,
+  StudyMaterialModel,
 } from '../models/index.js';
-import { hashPassword } from '../utils/crypto.js';
+import { hashPassword, randomToken, sha256 } from '../utils/crypto.js';
 import { badRequest, conflict, notFound } from '../utils/errors.js';
 import { paginate, paginatedResult } from '../utils/helpers.js';
 import { notify } from '../services/notification.service.js';
+import { liveBannerQuery } from '../services/banner.service.js';
+import { resolveHomeDiscovery } from '../services/homeDiscovery.service.js';
+import { resolveHomeHighlights } from '../services/homeHighlights.service.js';
+import { resolveHomePlatform } from '../services/homePlatform.service.js';
+import { resolveHomeFaculty } from '../services/homeFaculty.service.js';
+import { resolveHomeSectionCopy } from '../services/homeSections.service.js';
+import {
+  resolveHomeTestSubscription,
+  sanitizeHomeTestSubscriptionInput,
+} from '../services/homeTestSubscription.service.js';
+import { sendPasswordResetEmail, sendTeacherDecisionEmail } from '../services/email.service.js';
 
 export const adminRouter = Router();
 export const cmsRouter = Router();
@@ -60,6 +76,33 @@ adminRouter.get(
     ]);
     const revenue = payments[0]?.total ?? 0;
     const commission = Number(process.env.PLATFORM_COMMISSION_PERCENT ?? 20);
+    const since = new Date();
+    since.setMonth(since.getMonth() - 11);
+    since.setDate(1);
+    since.setHours(0, 0, 0, 0);
+    const [revenueSeries, enrollmentSeries, topCourses] = await Promise.all([
+      PaymentModel.aggregate([
+        { $match: { status: 'captured', createdAt: { $gte: since } } },
+        {
+          $group: {
+            _id: { $dateToString: { format: '%Y-%m', date: '$createdAt' } },
+            total: { $sum: '$amountPaise' },
+          },
+        },
+        { $sort: { _id: 1 } },
+      ]),
+      EnrollmentModel.aggregate([
+        { $match: { createdAt: { $gte: since } } },
+        {
+          $group: {
+            _id: { $dateToString: { format: '%Y-%m', date: '$createdAt' } },
+            total: { $sum: 1 },
+          },
+        },
+        { $sort: { _id: 1 } },
+      ]),
+      CourseModel.find({ status: 'published' }).sort({ enrollmentCount: -1 }).select('title enrollmentCount').limit(6).lean(),
+    ]);
     res.json({
       students,
       teachers,
@@ -72,6 +115,9 @@ adminRouter.get(
       pendingPayouts,
       pendingTeachers,
       openDoubts,
+      revenueSeries,
+      enrollmentSeries,
+      topCourses,
     });
   }),
 );
@@ -125,6 +171,33 @@ adminRouter.post(
 );
 
 adminRouter.post(
+  '/users/:id/revoke-sessions',
+  audit('user.force_logout', 'User'),
+  asyncHandler(async (req: AuthedRequest, res) => {
+    const result = await SessionModel.updateMany(
+      { user: req.params.id, revokedAt: { $exists: false } },
+      { revokedAt: new Date() },
+    );
+    res.json({ revoked: result.modifiedCount });
+  }),
+);
+
+adminRouter.post(
+  '/users/:id/send-reset',
+  audit('user.reset_email', 'User'),
+  asyncHandler(async (req, res) => {
+    const user = await UserModel.findById(req.params.id);
+    if (!user) throw notFound('User not found');
+    const token = randomToken();
+    user.passwordResetTokenHash = sha256(token);
+    user.passwordResetExpires = new Date(Date.now() + 1000 * 60 * 30);
+    await user.save();
+    await sendPasswordResetEmail(user.email, user.name, token);
+    res.json({ ok: true });
+  }),
+);
+
+adminRouter.post(
   '/teachers/:id/decision',
   validate(z.object({ teacherStatus: z.enum(['approved', 'rejected', 'suspended']) })),
   asyncHandler(async (req: AuthedRequest, res) => {
@@ -145,7 +218,9 @@ adminRouter.post(
       userId: String(user._id),
       title: `Teacher application ${user.teacherStatus}`,
       type: 'teacher_status',
+      channels: ['inApp', 'push'],
     });
+    await sendTeacherDecisionEmail(user.email, user.name, user.teacherStatus ?? req.body.teacherStatus);
     res.json({ user });
   }),
 );
@@ -210,9 +285,13 @@ adminRouter.post(
   '/settings',
   validate(z.object({ key: z.string(), value: z.unknown() })),
   asyncHandler(async (req, res) => {
+    const value =
+      req.body.key === 'home.testSubscription'
+        ? sanitizeHomeTestSubscriptionInput(req.body.value)
+        : req.body.value;
     const item = await SettingModel.findOneAndUpdate(
       { key: req.body.key },
-      { $set: { value: req.body.value } },
+      { $set: { value } },
       { upsert: true, new: true },
     );
     res.json({ item });
@@ -221,17 +300,121 @@ adminRouter.post(
 
 adminRouter.post(
   '/notifications/broadcast',
-  validate(z.object({ title: z.string(), body: z.string().optional(), role: z.enum(['student', 'teacher']).optional() })),
+  validate(
+    z.object({
+      title: z.string(),
+      body: z.string().optional(),
+      audience: z.enum(['all', 'role', 'batch', 'course']).optional(),
+      role: z.enum(['student', 'teacher']).optional(),
+      batchId: z.string().optional(),
+      courseId: z.string().optional(),
+      channels: z.array(z.enum(['inApp', 'email', 'push'])).optional(),
+    }),
+  ),
   asyncHandler(async (req, res) => {
     const filter: Record<string, unknown> = { status: 'active' };
-    if (req.body.role) filter.role = req.body.role;
-    const users = await UserModel.find(filter).select('_id').limit(5000).lean();
+    if (req.body.audience === 'role' && req.body.role) filter.role = req.body.role;
+    else if (req.body.role) filter.role = req.body.role;
+    let userIds: string[] = [];
+    if (req.body.audience === 'batch' && req.body.batchId) {
+      const enrolled = await EnrollmentModel.find({ batch: req.body.batchId, status: 'active' }).select('user').lean();
+      userIds = enrolled.map((e) => String(e.user));
+    } else if (req.body.audience === 'course' && req.body.courseId) {
+      const enrolled = await EnrollmentModel.find({ course: req.body.courseId, status: 'active' }).select('user').lean();
+      userIds = enrolled.map((e) => String(e.user));
+    } else {
+      const users = await UserModel.find(filter).select('_id').limit(5000).lean();
+      userIds = users.map((u) => String(u._id));
+    }
     const { notifyMany } = await import('../services/notification.service.js');
-    await notifyMany(
-      users.map((u) => String(u._id)),
-      { title: req.body.title, body: req.body.body, type: 'promotional' },
-    );
-    res.json({ sent: users.length });
+    await notifyMany(userIds, {
+      title: req.body.title,
+      body: req.body.body,
+      type: 'promotional',
+      channels: req.body.channels,
+    });
+    res.json({ sent: userIds.length });
+  }),
+);
+
+adminRouter.get(
+  '/sessions',
+  asyncHandler(async (req, res) => {
+    const { skip, limit, page } = paginate(Number(req.query.page ?? 1), Number(req.query.limit ?? 20));
+    const filter: Record<string, unknown> = {};
+    if (req.query.userId) filter.user = req.query.userId;
+    if (req.query.active === '1') filter.revokedAt = { $exists: false };
+    const [items, total] = await Promise.all([
+      SessionModel.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit).populate('user', 'name email role').lean(),
+      SessionModel.countDocuments(filter),
+    ]);
+    res.json(paginatedResult(items, total, page, limit));
+  }),
+);
+
+adminRouter.post(
+  '/sessions/:id/revoke',
+  audit('session.revoke', 'Session'),
+  asyncHandler(async (req, res) => {
+    const session = await SessionModel.findByIdAndUpdate(req.params.id, { revokedAt: new Date() }, { new: true });
+    if (!session) throw notFound('Session not found');
+    res.json({ session });
+  }),
+);
+
+adminRouter.get(
+  '/reports',
+  asyncHandler(async (req, res) => {
+    const view = String(req.query.view ?? 'revenue');
+    const from = req.query.from ? new Date(String(req.query.from)) : new Date(Date.now() - 30 * 86400000);
+    const to = req.query.to ? new Date(String(req.query.to)) : new Date();
+    const csv = String(req.query.csv ?? '') === '1';
+    if (view === 'student') {
+      const items = await UserModel.find({ role: 'student', createdAt: { $gte: from, $lte: to } })
+        .select('name email status createdAt lastLoginAt')
+        .sort({ createdAt: -1 })
+        .limit(500)
+        .lean();
+      if (csv) {
+        res.setHeader('Content-Type', 'text/csv');
+        res.send(['name,email,status,createdAt', ...items.map((i) => `${i.name},${i.email},${i.status},${i.createdAt}`)].join('\n'));
+        return;
+      }
+      res.json({ items, view });
+      return;
+    }
+    if (view === 'teacher') {
+      const items = await UserModel.find({ role: 'teacher', createdAt: { $gte: from, $lte: to } })
+        .select('name email teacherStatus createdAt')
+        .sort({ createdAt: -1 })
+        .limit(500)
+        .lean();
+      if (csv) {
+        res.setHeader('Content-Type', 'text/csv');
+        res.send(
+          ['name,email,teacherStatus,createdAt', ...items.map((i) => `${i.name},${i.email},${i.teacherStatus},${i.createdAt}`)].join('\n'),
+        );
+        return;
+      }
+      res.json({ items, view });
+      return;
+    }
+    const items = await PaymentModel.find({ status: 'captured', createdAt: { $gte: from, $lte: to } })
+      .select('amountPaise createdAt invoiceNumber gateway user')
+      .sort({ createdAt: -1 })
+      .limit(500)
+      .lean();
+    if (csv) {
+      res.setHeader('Content-Type', 'text/csv');
+      res.send(
+        [
+          'invoice,amountPaise,gateway,createdAt',
+          ...items.map((i) => `${i.invoiceNumber},${i.amountPaise},${i.gateway},${i.createdAt}`),
+        ].join('\n'),
+      );
+      return;
+    }
+    res.json({ items, view });
   }),
 );
 
@@ -256,22 +439,77 @@ cmsRouter.post(
 cmsRouter.get(
   '/public',
   asyncHandler(async (_req, res) => {
-    const [banners, faqs, pages, featuredCourses, students, teachers, courses, batches] = await Promise.all([
-      BannerModel.find({ active: true }).sort({ order: 1 }).lean(),
-      FAQModel.find({ published: true }).sort({ order: 1 }).lean(),
-      CMSPageModel.find().lean(),
-      CourseModel.find({ status: 'published' }).sort({ enrollmentCount: -1 }).limit(8).lean(),
-      UserModel.countDocuments({ role: 'student', status: 'active' }),
-      UserModel.countDocuments({ role: 'teacher', teacherStatus: 'approved' }),
-      CourseModel.countDocuments({ status: 'published' }),
-      BatchModel.countDocuments({ status: { $in: ['upcoming', 'open', 'ongoing'] } }),
-    ]);
-    res.json({
+    const [
       banners,
       faqs,
       pages,
       featuredCourses,
+      students,
+      teachers,
+      courses,
+      batches,
+      featuredReviews,
+      highlightSetting,
+      discoverySetting,
+      platformSetting,
+      facultySetting,
+      sectionsSetting,
+      testSubscriptionSetting,
+      tests,
+      materials,
+    ] = await Promise.all([
+      BannerModel.find(liveBannerQuery()).sort({ sortOrder: 1, order: 1 }).lean(),
+      FAQModel.find({ published: true }).sort({ order: 1 }).lean(),
+      CMSPageModel.find().lean(),
+      CourseModel.find({ status: 'published' }).sort({ enrollmentCount: -1 }).limit(8).populate('teachers', 'name headline').lean(),
+      UserModel.countDocuments({ role: 'student', status: 'active' }),
+      UserModel.countDocuments({ role: 'teacher', teacherStatus: 'approved' }),
+      CourseModel.countDocuments({ status: 'published' }),
+      BatchModel.countDocuments({ status: { $in: ['upcoming', 'open', 'ongoing'] } }),
+      ReviewModel.find({ hidden: { $ne: true } })
+        .sort({ createdAt: -1 })
+        .limit(6)
+        .populate('user', 'name')
+        .populate('course', 'title category')
+        .lean(),
+      SettingModel.findOne({ key: 'home.highlights' }).lean(),
+      SettingModel.findOne({ key: 'home.discovery' }).lean(),
+      SettingModel.findOne({ key: 'home.platform' }).lean(),
+      SettingModel.findOne({ key: 'home.faculty' }).lean(),
+      SettingModel.findOne({ key: 'home.sections' }).lean(),
+      SettingModel.findOne({ key: 'home.testSubscription' }).lean(),
+      TestModel.countDocuments({ status: { $in: ['scheduled', 'live', 'ended'] } }),
+      StudyMaterialModel.countDocuments({ status: 'published' }),
+    ]);
+    const highlights = resolveHomeHighlights(highlightSetting?.value, {
+      students,
+      teachers,
+      courses,
+      batches,
+      tests,
+      materials,
+    });
+    const discovery = resolveHomeDiscovery(discoverySetting?.value);
+    const platform = resolveHomePlatform(platformSetting?.value);
+    const faculty = resolveHomeFaculty(facultySetting?.value);
+    const sections = resolveHomeSectionCopy(sectionsSetting?.value);
+    const testSubscription = resolveHomeTestSubscription(testSubscriptionSetting?.value);
+    res.json({
+      banners: banners.map((b) => ({
+        ...b,
+        href: b.ctaUrl || b.href,
+      })),
+      faqs,
+      pages,
+      featuredCourses,
+      featuredReviews,
       stats: { students, teachers, courses, batches },
+      highlights,
+      discovery,
+      platform,
+      faculty,
+      sections,
+      testSubscription,
     });
   }),
 );
@@ -364,7 +602,13 @@ adminCms.use(authenticate, requireRoles('admin'));
 adminCms.post(
   '/banners',
   asyncHandler(async (req, res) => {
-    const banner = await BannerModel.create(req.body);
+    const banner = await BannerModel.create({
+      ...req.body,
+      ctaUrl: req.body.ctaUrl || req.body.href,
+      href: req.body.href || req.body.ctaUrl,
+      sortOrder: req.body.sortOrder ?? req.body.order ?? 0,
+      order: req.body.order ?? req.body.sortOrder ?? 0,
+    });
     res.status(201).json({ banner });
   }),
 );
@@ -450,8 +694,22 @@ careerRouter.get(
   }),
 );
 
+careerRouter.get(
+  '/scholarships',
+  asyncHandler(async (_req, res) => {
+    const items = await ScholarshipModel.find({ published: true }).sort({ deadline: 1, createdAt: -1 }).lean();
+    res.json({ items });
+  }),
+);
+
 const adminCareer = Router();
 adminCareer.use(authenticate, requireRoles('admin'));
+adminCareer.get(
+  '/scholarships',
+  asyncHandler(async (_req, res) => {
+    res.json({ items: await ScholarshipModel.find().sort({ createdAt: -1 }).lean() });
+  }),
+);
 adminCareer.post(
   '/articles',
   asyncHandler(async (req, res) => {
@@ -462,6 +720,20 @@ adminCareer.post(
   '/roadmaps',
   asyncHandler(async (req, res) => {
     res.status(201).json({ item: await RoadmapModel.create(req.body) });
+  }),
+);
+adminCareer.post(
+  '/scholarships',
+  asyncHandler(async (req, res) => {
+    res.status(201).json({ item: await ScholarshipModel.create(req.body) });
+  }),
+);
+adminCareer.patch(
+  '/scholarships/:id',
+  asyncHandler(async (req, res) => {
+    const item = await ScholarshipModel.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    if (!item) throw notFound('Not found');
+    res.json({ item });
   }),
 );
 careerRouter.use('/admin', adminCareer);

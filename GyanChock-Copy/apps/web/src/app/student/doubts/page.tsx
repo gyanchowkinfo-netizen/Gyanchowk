@@ -68,7 +68,7 @@ export default function StudentDoubtsPage() {
       <StaggerContainer className="space-y-3">
         {(list.data?.items ?? []).map((d) => (
           <StaggerItem key={d._id}>
-            <Link href={`/student/doubts/${d._id}`} className="gc-card flex items-center justify-between p-4 hover:border-gc-gold">
+            <Link href={`/student/doubts/${d._id}`} className="gc-card flex items-center justify-between p-4 hover:border-gc-blue">
               <span>{d.title}</span>
               <StatusBadge status={d.status} />
             </Link>

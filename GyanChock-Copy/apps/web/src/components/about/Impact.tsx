@@ -17,7 +17,7 @@ export function Impact({ stats }: { stats?: PublicPlatformStats }) {
     <section id="impact">
       <PageContainer>
         <Reveal>
-          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-gc-gold">Impact</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-gc-blue">Impact</p>
         </Reveal>
         <Reveal delay={0.04}>
           <h2 className="mt-2 font-display text-3xl text-gc-black">Numbers we can actually stand behind</h2>

@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { authenticate, requireRoles, teacherOrAdmin, type AuthedRequest } from '../middleware/auth.js';
 import { asyncHandler } from '../middleware/error.js';
 import { validate } from '../middleware/validate.js';
-import { VideoModel } from '../models/index.js';
+import { VideoModel, VideoBookmarkModel, VideoNoteModel } from '../models/index.js';
 import { grantPlayback, saveProgress, uploadSignature } from '../services/video.service.js';
 import { notFound } from '../utils/errors.js';
 
@@ -108,5 +108,75 @@ videoRouter.get(
     const filter = req.user!.role === 'admin' ? {} : { teacher: req.user!.id };
     const items = await VideoModel.find(filter).sort({ createdAt: -1 }).limit(100).lean();
     res.json({ items });
+  }),
+);
+
+videoRouter.patch(
+  '/:id',
+  authenticate,
+  teacherOrAdmin,
+  asyncHandler(async (req: AuthedRequest, res) => {
+    const video = await VideoModel.findById(req.params.id);
+    if (!video) throw notFound('Video not found');
+    Object.assign(video, req.body);
+    await video.save();
+    res.json({ video });
+  }),
+);
+
+videoRouter.get(
+  '/:id/bookmarks',
+  authenticate,
+  asyncHandler(async (req: AuthedRequest, res) => {
+    const items = await VideoBookmarkModel.find({ user: req.user!.id, video: req.params.id }).sort({ timestampSec: 1 }).lean();
+    res.json({ items });
+  }),
+);
+
+videoRouter.post(
+  '/:id/bookmarks',
+  authenticate,
+  validate(z.object({ timestampSec: z.number().min(0), label: z.string().max(120).optional() })),
+  asyncHandler(async (req: AuthedRequest, res) => {
+    const item = await VideoBookmarkModel.create({
+      user: req.user!.id,
+      video: req.params.id,
+      timestampSec: req.body.timestampSec,
+      label: req.body.label,
+    });
+    res.status(201).json({ item });
+  }),
+);
+
+videoRouter.delete(
+  '/bookmarks/:bookmarkId',
+  authenticate,
+  asyncHandler(async (req: AuthedRequest, res) => {
+    await VideoBookmarkModel.deleteOne({ _id: req.params.bookmarkId, user: req.user!.id });
+    res.json({ ok: true });
+  }),
+);
+
+videoRouter.get(
+  '/:id/notes',
+  authenticate,
+  asyncHandler(async (req: AuthedRequest, res) => {
+    const items = await VideoNoteModel.find({ user: req.user!.id, video: req.params.id }).sort({ timestampSec: 1 }).lean();
+    res.json({ items });
+  }),
+);
+
+videoRouter.post(
+  '/:id/notes',
+  authenticate,
+  validate(z.object({ timestampSec: z.number().min(0), body: z.string().min(1).max(4000) })),
+  asyncHandler(async (req: AuthedRequest, res) => {
+    const item = await VideoNoteModel.create({
+      user: req.user!.id,
+      video: req.params.id,
+      timestampSec: req.body.timestampSec,
+      body: req.body.body,
+    });
+    res.status(201).json({ item });
   }),
 );
