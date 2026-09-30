@@ -3,13 +3,13 @@ import type { Metadata } from 'next';
 export const revalidate = 120;
 
 export const metadata: Metadata = {
-  title: 'Career',
+  title: 'Careers at Gyan Chowk | Join Our Team',
   description:
-    'Explore Gyan Chowk career paths, recorded-learning roadmaps and practical resources that help students move from learning to opportunity.',
+    'Explore career opportunities at Gyan Chowk and join a team building meaningful learning experiences.',
   alternates: { canonical: '/career' },
   openGraph: {
-    title: 'Build Skills. Shape Your Future. | Gyan Chowk',
-    description: 'Career paths, learning roadmaps and resources from Gyan Chowk.',
+    title: 'Careers at Gyan Chowk | Join Our Team',
+    description: 'Explore career opportunities at Gyan Chowk and join a team building meaningful learning experiences.',
     url: '/career',
   },
 };

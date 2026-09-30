@@ -17,6 +17,19 @@ export function signImageUrl(publicId: string, opts?: { width?: number; crop?: s
   });
 }
 
+/** Prefer a browser-safe cover URL for catalogue / homepage cards. */
+export function publicMediaUrl(media?: { publicId?: string | null; url?: string | null } | null, width = 900) {
+  if (!media) return undefined;
+  const url = typeof media.url === 'string' ? media.url.trim() : '';
+  const publicId = typeof media.publicId === 'string' ? media.publicId.trim() : '';
+  if (url && !url.includes('/authenticated/')) return url;
+  if (publicId && isCloudinaryConfigured()) {
+    const signed = signImageUrl(publicId, { width, crop: 'fill' });
+    if (signed) return signed;
+  }
+  return url || undefined;
+}
+
 export function signHlsUrl(publicId: string): string {
   if (!isCloudinaryConfigured()) {
     return '';
@@ -112,7 +125,9 @@ export function uploadSignature(folder: string, resourceType: 'image' | 'video' 
   const timestamp = Math.round(Date.now() / 1000);
   const eager =
     resourceType === 'video' ? 'sp_hd/m3u8' : undefined;
-  const deliveryType = folder === 'banners' ? 'upload' : 'authenticated';
+  /** Public marketing assets (homepage, catalogue) must use delivery type `upload`. */
+  const publicFolders = new Set(['banners', 'courses', 'cms', 'blogs', 'avatars']);
+  const deliveryType = publicFolders.has(folder) ? 'upload' : 'authenticated';
   const params: Record<string, string | number> = {
     timestamp,
     folder: `gyan-chowk/${folder}`,

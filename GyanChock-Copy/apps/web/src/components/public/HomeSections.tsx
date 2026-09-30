@@ -185,11 +185,11 @@ export function CTASection({ children }: { children?: ReactNode }) {
           Browse the catalogue. Enroll only after payment is verified on the server.
         </p>
         {children ?? (
-          <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
-            <Link href="/register" className="gc-btn w-full bg-white text-gc-black hover:bg-gc-line sm:w-auto">
+          <div className="mt-8 grid grid-cols-2 gap-2 w-full max-w-sm mx-auto sm:flex sm:flex-row sm:items-center sm:justify-center sm:gap-3 sm:w-auto">
+            <Link href="/register" className="gc-btn w-full bg-white text-gc-black hover:bg-gc-line sm:w-auto px-2 text-xs sm:px-5 sm:text-sm">
               Get started
             </Link>
-            <Link href="/contact" className="gc-btn-ghost-inverse w-full sm:w-auto">
+            <Link href="/contact" className="gc-btn-ghost-inverse w-full sm:w-auto px-2 text-xs sm:px-5 sm:text-sm">
               Talk to us
             </Link>
           </div>

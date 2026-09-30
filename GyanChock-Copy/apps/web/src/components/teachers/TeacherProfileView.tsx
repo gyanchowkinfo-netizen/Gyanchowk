@@ -1,33 +1,46 @@
 'use client';
 
-import Link from 'next/link';
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { PageContainer, Breadcrumbs } from '@/components/layout/Page';
+import { PageContainer } from '@/components/layout/Page';
 import { ErrorState } from '@/components/ui/States';
-import { AnimatedSection, ScrollProgress } from '@/components/motion';
+import { ScrollProgress } from '@/components/motion';
 import { api } from '@/lib/api';
 import type { BatchCardData, CourseCardData, TeacherCardData } from '@/lib/types';
 import { TeacherProfileHero } from './TeacherProfileHero';
-import { TeacherCourses } from './TeacherCourses';
-import { TeacherReviews, type TeacherReviewItem } from './TeacherReviews';
+import { TeacherProfileTabs, type ProfileTabId } from './TeacherProfileTabs';
+import { TeacherAboutCard } from './TeacherAboutCard';
+import { TeacherSubjectsCard } from './TeacherSubjectsCard';
+import { TeacherAchievementsCard } from './TeacherAchievementsCard';
+import { TeacherReviewsCarousel } from './TeacherReviewsCarousel';
+import { TeacherQuoteCard } from './TeacherQuoteCard';
+import { TeacherDoubtCard } from './TeacherDoubtCard';
+import { TeacherFeaturedCoursesCard } from './TeacherFeaturedCoursesCard';
+import { TeacherBenefitsStrip } from './TeacherBenefitsStrip';
 
 export interface TeacherProfilePayload {
   teacher: TeacherCardData;
   courses: CourseCardData[];
-  batches: BatchCardData[];
-  reviews: TeacherReviewItem[];
+  batches?: BatchCardData[];
+  reviews?: any[];
+  achievements?: any[];
+  quote?: any;
+  doubtCTA?: any;
 }
 
 export function TeacherProfileSkeleton() {
   return (
-    <PageContainer>
-      <div className="h-4 w-48 animate-pulse rounded bg-gc-navy" />
-      <div className="mt-6 grid gap-8 rounded-3xl border border-gc-line p-8 md:grid-cols-[280px_1fr]">
-        <div className="mx-auto h-48 w-48 animate-pulse rounded-[2rem] bg-gc-navy" />
-        <div className="space-y-4">
-          <div className="h-8 w-2/3 animate-pulse rounded bg-gc-navy" />
-          <div className="h-4 w-full animate-pulse rounded bg-gc-navy" />
-          <div className="h-4 w-4/5 animate-pulse rounded bg-gc-navy" />
+    <PageContainer className="!py-8 bg-[#FAF7F2]">
+      <div className="h-80 w-full animate-pulse rounded-[2.5rem] bg-stone-200/60" />
+      <div className="mt-8 h-12 w-96 animate-pulse rounded-full bg-stone-200/50" />
+      <div className="mt-8 grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-6">
+        <div className="space-y-6">
+          <div className="h-64 rounded-3xl bg-stone-200/40 animate-pulse" />
+          <div className="h-44 rounded-3xl bg-stone-200/40 animate-pulse" />
+        </div>
+        <div className="space-y-6">
+          <div className="h-44 rounded-3xl bg-stone-200/40 animate-pulse" />
+          <div className="h-32 rounded-3xl bg-stone-200/40 animate-pulse" />
         </div>
       </div>
     </PageContainer>
@@ -43,137 +56,101 @@ export function TeacherProfileView({
   initial?: TeacherProfilePayload;
   loadError?: string;
 }) {
+  const [activeTab, setActiveTab] = useState<ProfileTabId>('about');
+
   const query = useQuery({
-    queryKey: ['teacher', slug],
-    queryFn: () => api<TeacherProfilePayload>(`/api/catalog/teachers/${slug}`),
+    queryKey: ['teacher-profile', slug],
+    queryFn: async () => {
+      // Try dedicated teacher endpoint first, then catalog endpoint
+      try {
+        const res = await api<any>(`/api/teachers/${slug}`);
+        if (res.teacher) return res;
+        return { teacher: res, courses: res.courses || [] };
+      } catch {
+        return api<TeacherProfilePayload>(`/api/catalog/teachers/${slug}`);
+      }
+    },
     initialData: initial,
   });
 
   if (query.isLoading && !query.data) return <TeacherProfileSkeleton />;
+
   if (query.error || (loadError && !query.data)) {
     return (
-      <PageContainer>
+      <PageContainer className="!py-12 bg-[#FAF7F2]">
         <ErrorState
-          message="Unable to load this teacher. Please try again."
+          message="Unable to load this teacher profile. Please try again."
           onRetry={() => void query.refetch()}
         />
       </PageContainer>
     );
   }
+
   const teacher = query.data?.teacher;
   if (!teacher) {
     return (
-      <PageContainer>
+      <PageContainer className="!py-12 bg-[#FAF7F2]">
         <ErrorState message="Teacher not found" onRetry={() => void query.refetch()} />
       </PageContainer>
     );
   }
 
   const courses = query.data?.courses ?? [];
-  const reviews = query.data?.reviews ?? [];
-  const subjects = teacher.subjects?.length ? teacher.subjects : teacher.categories ?? [];
-  const qualifications = teacher.qualifications ?? [];
-  const languages = teacher.languages ?? [];
-  const achievements = [
-    teacher.courseCount ? `${teacher.courseCount} published course${teacher.courseCount === 1 ? '' : 's'}` : null,
-    teacher.enrollmentCount ? `${teacher.enrollmentCount} verified enrollment${teacher.enrollmentCount === 1 ? '' : 's'}` : null,
-    teacher.ratingCount ? `${teacher.ratingCount} course review${teacher.ratingCount === 1 ? '' : 's'}` : null,
-  ].filter(Boolean) as string[];
+
+  function handleTabChange(tab: ProfileTabId) {
+    setActiveTab(tab);
+    if (tab === 'about') {
+      document.getElementById('about-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } else if (tab === 'courses') {
+      document.getElementById('teacher-courses')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } else if (tab === 'reviews') {
+      document.getElementById('reviews-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } else if (tab === 'achievements') {
+      document.getElementById('achievements-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } else if (tab === 'qa') {
+      document.getElementById('qa-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }
 
   return (
-    <PageContainer>
+    <div className="min-h-screen bg-[#FAF7F2] text-[#1C1815] pb-16">
       <ScrollProgress />
-      <Breadcrumbs items={[{ href: '/', label: 'Home' }, { href: '/teachers', label: 'Teachers' }, { label: teacher.name }]} />
-      <TeacherProfileHero teacher={teacher} hasCourses={courses.length > 0} />
 
-      <AnimatedSection>
-        <h2 className="mt-12 font-display text-2xl text-gc-black">Profile</h2>
-        <p className="mt-3 max-w-3xl whitespace-pre-wrap text-gc-mist">
-          {teacher.bio || teacher.details || 'This teacher has not added a public bio yet.'}
-        </p>
-        {teacher.details && teacher.bio ? (
-          <p className="mt-4 max-w-3xl whitespace-pre-wrap text-gc-mist">{teacher.details}</p>
-        ) : null}
-        {teacher.experience ? (
-          <p className="mt-4 max-w-3xl text-sm text-gc-mist">
-            <span className="font-medium text-gc-black">Experience: </span>
-            {teacher.experience}
-          </p>
-        ) : null}
-        {teacher.createdAt ? (
-          <p className="mt-2 text-sm text-gc-mute">On Gyan Chowk since {new Date(teacher.createdAt).toLocaleDateString()}</p>
-        ) : null}
-      </AnimatedSection>
+      <PageContainer className="!py-6 sm:!py-8 max-w-7xl mx-auto">
+        {/* HERO SECTION */}
+        <TeacherProfileHero
+          teacher={teacher}
+          onStartLearning={() => handleTabChange('courses')}
+        />
 
-      {qualifications.length ? (
-        <AnimatedSection>
-          <h2 className="mt-10 font-display text-2xl text-gc-black">Qualifications</h2>
-          <ul className="mt-3 flex flex-wrap gap-2">
-            {qualifications.map((item) => (
-              <li key={item} className="gc-card px-4 py-2 text-sm">
-                {item}
-              </li>
-            ))}
-          </ul>
-        </AnimatedSection>
-      ) : null}
+        {/* TABS NAVIGATION */}
+        <TeacherProfileTabs activeTab={activeTab} onTabChange={handleTabChange} />
 
-      <AnimatedSection>
-        <h2 className="mt-10 font-display text-2xl text-gc-black">Subjects</h2>
-        {subjects.length ? (
-          <ul className="mt-3 flex flex-wrap gap-2">
-            {subjects.map((s) => (
-              <li key={s} className="gc-card px-4 py-2 text-sm">
-                {s}
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="mt-3 text-sm text-gc-mute">Subjects appear after this teacher publishes a course.</p>
-        )}
-      </AnimatedSection>
-
-      {languages.length ? (
-        <AnimatedSection>
-          <h2 className="mt-10 font-display text-2xl text-gc-black">Languages</h2>
-          <ul className="mt-3 flex flex-wrap gap-2">
-            {languages.map((item) => (
-              <li key={item} className="gc-card px-4 py-2 text-sm">
-                {item}
-              </li>
-            ))}
-          </ul>
-        </AnimatedSection>
-      ) : null}
-
-      {achievements.length ? (
-        <AnimatedSection>
-          <h2 className="mt-10 font-display text-2xl text-gc-black">Achievements</h2>
-          <ul className="mt-3 grid gap-3 md:grid-cols-3">
-            {achievements.map((item) => (
-              <li key={item} className="gc-card p-4 text-sm text-gc-mist">
-                {item}
-              </li>
-            ))}
-          </ul>
-        </AnimatedSection>
-      ) : null}
-
-      {courses.length ? <TeacherCourses courses={courses} /> : null}
-
-      {reviews.length ? <TeacherReviews reviews={reviews} /> : null}
-
-      <AnimatedSection>
-        <div className="mt-12 gc-card flex flex-wrap items-center justify-between gap-4 p-6">
-          <div>
-            <p className="font-display text-2xl text-gc-black">Start learning with {teacher.name.split(' ')[0]}</p>
-            <p className="text-sm text-gc-mute">Enrollment unlocks after Razorpay verification on paid courses.</p>
+        {/* 2-COLUMN MAIN CONTENT */}
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-6 items-start mt-6">
+          {/* LEFT COLUMN: About, Subjects, Achievements */}
+          <div className="space-y-6">
+            <TeacherAboutCard teacher={teacher} />
+            <TeacherSubjectsCard teacher={teacher} />
+            <TeacherAchievementsCard teacher={teacher} />
           </div>
-          <Link href="/courses" className="gc-btn-primary">
-            Browse courses <span className="gc-btn-arrow">→</span>
-          </Link>
+
+          {/* RIGHT COLUMN: Quote, Doubt Q&A CTA, Featured Courses */}
+          <div className="space-y-6">
+            <TeacherQuoteCard teacher={teacher} />
+            <TeacherDoubtCard teacher={teacher} />
+            <TeacherFeaturedCoursesCard teacher={teacher} catalogCourses={courses} />
+          </div>
         </div>
-      </AnimatedSection>
-    </PageContainer>
+
+        {/* FULL WIDTH STUDENT REVIEWS SECTION */}
+        <div className="mt-8">
+          <TeacherReviewsCarousel teacher={teacher} />
+        </div>
+
+        {/* BOTTOM LEARNING BENEFITS STRIP */}
+        <TeacherBenefitsStrip benefits={teacher.benefits} />
+      </PageContainer>
+    </div>
   );
 }

@@ -22,13 +22,17 @@ const courseSchema = new Schema(
     thumbnail: mediaSchema,
     banner: mediaSchema,
     teachers: [{ type: Schema.Types.ObjectId, ref: 'User', index: true }],
+    teacherName: { type: String, default: 'Expert Faculty', trim: true },
     category: { type: String, index: true },
     subjects: [{ type: String, index: true }],
     examCategories: [{ type: String, index: true }],
     careerTrack: { type: String, index: true },
     targetClass: { type: String, index: true },
     targetExam: { type: String, index: true },
-    language: { type: String, default: 'en', index: true },
+    language: { type: String, default: 'English', index: true },
+    foundation: { type: String, default: 'Foundation', trim: true, index: true },
+    startsOn: { type: Date },
+    featured: { type: Boolean, default: false, index: true },
     pricingType: { type: String, enum: PRICING_TYPES, default: 'paid', index: true },
     price: { type: Number, default: 0, min: 0 },
     discountPercent: { type: Number, default: 0, min: 0, max: 100 },
@@ -43,6 +47,83 @@ const courseSchema = new Schema(
     outcomes: [String],
     seoTitle: String,
     seoDescription: String,
+    badge: { type: String, default: 'Premium Course' },
+    duration: { type: String, default: '12 Months' },
+    level: { type: String, default: 'Advanced' },
+    comparePrice: { type: Number, default: 0 },
+    banners: [
+      {
+        publicId: String,
+        url: String,
+        title: String,
+        subtitle: String,
+        ctaText: String,
+        ctaLink: String,
+        active: { type: Boolean, default: true },
+        order: { type: Number, default: 0 },
+      },
+    ],
+    highlights: [
+      {
+        icon: String,
+        title: String,
+        subtitle: String,
+      },
+    ],
+    statistics: [
+      {
+        label: String,
+        value: String,
+        icon: String,
+      },
+    ],
+    features: [
+      {
+        icon: String,
+        title: String,
+        description: String,
+      },
+    ],
+    includes: [
+      {
+        icon: String,
+        title: String,
+        subtitle: String,
+      },
+    ],
+    curriculum: [
+      {
+        moduleTitle: String,
+        moduleSubtitle: String,
+        topics: [String],
+      },
+    ],
+    instructorInfo: {
+      name: String,
+      role: String,
+      qualification: String,
+      experience: String,
+      expertise: String,
+      bio: String,
+      avatarUrl: String,
+    },
+    finalCta: {
+      title: { type: String, default: 'Ready to start learning?' },
+      subtitle: { type: String, default: 'Join the course and start your learning journey with expert guidance.' },
+      buttonText: { type: String, default: 'Enroll Now' },
+      enabled: { type: Boolean, default: true },
+    },
+    sectionVisibility: {
+      overview: { type: Boolean, default: true },
+      whatYouLearn: { type: Boolean, default: true },
+      features: { type: Boolean, default: true },
+      includes: { type: Boolean, default: true },
+      syllabus: { type: Boolean, default: true },
+      instructors: { type: Boolean, default: true },
+      faqs: { type: Boolean, default: true },
+      finalCta: { type: Boolean, default: true },
+    },
+    sectionOrder: [{ type: String }],
     publishedAt: Date,
     createdBy: { type: Schema.Types.ObjectId, ref: 'User' },
   },
@@ -51,7 +132,12 @@ const courseSchema = new Schema(
 
 courseSchema.index({ status: 1, pricingType: 1, ratingAvg: -1 });
 courseSchema.index({ category: 1, status: 1 });
-courseSchema.index({ title: 'text', subtitle: 'text', description: 'text' });
+// Course.language stores medium (English/Hindi/Hinglish). MongoDB text indexes
+// treat a field named "language" as search-language override — use a dummy override.
+courseSchema.index(
+  { title: 'text', subtitle: 'text', description: 'text' },
+  { name: 'course_text_search', default_language: 'none', language_override: '_searchLang' },
+);
 
 const batchSchema = new Schema(
   {
@@ -98,7 +184,10 @@ const batchSchema = new Schema(
 );
 
 batchSchema.index({ course: 1, status: 1 });
-batchSchema.index({ name: 'text', description: 'text' });
+batchSchema.index(
+  { name: 'text', description: 'text' },
+  { name: 'batch_text_search', default_language: 'none', language_override: '_searchLang' },
+);
 
 const subjectSchema = new Schema(
   {

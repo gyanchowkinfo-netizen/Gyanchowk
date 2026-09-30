@@ -33,7 +33,7 @@ export default async function AboutPage() {
         {about?.body ||
           'Gyan Chowk is building a structured learning ecosystem that helps students learn, practice, improve and move toward their goals.'}
       </p>
-      <AboutPageClient pages={cms.pages ?? []} stats={cms.stats} />
+      <AboutPageClient pages={cms.pages ?? []} stats={cms.stats} initialConfig={cms.aboutPage} />
     </>
   );
 }

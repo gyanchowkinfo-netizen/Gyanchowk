@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { formatPrice, formatInr, salePrice, cn } from '@/lib/format';
+import { formatPrice, formatInr, salePrice, cn, formatStartedOn, formatCourseLanguage } from '@/lib/format';
 import { Rating } from '@/components/ui/Badge';
 import type { CourseCardData } from '@/lib/types';
 import { useCompare } from '@/lib/compare';
@@ -29,48 +29,66 @@ export function CourseCard({
   const cover = course.thumbnail?.url;
   const href = `/courses/${course.slug}`;
   const isCatalog = variant === 'catalog';
+  const foundation = (course.foundation || 'Foundation').trim() || 'Foundation';
+  const language = formatCourseLanguage(course.language);
+  const started = formatStartedOn(course.startsOn || course.publishedAt || course.createdAt);
+  const targetExam = (course.targetExam || '').trim();
 
   const cardInner = (
     <>
-      <Link href={href} className="block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--brand-blue)]/40">
+      <Link
+        href={href}
+        className="block shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--brand-blue)]/40"
+      >
         <div className="gc-course-media" aria-hidden={!cover}>
           {cover ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={cover} alt="" />
+            <img src={cover} alt="" loading="lazy" decoding="async" />
           ) : null}
           {course.pricingType === 'free' ? <span className="gc-course-badge">Free</span> : null}
         </div>
       </Link>
-      <div className={cn('gc-course-body', featured && 'sm:pt-6')}>
-        <Link href={href} className="group/title block focus-visible:outline-none">
-          <h3
-            className={cn(
-              'gc-course-title',
-              isCatalog && 'gc-course-title--catalog group-hover/title:text-[color:var(--brand-navy)]',
-            )}
-          >
-            {course.title}
-          </h3>
-        </Link>
-        {meta ? <p className="mt-1.5 text-xs tracking-wide text-gc-mute">{meta}</p> : null}
-        <p className="mt-2 text-sm font-medium text-gc-mist">{teachers || 'Faculty TBA'}</p>
-        {course.subtitle ? (
-          <p className="mt-2 line-clamp-2 flex-1 text-sm leading-relaxed text-gc-mute">{course.subtitle}</p>
+      <div className={cn('gc-course-body', featured && !isCatalog && 'sm:pt-6')}>
+        {isCatalog ? (
+          <>
+            <div className="gc-course-topline">
+              <span className="gc-course-foundation">{foundation}</span>
+              <span className="gc-course-lang">{language}</span>
+            </div>
+            <Link href={href} className="group/title mt-2 block focus-visible:outline-none">
+              <h3 className="gc-course-title gc-course-title--catalog is-clamped group-hover/title:text-[color:var(--brand-navy)]">
+                {course.title}
+              </h3>
+            </Link>
+            {targetExam ? <p className="gc-course-exam">{targetExam}</p> : null}
+            {started ? <p className="gc-course-started">Started on {started}</p> : null}
+          </>
         ) : (
-          <span className="flex-1" />
+          <>
+            <Link href={href} className="group/title block focus-visible:outline-none">
+              <h3 className="gc-course-title">{course.title}</h3>
+            </Link>
+            {meta ? <p className="mt-1.5 text-xs tracking-wide text-gc-mute">{meta}</p> : null}
+            <p className="mt-2 text-sm font-medium text-gc-mist">{teachers || 'Faculty TBA'}</p>
+            {course.subtitle ? (
+              <p className="mt-2 line-clamp-2 flex-1 text-sm leading-relaxed text-gc-mute">{course.subtitle}</p>
+            ) : (
+              <span className="flex-1" />
+            )}
+            <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+              {course.ratingCount ? (
+                <Rating value={course.ratingAvg} count={course.ratingCount} />
+              ) : (
+                <span className="text-xs text-gc-mute">Ratings after course reviews</span>
+              )}
+              {course.enrollmentCount != null ? (
+                <span className="text-xs font-medium text-gc-mist">{course.enrollmentCount} enrolled</span>
+              ) : null}
+            </div>
+          </>
         )}
-        <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
-          {course.ratingCount ? (
-            <Rating value={course.ratingAvg} count={course.ratingCount} />
-          ) : (
-            <span className="text-xs text-gc-mute">Ratings after course reviews</span>
-          )}
-          {course.enrollmentCount != null ? (
-            <span className="text-xs font-medium text-gc-mist">{course.enrollmentCount} enrolled</span>
-          ) : null}
-        </div>
         <div className={cn('gc-course-foot', isCatalog && 'gc-course-foot--catalog')}>
-          <div className="flex min-w-0 flex-wrap items-center gap-2">
+          <div className={cn(isCatalog ? 'gc-course-price-row' : 'flex min-w-0 flex-wrap items-center gap-2')}>
             <span className={cn(isCatalog ? 'gc-course-price-chip' : 'gc-course-price block')}>
               {formatPrice(course.price, course.discountPercent, course.pricingType)}
               {isCatalog && showOffer ? <s>{formatInr(course.price)}</s> : null}
@@ -78,7 +96,7 @@ export function CourseCard({
             {isCatalog && showOffer ? <span className="gc-course-offer">{Math.round(offerPct)}% off</span> : null}
           </div>
           {isCatalog ? (
-            <Link href={href} className="gc-btn-primary gc-course-cta shrink-0">
+            <Link href={href} className="gc-btn-primary gc-course-cta">
               View course
               <span className="gc-btn-arrow" aria-hidden>
                 →
@@ -129,14 +147,21 @@ export function CourseGrid({
   compare,
   featured,
   variant,
+  compact,
 }: {
   courses: CourseCardData[];
   compare?: boolean;
   featured?: boolean;
   variant?: 'default' | 'catalog';
+  compact?: boolean;
 }) {
   return (
-    <StaggerContainer className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+    <StaggerContainer
+      className={cn(
+        'grid',
+        compact ? 'gap-3.5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4' : 'gap-5 sm:grid-cols-2 xl:grid-cols-3',
+      )}
+    >
       {courses.map((c) => (
         <StaggerItem key={c._id} className="h-full">
           <CourseCard course={c} compare={compare} featured={featured} variant={variant} />

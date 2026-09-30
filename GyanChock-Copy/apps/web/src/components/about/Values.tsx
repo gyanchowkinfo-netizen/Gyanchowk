@@ -1,47 +1,118 @@
 'use client';
 
-import { HeartHandshake, Infinity as LoopIcon, Lightbulb, ShieldCheck, Sparkles, Target, TrendingUp, Users } from 'lucide-react';
+import React from 'react';
 import { PageContainer } from '@/components/layout/Page';
-import { Reveal, StaggerContainer, StaggerItem } from '@/components/motion';
-import { CardIcon, CARD_ICON_CYCLE } from '@/components/ui/CardIcon';
+import { Reveal } from '@/components/motion';
+import type { AboutValuesConfig } from '@/lib/types';
+import { DEFAULT_ABOUT_PAGE_CONFIG } from '@/lib/types';
+import { getAccentTheme, renderHighlightedHeading } from './WhyGyanChowk';
 
-const values = [
-  { icon: Users, title: 'Student first', body: 'Product decisions start with learner outcomes, not spectacle.' },
-  { icon: Sparkles, title: 'Quality learning', body: 'Recorded lessons, tests and materials stay enrollment-gated and verified.' },
-  { icon: HeartHandshake, title: 'Accessibility', body: 'Learn on your schedule, with recorded lessons you can pause and resume.' },
-  { icon: Target, title: 'Consistency', body: 'Batches, attendance and backlog planning keep effort visible.' },
-  { icon: Lightbulb, title: 'Innovation', body: 'Analytics, ranks and doubts improve how students actually study.' },
-  { icon: ShieldCheck, title: 'Trust', body: 'Payments, certificates and access are decided on the server.' },
-  { icon: TrendingUp, title: 'Performance', body: 'The pages should stay fast. Motion never blocks learning.' },
-  { icon: LoopIcon, title: 'Continuous improvement', body: 'CMS, faculty and analytics keep the ecosystem honest.' },
-];
+const VALUE_ACCENTS = ['blue', 'amber', 'rose', 'green', 'violet', 'cyan', 'indigo', 'teal'];
 
-export function Values() {
+export function Values({ config }: { config?: AboutValuesConfig }) {
+  const valuesConfig = config ?? DEFAULT_ABOUT_PAGE_CONFIG.values;
+  const items = (valuesConfig.items || DEFAULT_ABOUT_PAGE_CONFIG.values.items).filter(
+    (i) => i.active !== false,
+  );
+
   return (
-    <section id="values">
-      <PageContainer>
-        <Reveal>
-          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-gc-blue">Our values</p>
-        </Reveal>
-        <Reveal delay={0.04}>
-          <h2 className="mt-2 font-display text-3xl text-gc-black">What we refuse to compromise</h2>
-        </Reveal>
-        <StaggerContainer className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {values.map((item, i) => {
-            const Icon = item.icon;
+    <section
+      id="values"
+      className="relative overflow-hidden bg-[#FAF7F2] py-14 sm:py-20 border-b border-[#ECE6DE]"
+    >
+      {/* Subtle ambient depth - minimal and warm */}
+      <div
+        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,rgba(247,242,233,0.7),transparent_65%)]"
+        aria-hidden="true"
+      />
+
+      <PageContainer className="relative !py-0">
+        {/* SECTION HEADER - matching Why Gyan Chowk reference design */}
+        <div className="max-w-3xl mb-10 sm:mb-12">
+          {/* Badge with horizontal line accents */}
+          <Reveal>
+            <div className="inline-flex items-center gap-2.5 mb-3.5">
+              <span className="w-5 h-px bg-[#C4A05A]/45" aria-hidden="true" />
+              <span className="inline-block rounded-full bg-[#FAF0E4] border border-[#E8DCC8] px-3.5 py-0.5 text-[11px] font-bold tracking-[0.2em] uppercase text-[#8C6228]">
+                {valuesConfig.eyebrow || 'OUR VALUES'}
+              </span>
+              <span className="w-5 h-px bg-[#C4A05A]/45" aria-hidden="true" />
+            </div>
+          </Reveal>
+
+          {/* Main Heading */}
+          <Reveal delay={0.04}>
+            <h2 className="font-serif text-3xl sm:text-4xl lg:text-[2.85rem] font-bold tracking-tight text-[#0F172A] leading-[1.14]">
+              {renderHighlightedHeading(valuesConfig.heading, valuesConfig.headingHighlight)}
+            </h2>
+          </Reveal>
+
+          {/* Supporting Text */}
+          {valuesConfig.description && (
+            <Reveal delay={0.08}>
+              <p className="mt-3.5 text-xs sm:text-[14px] text-slate-500 font-normal leading-relaxed max-w-2xl">
+                {valuesConfig.description}
+              </p>
+            </Reveal>
+          )}
+        </div>
+
+        {/* VALUES CARDS GRID - Matching Why Gyan Chowk Card Design */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 auto-rows-fr gap-5 sm:gap-6">
+          {items.map((item, idx) => {
+            const accentKey = item.colorVariant || VALUE_ACCENTS[idx % VALUE_ACCENTS.length];
+            const theme = getAccentTheme(accentKey);
+            const gradId = `wave-grad-value-${item._key || idx}`;
+
             return (
-              <StaggerItem key={item.title}>
-                <article className="gc-card gc-card-lift h-full p-5">
-                  <CardIcon variant={CARD_ICON_CYCLE[i % CARD_ICON_CYCLE.length]}>
-                    <Icon />
-                  </CardIcon>
-                  <h3 className="mt-3 font-display text-lg">{item.title}</h3>
-                  <p className="mt-2 text-sm text-gc-mute">{item.body}</p>
-                </article>
-              </StaggerItem>
+              <div key={item._key || `${item.title}-${idx}`} className="col-span-1 flex flex-col">
+                <Reveal delay={idx * 0.03} className="h-full w-full flex flex-col flex-1">
+                  <div
+                    tabIndex={0}
+                    className="group relative h-full w-full rounded-[22px] border border-slate-200/70 bg-white p-6 sm:p-7 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.04)] transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-[0_12px_30px_-6px_rgba(0,0,0,0.08)] hover:border-slate-300/80 overflow-hidden flex flex-col justify-between flex-1 min-h-[175px] sm:min-h-[185px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/30"
+                  >
+                    {/* Left vertical accent line - rounded left pill */}
+                    <div
+                      className="absolute left-0 top-0 bottom-0 w-[4.5px] rounded-l-[22px] transition-all duration-300 group-hover:w-[5.5px]"
+                      style={{ backgroundColor: theme.bar }}
+                      aria-hidden="true"
+                    />
+
+                    {/* Content (Typography & Hierarchy Focused, NO BULKY ICON BOXES) */}
+                    <div className="relative z-10 pr-2 flex flex-col flex-1">
+                      <h3 className="font-serif text-[1.125rem] sm:text-[1.2rem] font-bold text-[#0F172A] tracking-tight leading-snug">
+                        {item.title}
+                      </h3>
+                      <p className="mt-2.5 text-xs sm:text-[13.5px] text-[#475569] font-normal leading-relaxed line-clamp-4 sm:line-clamp-5 flex-1">
+                        {item.body}
+                      </p>
+                    </div>
+
+                    {/* Subtle decorative curved wave shape in bottom-right corner matching Why Gyan Chowk */}
+                    <svg
+                      className="pointer-events-none absolute -bottom-0.5 -right-0.5 w-32 h-20 transition-transform duration-300 ease-out group-hover:scale-105"
+                      viewBox="0 0 140 90"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                      aria-hidden="true"
+                    >
+                      <path
+                        d="M140 18 C105 18 70 52 0 90 L140 90 Z"
+                        fill={`url(#${gradId})`}
+                      />
+                      <defs>
+                        <linearGradient id={gradId} x1="0%" y1="100%" x2="100%" y2="0%">
+                          <stop offset="0%" stopColor={theme.waveStart} stopOpacity="0.04" />
+                          <stop offset="100%" stopColor={theme.waveEnd} stopOpacity="0.18" />
+                        </linearGradient>
+                      </defs>
+                    </svg>
+                  </div>
+                </Reveal>
+              </div>
             );
           })}
-        </StaggerContainer>
+        </div>
       </PageContainer>
     </section>
   );

@@ -47,3 +47,38 @@ export function formatDate(value?: string) {
   if (Number.isNaN(d.getTime())) return undefined;
   return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
 }
+
+/** e.g. Started on 24th Aug'26 */
+export function formatStartedOn(value?: string | Date | null) {
+  if (!value) return undefined;
+  const d = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(d.getTime())) return undefined;
+  const day = d.getDate();
+  const ord =
+    day % 10 === 1 && day !== 11 ? 'st' : day % 10 === 2 && day !== 12 ? 'nd' : day % 10 === 3 && day !== 13 ? 'rd' : 'th';
+  const mon = d.toLocaleString('en-GB', { month: 'short' });
+  const yy = String(d.getFullYear()).slice(-2);
+  return `${day}${ord} ${mon}'${yy}`;
+}
+
+const LANGUAGE_LABELS: Record<string, string> = {
+  en: 'English',
+  english: 'English',
+  hi: 'Hindi',
+  hindi: 'Hindi',
+  hinglish: 'Hinglish',
+  bilingual: 'Bilingual',
+};
+
+export function formatCourseLanguage(value?: string | null) {
+  const raw = (value || '').trim();
+  if (!raw) return 'English';
+  return LANGUAGE_LABELS[raw.toLowerCase()] || raw;
+}
+
+/** Normalize admin/API language input to a stable display label. */
+export function normalizeCourseLanguage(value?: string | null) {
+  const raw = (value || '').trim();
+  if (!raw) return 'English';
+  return LANGUAGE_LABELS[raw.toLowerCase()] || raw;
+}

@@ -1,7 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { usePathname, useRouter } from 'next/navigation';
 import { Menu, Search, X } from 'lucide-react';
 import { BrandLogo } from '@/components/brand/BrandLogo';
@@ -21,6 +22,13 @@ export function Navbar() {
   const [open, setOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const headerRef = useRef<HTMLElement>(null);
+  const [navHeight, setNavHeight] = useState(72);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     void refresh();
@@ -44,6 +52,22 @@ export function Navbar() {
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
+  useEffect(() => {
+    const updateNavHeight = () => {
+      if (headerRef.current) {
+        const rect = headerRef.current.getBoundingClientRect();
+        setNavHeight(Math.max(56, Math.round(rect.bottom)));
+      }
+    };
+    updateNavHeight();
+    window.addEventListener('resize', updateNavHeight);
+    window.addEventListener('scroll', updateNavHeight, { passive: true });
+    return () => {
+      window.removeEventListener('resize', updateNavHeight);
+      window.removeEventListener('scroll', updateNavHeight);
+    };
+  }, [open, scrolled]);
+
   if (isAppPanelPath(pathname)) {
     return null;
   }
@@ -58,7 +82,14 @@ export function Navbar() {
   };
 
   return (
-    <header className={cn('gc-navbar sticky top-0 z-50 overflow-visible backdrop-blur-md', scrolled && 'is-scrolled')}>
+    <header
+      ref={headerRef}
+      className={cn(
+        'gc-navbar sticky top-0 z-50 overflow-visible',
+        !open && 'backdrop-blur-md',
+        scrolled && 'is-scrolled',
+      )}
+    >
       <div className="gc-navbar-inner gc-container flex items-center gap-5 overflow-visible sm:gap-6 lg:gap-8">
         <BrandLogo size={36} imageClassName="gc-navbar-logo" />
         <nav className="hidden flex-1 items-center justify-center gap-6 overflow-visible text-[15px] xl:gap-9 lg:flex" aria-label="Primary">
@@ -109,81 +140,104 @@ export function Navbar() {
           </div>
         </div>
       </div>
-      {open ? (
-        <div className="gc-navbar-drawer fixed inset-0 top-[4.5rem] z-50 overflow-y-auto px-5 py-6 sm:top-20">
-          <nav className="flex min-h-[calc(100dvh-5rem)] flex-col" aria-label="Mobile">
-            <SearchTrigger
-              className="mb-6 h-12"
-              onClick={() => {
-                setOpen(false);
-                setSearchOpen(true);
-              }}
-            />
-            <div className="space-y-1">
-              <CoursesNavMenu label={t.nav.courses} variant="mobile" onNavigate={() => setOpen(false)} />
-              <Link href="/teachers" className="block min-h-11 py-3 font-display text-3xl text-[#26352d]" onClick={() => setOpen(false)}>
-                {t.nav.teachers}
-              </Link>
-              <Link href="/career" className="block min-h-11 py-3 font-display text-3xl text-[#26352d]" onClick={() => setOpen(false)}>
-                {t.nav.career}
-              </Link>
-              <Link href="/about" className="block min-h-11 py-3 font-display text-3xl text-[#26352d]" onClick={() => setOpen(false)}>
-                {t.nav.about}
-              </Link>
-            </div>
-            <label className="mt-8 block text-sm text-[#626860]">
-              Language
-              <select
-                className="gc-input mt-2"
-                value={locale}
-                onChange={(e) => setLocale(e.target.value as typeof locale)}
-                suppressHydrationWarning
-              >
-                <option value="en">English</option>
-                <option value="hi">हिन्दी</option>
-                <option value="hinglish">Hinglish</option>
-              </select>
-            </label>
-            <div className="mt-auto space-y-3 pt-8">
-              {user ? (
-                <>
-                  {itemsForUser(user).map((item) => (
-                    <Link
-                      key={item.label}
-                      href={item.href!}
-                      className="gc-btn-outline w-full"
-                      onClick={() => setOpen(false)}
-                    >
-                      {item.label}
-                    </Link>
-                  ))}
-                  <button
-                    type="button"
-                    className="gc-btn-primary w-full"
-                    onClick={async () => {
-                      setOpen(false);
-                      await logout();
-                      router.push('/');
-                    }}
+      {open && mounted
+        ? createPortal(
+            <div
+              className="gc-navbar-drawer fixed inset-x-0 bottom-0 z-[49] overflow-y-auto px-5 py-6"
+              style={{ top: navHeight }}
+            >
+              <nav className="flex min-h-full flex-col pb-24" aria-label="Mobile">
+                <SearchTrigger
+                  className="mb-6 h-12 w-full"
+                  onClick={() => {
+                    setOpen(false);
+                    setSearchOpen(true);
+                  }}
+                />
+                <div className="space-y-1">
+                  <CoursesNavMenu label={t.nav.courses} variant="mobile" onNavigate={() => setOpen(false)} />
+                  <Link
+                    href="/teachers"
+                    className="block min-h-11 py-3 font-display text-3xl text-[#26352d] transition-colors hover:text-amber-800"
+                    onClick={() => setOpen(false)}
                   >
-                    Log out
-                  </button>
-                </>
-              ) : (
-                <>
-                  <Link href="/login" className="gc-btn-outline w-full" onClick={() => setOpen(false)}>
-                    {t.nav.login}
+                    {t.nav.teachers}
                   </Link>
-                  <Link href="/register" className="gc-btn-primary w-full" onClick={() => setOpen(false)}>
-                    {t.nav.register}
+                  <Link
+                    href="/career"
+                    className="block min-h-11 py-3 font-display text-3xl text-[#26352d] transition-colors hover:text-amber-800"
+                    onClick={() => setOpen(false)}
+                  >
+                    {t.nav.career}
                   </Link>
-                </>
-              )}
-            </div>
-          </nav>
-        </div>
-      ) : null}
-      <SearchCommand open={searchOpen} onOpenChange={setSearchOpen} />
+                  <Link
+                    href="/about"
+                    className="block min-h-11 py-3 font-display text-3xl text-[#26352d] transition-colors hover:text-amber-800"
+                    onClick={() => setOpen(false)}
+                  >
+                    {t.nav.about}
+                  </Link>
+                </div>
+                <label className="mt-8 block text-sm font-medium text-[#626860]">
+                  Language
+                  <select
+                    className="gc-input mt-2 w-full"
+                    value={locale}
+                    onChange={(e) => setLocale(e.target.value as typeof locale)}
+                    suppressHydrationWarning
+                  >
+                    <option value="en">English</option>
+                    <option value="hi">हिन्दी</option>
+                    <option value="hinglish">Hinglish</option>
+                  </select>
+                </label>
+                <div className="mt-8 space-y-3 pt-6 border-t border-gc-line/60">
+                  {user ? (
+                    <>
+                      {itemsForUser(user).map((item) => (
+                        <Link
+                          key={item.label}
+                          href={item.href!}
+                          className="gc-btn-outline w-full justify-center"
+                          onClick={() => setOpen(false)}
+                        >
+                          {item.label}
+                        </Link>
+                      ))}
+                      <button
+                        type="button"
+                        className="gc-btn-primary w-full justify-center"
+                        onClick={async () => {
+                          setOpen(false);
+                          await logout();
+                          router.push('/');
+                        }}
+                      >
+                        Log out
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <Link href="/login" className="gc-btn-outline w-full justify-center" onClick={() => setOpen(false)}>
+                        {t.nav.login}
+                      </Link>
+                      <Link href="/register" className="gc-btn-primary w-full justify-center" onClick={() => setOpen(false)}>
+                        {t.nav.register}
+                      </Link>
+                    </>
+                  )}
+                </div>
+              </nav>
+            </div>,
+            document.body,
+          )
+        : null}
+      {mounted
+        ? createPortal(
+            <SearchCommand open={searchOpen} onOpenChange={setSearchOpen} />,
+            document.body,
+          )
+        : null}
     </header>
   );
 }

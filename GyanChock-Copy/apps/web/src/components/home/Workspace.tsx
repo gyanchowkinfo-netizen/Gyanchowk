@@ -37,7 +37,7 @@ export function DashboardPreview({
 
   return (
     <section className={styles.section} aria-labelledby="workspace">
-      <div className="gc-container py-14 md:py-20">
+      <div className="gc-container py-7 md:py-10">
         <div className={styles.grid}>
           <Reveal>
             <div className={styles.copy}>
@@ -126,29 +126,10 @@ export function ContinueLearning({
 }) {
   const user = useAuth((s) => s.user);
 
-  if (!user) {
-    return (
-      <section className="gc-container py-14 md:py-16" aria-labelledby="journey">
-        <div className="gc-card flex flex-col items-start justify-between gap-6 p-6 sm:flex-row sm:items-center sm:p-8">
-          <div>
-            <p className="gc-kicker mb-2">Account</p>
-            <h2 id="journey" className="gc-section-title">
-              Your learning journey starts here.
-            </h2>
-            <p className="mt-2 max-w-md text-sm text-gc-mute">A free student account unlocks the catalogue, tests and a quiet workspace.</p>
-          </div>
-          <Link href="/register" className="gc-btn-primary w-full sm:w-auto">
-            Create free account
-          </Link>
-        </div>
-      </section>
-    );
-  }
-
-  if (!items.length) return null;
+  if (!user || !items.length) return null;
 
   return (
-    <section className="gc-container py-14 md:py-16" aria-labelledby="continue">
+    <section className="gc-container py-7 md:py-10" aria-labelledby="continue">
       <SectionHeading id="continue" kicker="Resume" title="Continue learning" href="/student/learning" action="Open learning →" />
       <ul className="grid gap-4 sm:grid-cols-2">
         {items.slice(0, 4).map((c) => (

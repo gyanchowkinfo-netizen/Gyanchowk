@@ -32,8 +32,8 @@ export function BannerCarousel() {
 
   if (query.isLoading) {
     return (
-      <section className="gc-container pb-6 pt-2" aria-label="Promotions loading">
-        <div className="h-[200px] animate-pulse rounded-[24px] border border-gc-line bg-[color:var(--gyan-primary-soft)] sm:h-[280px] lg:h-[340px]" />
+      <section className="gc-container pb-3 pt-4 sm:pb-4 sm:pt-5" aria-label="Promotions loading">
+        <div className="h-[148px] animate-pulse rounded-[22px] border border-gc-line bg-[color:var(--gyan-primary-soft)] sm:h-[188px] lg:h-[220px]" />
       </section>
     );
   }
@@ -100,7 +100,7 @@ function Carousel({ items }: { items: PublicBanner[] }) {
   }
 
   return (
-    <section className="gc-container pb-4 pt-2 sm:pb-8" aria-roledescription="carousel" aria-label="Gyan Chowk promotions">
+    <section className="gc-container pb-3 pt-4 sm:pb-5 sm:pt-5" aria-roledescription="carousel" aria-label="Gyan Chowk promotions">
       <div
         ref={region}
         className="relative overflow-hidden rounded-[22px] border border-gc-line bg-[color:var(--brand-navy)] shadow-[var(--shadow-md)]"
@@ -124,7 +124,7 @@ function Carousel({ items }: { items: PublicBanner[] }) {
           go(dx < 0 ? 1 : -1);
         }}
       >
-        <div className="relative aspect-[16/9] min-h-[200px] sm:aspect-[21/9] sm:min-h-[260px] lg:min-h-[320px]">
+        <div className="relative h-[148px] sm:h-[188px] lg:h-[220px]">
           {items.map((banner, i) => {
             const src = isMobile ? banner.mobileImageUrl || banner.imageUrl : banner.imageUrl || banner.mobileImageUrl;
             const offset = i - index;
@@ -151,14 +151,14 @@ function Carousel({ items }: { items: PublicBanner[] }) {
                   <div className="absolute inset-0 bg-[image:var(--gradient-hero)]" />
                 )}
                 <div className="absolute inset-0 bg-gradient-to-r from-[color:var(--brand-navy)]/80 via-[color:var(--brand-navy)]/35 to-transparent" />
-                <div className="relative z-10 flex h-full max-w-xl flex-col justify-end p-5 sm:p-8 lg:p-10">
+                <div className="relative z-10 flex h-full max-w-xl flex-col justify-end p-4 sm:p-6 lg:p-7">
                   <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-white/70">Promotion</p>
-                  <h2 className="mt-2 font-display text-2xl leading-tight text-white sm:text-4xl">{banner.title}</h2>
+                  <h2 className="mt-1 font-display text-xl leading-tight text-white sm:text-2xl lg:text-[1.75rem]">{banner.title}</h2>
                   {banner.subtitle ? (
-                    <p className="mt-2 line-clamp-2 text-sm text-white/80 sm:text-base">{banner.subtitle}</p>
+                    <p className="mt-1 line-clamp-1 text-sm text-white/80 sm:line-clamp-2">{banner.subtitle}</p>
                   ) : null}
                   {banner.ctaUrl ? (
-                    <Link href={banner.ctaUrl} className="gc-btn mt-5 w-fit bg-white text-[color:var(--brand-navy)] hover:bg-white/90">
+                    <Link href={banner.ctaUrl} className="gc-btn mt-3 w-fit bg-white text-[color:var(--brand-navy)] hover:bg-white/90">
                       {banner.ctaText || 'Learn more'}
                     </Link>
                   ) : null}

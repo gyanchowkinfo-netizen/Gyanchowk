@@ -24,7 +24,7 @@ export function FacultySection({
 
   return (
     <section className="border-y border-gc-line/70 bg-[color:var(--gyan-surface)]/50" aria-labelledby="faculty">
-      <div className="gc-container py-14 md:py-20">
+      <div className="gc-container py-7 md:py-10">
         <SectionHeading
           id="faculty"
           kicker={copy?.kicker || 'Faculty'}

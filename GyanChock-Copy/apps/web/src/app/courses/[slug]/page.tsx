@@ -5,196 +5,243 @@ import { useQuery } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
-import { formatPrice, salePrice } from '@/lib/format';
 import { rememberCourse } from '@/lib/hooks';
 import { toast } from '@/lib/toast';
-import { PageContainer, Breadcrumbs } from '@/components/layout/Page';
-import { Rating, StatusBadge } from '@/components/ui/Badge';
-import { Button } from '@/components/ui/Button';
-import { CourseCard } from '@/components/public/CourseCard';
+import { formatPrice } from '@/lib/format';
 import { LoadingState, ErrorState, EmptyState } from '@/components/ui/States';
-import type { CourseCardData } from '@/lib/types';
-import { AnimatedSection, ScrollProgress, ScaleIn, StaggerContainer, StaggerItem, TextReveal } from '@/components/motion';
-import { SyllabusAccordion } from '@/components/motion/SyllabusAccordion';
+import type { CourseDetail, CourseCardData } from '@/lib/types';
 import { VideoPlayer } from '@/components/player/VideoPlayer';
+import { X, Play, PhoneCall } from 'lucide-react';
 
-interface Course extends CourseCardData {
-  description?: string;
-  validityDays?: number;
-  outcomes?: string[];
-  faqs?: Array<{ question: string; answer: string }>;
-  certificateEnabled?: boolean;
+// New Course Detail Components
+import { CourseDetailHero } from '@/components/courses/detail/CourseDetailHero';
+import { CourseNavigationTabs } from '@/components/courses/detail/CourseNavigationTabs';
+import { CourseAboutSection } from '@/components/courses/detail/CourseAboutSection';
+import { CourseFeaturesSection } from '@/components/courses/detail/CourseFeaturesSection';
+import { CourseIncludesCard } from '@/components/courses/detail/CourseIncludesCard';
+import { CourseCurriculumSection } from '@/components/courses/detail/CourseCurriculumSection';
+import { CourseInstructorSection } from '@/components/courses/detail/CourseInstructorSection';
+import { CourseFAQSection } from '@/components/courses/detail/CourseFAQSection';
+import { CourseFinalCTA } from '@/components/courses/detail/CourseFinalCTA';
+
+interface Lesson {
+  _id: string;
+  title: string;
+  isDemo?: boolean;
+  chapter?: string;
+  video?: string;
 }
 
-interface Lesson { _id: string; title: string; isDemo?: boolean; chapter?: string; video?: string }
-interface Chapter { _id: string; name: string }
-interface Review { _id: string; rating: number; body: string; verified?: boolean }
+interface Chapter {
+  _id: string;
+  name: string;
+}
 
 export default function CourseDetailPage() {
   const { slug } = useParams<{ slug: string }>();
   const { user } = useAuth();
   const router = useRouter();
-  const [saving, setSaving] = useState(false);
+
+  const [savingWishlist, setSavingWishlist] = useState(false);
   const [previewId, setPreviewId] = useState<string | null>(null);
+
   const { data, error, isLoading, refetch } = useQuery({
     queryKey: ['course', slug],
     queryFn: () =>
       api<{
-        course: Course;
+        course: CourseDetail;
         lessons: Lesson[];
         chapters: Chapter[];
-        reviews: Review[];
         related: CourseCardData[];
       }>(`/api/courses/${slug}`),
   });
+
   const course = data?.course;
   const demoLesson = (data?.lessons ?? []).find((l) => l.isDemo && l.video);
+  const hasDemoVideo = Boolean(demoLesson?.video || course?.demoVideo?.publicId || course?.demoVideo?.url);
 
   useEffect(() => {
-    if (course) rememberCourse(course.slug, course.title);
+    if (course) {
+      rememberCourse(course.slug, course.title);
+    }
   }, [course]);
 
-  async function enroll() {
+  async function handleEnroll() {
     if (!user) return router.push(`/login?next=/courses/${slug}`);
     if (!course) return;
     router.push(`/checkout/${course._id}?type=course`);
   }
 
-  async function saveWishlist() {
+  async function handleSaveWishlist() {
     if (!user) return router.push('/login');
-    setSaving(true);
+    setSavingWishlist(true);
     try {
       await api(`/api/learning/wishlist/${course?._id}`, { method: 'POST' });
       toast.success('Saved to wishlist');
     } catch (e) {
       toast.error(e instanceof Error ? e.message : 'Could not save');
     } finally {
-      setSaving(false);
+      setSavingWishlist(false);
     }
   }
 
-  if (isLoading) return <LoadingState label="Loading course…" />;
-  if (error) return <PageContainer><ErrorState message={(error as Error).message} onRetry={() => void refetch()} /></PageContainer>;
-  if (!course) return <EmptyState title="Course not found" />;
+  function handleWatchPreview() {
+    if (demoLesson?.video) {
+      setPreviewId(String(demoLesson.video));
+    } else if (course?.demoVideo?.publicId) {
+      setPreviewId(course.demoVideo.publicId);
+    } else {
+      toast.info('No video demo attached yet. You can preview syllabus below.');
+      const syllabusEl = document.getElementById('syllabus');
+      if (syllabusEl) {
+        syllabusEl.scrollIntoView({ behavior: 'smooth' });
+      }
+    }
+  }
 
-  const price = formatPrice(course.price, course.discountPercent, course.pricingType);
-  const original = salePrice(course.price, 0, course.pricingType);
+  if (isLoading) {
+    return (
+      <div className="min-h-[60vh] flex items-center justify-center">
+        <LoadingState label="Loading course details…" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="mx-auto max-w-5xl px-4 py-16">
+        <ErrorState message={(error as Error).message} onRetry={() => void refetch()} />
+      </div>
+    );
+  }
+
+  if (!course) {
+    return (
+      <div className="mx-auto max-w-5xl px-4 py-16">
+        <EmptyState title="Course not found" />
+      </div>
+    );
+  }
+
+  const visibility = course.sectionVisibility || {};
+  const isVisible = (key: keyof typeof visibility) => visibility[key] !== false;
+
+  const priceFormatted = formatPrice(course.price, course.discountPercent, course.pricingType);
 
   return (
-    <PageContainer>
-      <ScrollProgress />
-      <Breadcrumbs items={[{ href: '/', label: 'Home' }, { href: '/courses', label: 'Courses' }, { label: course.title }]} />
-      <div className="grid gap-8 lg:grid-cols-[1fr_320px]">
-        <div>
-          <p className="text-xs tracking-[0.3em] text-gc-gold">{course.category ?? 'COURSE'}</p>
-          <h1 className="mt-2 font-display text-4xl">
-            <TextReveal text={course.title} />
-          </h1>
-          <p className="mt-3 text-gc-mist">{course.subtitle}</p>
-          <div className="mt-4 flex flex-wrap items-center gap-4 text-sm">
-            <Rating value={course.ratingAvg} count={course.ratingCount} />
-            <span className="text-gc-mute">{course.enrollmentCount ?? 0} students</span>
-            {course.teachers?.[0]?.name ? <span>By {course.teachers[0].name}</span> : null}
-          </div>
-          <AnimatedSection>
-            <article className="mt-8 whitespace-pre-wrap text-gc-mist">{course.description}</article>
-          </AnimatedSection>
-          {course.outcomes?.length ? (
-            <AnimatedSection>
-              <h2 className="mt-10 font-display text-2xl text-gc-black">Outcomes</h2>
-              <ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-gc-mist">
-                {course.outcomes.map((o) => <li key={o}>{o}</li>)}
-              </ul>
-            </AnimatedSection>
-          ) : null}
-          <AnimatedSection>
-            <h2 className="mt-10 font-display text-2xl text-gc-black">Syllabus</h2>
-            <div className="mt-3">
-              <SyllabusAccordion
-                chapters={data.chapters ?? []}
-                lessons={data.lessons ?? []}
-                onPreview={(lesson) => {
-                  if (lesson.video) setPreviewId(String(lesson.video));
-                }}
-              />
+    <div className="min-h-screen bg-slate-50/30 text-slate-800">
+      {/* Hero Section */}
+      <CourseDetailHero
+        course={course}
+        onEnroll={handleEnroll}
+        onSaveWishlist={handleSaveWishlist}
+        onWatchPreview={hasDemoVideo ? handleWatchPreview : undefined}
+        saving={savingWishlist}
+        hasDemoVideo={hasDemoVideo}
+      />
+
+      {/* Sticky Tab Navigation */}
+      <CourseNavigationTabs />
+
+      {/* Main Content Area */}
+      <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8 sm:py-10 space-y-10 sm:space-y-14">
+        {/* About This Course & What You'll Learn */}
+        {isVisible('overview') && <CourseAboutSection course={course} />}
+
+        {/* Course Includes (Directly Below About This Course) */}
+        {isVisible('includes') && <CourseIncludesCard course={course} />}
+
+        {/* Course Features & Benefits - FULL WIDTH (2x3 or 3-column grid) */}
+        {isVisible('features') && <CourseFeaturesSection course={course} />}
+
+        {/* Course Structure & Curriculum - FULL WIDTH */}
+        {isVisible('syllabus') && (
+          <CourseCurriculumSection
+            course={course}
+            chapters={data?.chapters}
+            lessons={data?.lessons}
+            onPreviewLesson={(lesson) => {
+              if (lesson.video) setPreviewId(String(lesson.video));
+            }}
+          />
+        )}
+
+        {/* Instructors & Faculty - FULL WIDTH */}
+        {isVisible('instructors') && <CourseInstructorSection course={course} />}
+
+        {/* Frequently Asked Questions - FULL WIDTH */}
+        {isVisible('faqs') && <CourseFAQSection course={course} />}
+
+        {/* Have Questions? Support Section (Below FAQs) */}
+        <div className="rounded-2xl border border-amber-200/90 bg-gradient-to-r from-amber-50/70 via-white to-amber-50/50 p-6 sm:p-7 shadow-xs">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-start gap-3.5">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-amber-800 border border-amber-300/80 shadow-2xs">
+                <PhoneCall className="h-5 w-5" />
+              </div>
+              <div>
+                <h4 className="text-base sm:text-lg font-bold text-slate-900">Have Questions?</h4>
+                <p className="mt-0.5 text-xs sm:text-sm text-slate-600 leading-relaxed max-w-xl">
+                  Connect with our academic counselors for guidance on syllabus, study plans, or scholarships.
+                </p>
+              </div>
             </div>
-          </AnimatedSection>
-          <AnimatedSection>
-            <h2 className="mt-10 font-display text-2xl text-gc-black">Certificate</h2>
-            <p className="mt-2 text-sm text-gc-mist">
-              {course.certificateEnabled ? 'A verifiable Gyan Chowk certificate is issued at ~90% completion.' : 'Certificate is not enabled for this course.'}
-            </p>
-          </AnimatedSection>
-          <AnimatedSection>
-            <h2 className="mt-10 font-display text-2xl text-gc-black">Reviews</h2>
-            <ul className="mt-3 space-y-3">
-              {(data.reviews ?? []).map((r) => (
-                <li key={r._id} className="gc-card p-4 text-sm">
-                  <Rating value={r.rating} />
-                  {r.verified ? <StatusBadge status="verified student" /> : null}
-                  <p className="mt-2">{r.body}</p>
-                </li>
-              ))}
-              {!data.reviews?.length ? <EmptyState title="No reviews yet" /> : null}
-            </ul>
-          </AnimatedSection>
-          {(data.course.faqs ?? []).length ? (
-            <AnimatedSection>
-              <h2 className="mt-10 font-display text-2xl text-gc-black">FAQs</h2>
-              {(data.course.faqs ?? []).map((f) => (
-                <details key={f.question} className="gc-card mt-2 p-4">
-                  <summary>{f.question}</summary>
-                  <p className="mt-2 text-sm text-gc-mist">{f.answer}</p>
-                </details>
-              ))}
-            </AnimatedSection>
-          ) : null}
+
+            <div className="flex items-center gap-3 shrink-0 sm:self-center">
+              <div className="rounded-xl border border-amber-300/90 bg-white px-4 py-2.5 shadow-2xs">
+                <span className="text-[11px] font-semibold text-slate-500 block leading-tight">Academic Counselor Helpline</span>
+                <span className="text-sm sm:text-base font-extrabold text-amber-700 tracking-tight">Toll Free: 1800-GYAN-CHOWK</span>
+              </div>
+            </div>
+          </div>
         </div>
-        <aside className="lg:sticky lg:top-24 h-fit gc-card p-5">
-          <ScaleIn>
-            <p className="font-display text-3xl text-gc-black">{price}</p>
-          </ScaleIn>
-          {original > 0 && course.discountPercent ? (
-            <p className="text-sm text-gc-mute line-through">{formatPrice(course.price, 0)}</p>
-          ) : null}
-          <p className="mt-2 text-xs text-gc-mute">Validity {course.validityDays ?? 365} days</p>
-          <Button className="mt-4 w-full" onClick={() => void enroll()}>
-            Enroll now <span className="gc-btn-arrow">→</span>
-          </Button>
-          {demoLesson?.video ? (
-            <Button variant="ghost" className="mt-2 w-full" onClick={() => setPreviewId(String(demoLesson.video))}>
-              Watch free preview
-            </Button>
-          ) : null}
-          <Button variant="ghost" className="mt-2 w-full" loading={saving} onClick={() => void saveWishlist()}>
-            Save for later
-          </Button>
-          <p className="mt-3 text-xs text-gc-mute">Paid access unlocks only after payment verification on the server.</p>
-          {previewId ? (
-            <div className="mt-4">
+
+        {/* Final CTA Section - FULL WIDTH */}
+        {isVisible('finalCta') && (
+          <CourseFinalCTA course={course} onEnroll={handleEnroll} />
+        )}
+      </main>
+
+      {/* Demo Video Player Modal */}
+      {previewId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-sm animate-in fade-in">
+          <div className="relative w-full max-w-4xl overflow-hidden rounded-2xl bg-black shadow-2xl">
+            <button
+              type="button"
+              onClick={() => setPreviewId(null)}
+              aria-label="Close Preview"
+              className="absolute right-3.5 top-3.5 z-20 flex h-8 w-8 items-center justify-center rounded-full bg-slate-900/80 text-white backdrop-blur-md hover:bg-slate-800"
+            >
+              <X className="h-4 w-4" />
+            </button>
+            <div className="aspect-video w-full">
               <VideoPlayer videoId={previewId} />
             </div>
-          ) : null}
-        </aside>
-      </div>
-      {(data.related ?? []).length ? (
-        <div className="mt-12">
-          <h2 className="mb-4 font-display text-2xl text-gc-black">Related courses</h2>
-          <StaggerContainer className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-            {data.related.map((c) => (
-              <StaggerItem key={c._id}>
-                <CourseCard course={c} />
-              </StaggerItem>
-            ))}
-          </StaggerContainer>
+          </div>
         </div>
-      ) : null}
-      <div className="fixed inset-x-0 bottom-16 z-30 border-t border-gc-line bg-gc-navy/95 p-3 lg:hidden">
+      )}
+
+      {/* Mobile Sticky Bottom Enrollment Bar */}
+      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-slate-200/90 bg-white/95 px-4 py-3 backdrop-blur-md shadow-lg lg:hidden">
         <div className="flex items-center justify-between gap-3">
-          <span className="text-gc-gold">{price}</span>
-          <Button onClick={() => void enroll()}>Enroll</Button>
+          <div>
+            <span className="text-lg font-bold text-slate-900">{priceFormatted}</span>
+            <span className="text-[11px] text-slate-500 block leading-tight">
+              {course.validityDays ?? 365} days validity
+            </span>
+          </div>
+
+          <button
+            type="button"
+            onClick={handleEnroll}
+            className="flex items-center gap-1.5 rounded-xl bg-amber-400 px-5 py-2.5 text-xs font-bold text-slate-950 shadow-sm transition hover:bg-amber-500 active:scale-95"
+          >
+            <span>Enroll Now</span>
+            <Play className="h-3 w-3 fill-slate-950" />
+          </button>
         </div>
       </div>
-    </PageContainer>
+
+    </div>
   );
 }

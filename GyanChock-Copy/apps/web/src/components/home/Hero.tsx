@@ -39,7 +39,7 @@ export function Hero({
         <div className="absolute -right-16 bottom-0 h-64 w-64 rounded-full bg-[color:var(--brand-violet)]/[0.08] blur-3xl" />
         <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[color:var(--brand-blue)]/20 to-transparent" />
       </div>
-      <div className="gc-container relative grid items-center gap-8 py-10 sm:gap-10 sm:py-14 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)] lg:gap-12 lg:py-16">
+      <div className="gc-container relative grid items-center gap-8 py-5 sm:gap-8 sm:py-7 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)] lg:gap-10 lg:py-8">
         <div className="order-1 min-w-0 text-center lg:text-left">
           <Reveal>
             <p className="gc-kicker mb-3">{kicker}</p>
@@ -62,14 +62,23 @@ export function Hero({
             </p>
           </Reveal>
           <Reveal delay={0.12}>
-            <div className="mt-6 flex w-full flex-col items-stretch gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-center lg:justify-start">
-              <Link href="/register" className="gc-btn-primary min-h-12 w-full px-6 sm:w-auto">
+            <div className="mt-6 grid w-full grid-cols-3 gap-1.5 sm:flex sm:flex-row sm:flex-wrap sm:items-center sm:justify-center lg:justify-start sm:gap-3">
+              <Link
+                href="/register"
+                className="gc-btn-primary min-h-10 w-full sm:min-h-12 sm:w-auto !px-1 sm:!px-6 !text-[11px] min-[380px]:!text-xs sm:!text-sm font-semibold tracking-tight text-center leading-tight"
+              >
                 {cta}
               </Link>
-              <Link href="/courses" className="gc-btn-outline min-h-12 w-full px-6 sm:w-auto">
+              <Link
+                href="/courses"
+                className="gc-btn-outline min-h-10 w-full sm:min-h-12 sm:w-auto !px-1 sm:!px-6 !text-[11px] min-[380px]:!text-xs sm:!text-sm font-semibold tracking-tight text-center leading-tight"
+              >
                 {secondary}
               </Link>
-              <Link href="/student/tests" className="gc-btn-outline min-h-12 w-full px-6 sm:w-auto">
+              <Link
+                href="/student/tests"
+                className="gc-btn-outline min-h-10 w-full sm:min-h-12 sm:w-auto !px-1 sm:!px-6 !text-[11px] min-[380px]:!text-xs sm:!text-sm font-semibold tracking-tight text-center leading-tight"
+              >
                 Take a free test
               </Link>
             </div>

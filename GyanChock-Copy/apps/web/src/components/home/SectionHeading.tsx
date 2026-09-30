@@ -19,7 +19,7 @@ export function SectionHeading({
   id?: string;
 }) {
   return (
-    <div className={cn('mb-8 md:mb-10', align === 'center' ? 'mx-auto max-w-2xl text-center' : 'flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between')}>
+    <div className={cn('mb-6 md:mb-8', align === 'center' ? 'mx-auto max-w-2xl text-center' : 'flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between')}>
       <div className={cn('min-w-0', align === 'center' ? '' : 'max-w-2xl')}>
         {kicker ? (
           <p className="gc-kicker mb-3" id={id ? `${id}-kicker` : undefined}>

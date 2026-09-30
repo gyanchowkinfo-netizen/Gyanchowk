@@ -14,6 +14,11 @@ import { HomeFacultyEditor } from '@/components/admin/HomeFacultyEditor';
 import { HomeTestSubscriptionEditor } from '@/components/admin/HomeTestSubscriptionEditor';
 import { HomePlatformEditor } from '@/components/admin/HomePlatformEditor';
 import { HomeSectionCopyEditor } from '@/components/admin/HomeSectionCopyEditor';
+import { HomeWhyEditor } from '@/components/admin/HomeWhyEditor';
+import { HomeFeaturedCoursesEditor } from '@/components/admin/HomeFeaturedCoursesEditor';
+import { CoursesPageContentEditor } from '@/components/admin/CoursesPageContentEditor';
+import { TeachersPageContentEditor } from '@/components/admin/TeachersPageContentEditor';
+import { AboutPageContentEditor } from '@/components/admin/AboutPageContentEditor';
 
 export default function CmsPage() {
   const cms = useQuery({
@@ -79,18 +84,24 @@ export default function CmsPage() {
 
       <HomePlatformEditor />
 
+      <HomeWhyEditor />
+
       <HomeTestSubscriptionEditor />
 
       <HomeFacultyEditor />
 
-      <div className="gc-card grid gap-3 p-5">
-        <h2 className="font-display text-xl text-gc-black">Featured courses catalogue</h2>
-        <p className="text-sm text-gc-mute">
-          Create and edit courses, set prices, publish, feature, and upload cover images for the homepage Featured courses section.
-        </p>
-        <Link href="/admin/courses" className="gc-btn-primary w-fit">
-          Manage courses
-        </Link>
+      <HomeFeaturedCoursesEditor />
+
+      <div className="gc-card p-6">
+        <CoursesPageContentEditor />
+      </div>
+
+      <div className="gc-card p-6">
+        <TeachersPageContentEditor />
+      </div>
+
+      <div className="gc-card p-6">
+        <AboutPageContentEditor />
       </div>
 
       <div className="gc-card grid gap-3 p-5">

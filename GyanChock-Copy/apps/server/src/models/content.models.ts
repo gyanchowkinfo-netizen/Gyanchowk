@@ -182,6 +182,58 @@ const scholarshipSchema = new Schema(
   { timestamps: true },
 );
 
+const learningStackCardSchema = new Schema(
+  {
+    title: { type: String, required: true, trim: true },
+    description: { type: String, required: true, trim: true },
+    accentColor: {
+      type: String,
+      enum: ['amber', 'violet', 'green', 'coral', 'orange', 'blue', 'indigo', 'teal', 'pink'],
+      default: 'amber',
+    },
+    displayOrder: { type: Number, default: 0, index: true },
+    isActive: { type: Boolean, default: true, index: true },
+  },
+  { timestamps: true },
+);
+learningStackCardSchema.index({ isActive: 1, displayOrder: 1 });
+
+const careerJobSchema = new Schema(
+  {
+    title: { type: String, required: true, trim: true },
+    department: { type: String, required: true, trim: true, index: true },
+    location: { type: String, required: true, trim: true },
+    workMode: {
+      type: String,
+      enum: ['Remote', 'On-site', 'Hybrid'],
+      default: 'Remote',
+    },
+    employmentType: {
+      type: String,
+      enum: ['Full-time', 'Part-time', 'Contract', 'Internship'],
+      default: 'Full-time',
+    },
+    experience: { type: String, default: '1-3 years', trim: true },
+    salaryRange: { type: String, trim: true, default: '' },
+    description: { type: String, default: '', trim: true },
+    responsibilities: [{ type: String, trim: true }],
+    requirements: [{ type: String, trim: true }],
+    qualifications: [{ type: String, trim: true }],
+    skills: [{ type: String, trim: true }],
+    icon: { type: String, default: 'briefcase', trim: true },
+    applyLink: { type: String, default: '', trim: true },
+    status: {
+      type: String,
+      enum: ['draft', 'published', 'closed', 'archived'],
+      default: 'published',
+      index: true,
+    },
+    displayOrder: { type: Number, default: 0, index: true },
+  },
+  { timestamps: true },
+);
+careerJobSchema.index({ status: 1, displayOrder: 1, createdAt: -1 });
+
 export const CareerArticleModel = mongoose.model('CareerArticle', careerArticleSchema);
 export const RoadmapModel = mongoose.model('Roadmap', roadmapSchema);
 export const BlogModel = mongoose.model('Blog', blogSchema);
@@ -191,3 +243,6 @@ export const BannerModel = mongoose.model('Banner', bannerSchema);
 export const SettingModel = mongoose.model('Setting', settingSchema);
 export const AuditLogModel = mongoose.model('AuditLog', auditLogSchema);
 export const ScholarshipModel = mongoose.model('Scholarship', scholarshipSchema);
+export const LearningStackCardModel = mongoose.model('LearningStackCard', learningStackCardSchema);
+export const CareerJobModel = mongoose.model('CareerJob', careerJobSchema);
+

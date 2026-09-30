@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { LANGUAGES, PAGINATION } from './constants.js';
+import { PAGINATION } from './constants.js';
 
 export const paginationQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
@@ -56,7 +56,7 @@ export const courseFilterSchema = paginationQuerySchema.extend({
   subject: z.string().optional(),
   exam: z.string().optional(),
   class: z.string().optional(),
-  language: z.enum(LANGUAGES).optional(),
+  language: z.string().trim().max(80).optional(),
   pricing: z.enum(['free', 'paid']).optional(),
   teacher: objectIdSchema.optional(),
   minRating: z.coerce.number().min(0).max(5).optional(),

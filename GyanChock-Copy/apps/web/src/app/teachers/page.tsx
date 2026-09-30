@@ -5,12 +5,21 @@ import type { TeacherCardData } from '@/lib/types';
 const APP = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 
 export default async function TeachersPage() {
+  let initialData: any = undefined;
   let names: TeacherCardData[] = [];
   try {
-    const data = await api<{ items: TeacherCardData[] }>('/api/catalog/teachers?limit=100');
-    names = data.items ?? [];
+    const data = await api<any>('/api/teachers?limit=12');
+    if (data && data.items) {
+      initialData = data;
+      names = data.items;
+    }
   } catch {
-    names = [];
+    try {
+      const data = await api<{ items: TeacherCardData[] }>('/api/catalog/teachers?limit=100');
+      names = data.items ?? [];
+    } catch {
+      names = [];
+    }
   }
   const jsonLd = [
     {
@@ -22,7 +31,7 @@ export default async function TeachersPage() {
         '@type': 'ListItem',
         position: i + 1,
         name: t.name,
-        url: `${APP}/teachers/${t._id}`,
+        url: `${APP}/teachers/${t.slug || t._id}`,
       })),
     },
     {
@@ -41,11 +50,11 @@ export default async function TeachersPage() {
         {names.map((t) => (
           <li key={t._id}>
             {t.name}
-            {t.headline ? ` — ${t.headline}` : ''}
+            {t.headline || t.designation ? ` — ${t.headline || t.designation}` : ''}
           </li>
         ))}
       </ul>
-      <TeachersPageClient />
+      <TeachersPageClient initialData={initialData} />
     </>
   );
 }

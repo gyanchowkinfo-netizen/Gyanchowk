@@ -3,7 +3,9 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
+    "predev": "node scripts/setup-next-dir.mjs",
     "dev": "next dev --port 3000",
+    "dev:clean": "node -e \"require('fs').rmSync('.next',{recursive:true,force:true})\" && next dev --port 3000",
     "prebuild": "npm run build --prefix ../.. -w @gyan-chowk/shared",
     "build": "next build",
     "start": "next start --port 3000",
@@ -35,6 +37,7 @@
     "@types/react-dom": "^19.0.4",
     "@types/three": "^0.185.4",
     "autoprefixer": "^10.4.21",
+    "cross-env": "^10.1.0",
     "eslint": "^9.22.0",
     "eslint-config-next": "^15.2.3",
     "postcss": "^8.5.3",

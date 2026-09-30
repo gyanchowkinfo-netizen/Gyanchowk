@@ -27,10 +27,18 @@ import { notFound } from '../utils/errors.js';
 import { facultyCardToProfile, resolveHomeFaculty } from '../services/homeFaculty.service.js';
 import { assertTeacherOwnsCourse } from '../services/learning.service.js';
 import { destroyMedia } from '../services/banner.service.js';
+import { publicMediaUrl } from '../services/video.service.js';
 
 export const courseRouter = Router();
 export const batchRouter = Router();
 export const catalogRouter = Router();
+
+function withPublicThumbnail<T extends { thumbnail?: { publicId?: string | null; url?: string | null } | null }>(course: T): T {
+  const thumb = course.thumbnail;
+  const url = publicMediaUrl(thumb ?? undefined);
+  if (!thumb || !url || url === thumb.url) return course;
+  return { ...course, thumbnail: { ...thumb, url } };
+}
 
 courseRouter.get(
   '/',
@@ -53,7 +61,21 @@ courseRouter.get(
     if (q.subject) filter.subjects = q.subject;
     if (q.exam) filter.targetExam = q.exam;
     if (q.class) filter.targetClass = q.class;
-    if (q.language) filter.language = q.language;
+    if (q.language) {
+      const lang = String(q.language).trim();
+      const aliases: Record<string, string[]> = {
+        en: ['en', 'english'],
+        english: ['en', 'english'],
+        hi: ['hi', 'hindi'],
+        hindi: ['hi', 'hindi'],
+        hinglish: ['hinglish'],
+        bilingual: ['bilingual'],
+      };
+      const key = lang.toLowerCase();
+      const variants = [...new Set([...(aliases[key] ?? [key]), key])];
+      const pattern = variants.map((v) => v.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|');
+      filter.language = { $regex: `^(?:${pattern})$`, $options: 'i' };
+    }
     if (q.pricing) filter.pricingType = q.pricing;
     if (q.teacher) filter.teachers = q.teacher;
     if (q.minRating) filter.ratingAvg = { $gte: Number(q.minRating) };
@@ -68,7 +90,7 @@ courseRouter.get(
         .lean(),
       CourseModel.countDocuments(filter),
     ]);
-    res.json(paginatedResult(items, total, page, limit));
+    res.json(paginatedResult(items.map(withPublicThumbnail), total, page, limit));
   }),
 );
 
@@ -127,9 +149,25 @@ courseRouter.get(
       _id: { $ne: course._id },
       $or: [{ category: course.category }, { targetExam: course.targetExam }],
     })
-      .select('title slug price pricingType discountPercent ratingAvg enrollmentCount subtitle')
+      .select('title slug price pricingType discountPercent ratingAvg enrollmentCount subtitle thumbnail')
       .limit(4)
       .lean();
+
+    if (course.thumbnail) {
+      const thumbUrl = publicMediaUrl(course.thumbnail);
+      if (thumbUrl) course.thumbnail = { ...course.thumbnail, url: thumbUrl };
+    }
+    if (course.banner) {
+      const bannerUrl = publicMediaUrl(course.banner);
+      if (bannerUrl) course.banner = { ...course.banner, url: bannerUrl };
+    }
+    if (Array.isArray(course.banners)) {
+      for (const b of course.banners as Array<{ publicId?: string; url?: string }>) {
+        const url = publicMediaUrl(b);
+        if (url) b.url = url;
+      }
+    }
+
     res.json({ course, subjects, chapters, topics, lessons, reviews, related });
   }),
 );
@@ -145,9 +183,16 @@ const courseBody = z.object({
   targetExam: z.string().optional(),
   careerTrack: z.string().optional(),
   language: z.string().optional(),
+  foundation: z.string().max(80).optional(),
+  teacherName: z.string().optional(),
+  startsOn: z.union([z.coerce.date(), z.null()]).optional(),
+  featured: z.boolean().optional(),
   pricingType: z.enum(['free', 'paid']).optional(),
   price: z.number().min(0).optional(),
   discountPercent: z.number().min(0).max(100).optional(),
+  ratingAvg: z.number().min(0).max(5).optional(),
+  ratingCount: z.number().min(0).optional(),
+  enrollmentCount: z.number().min(0).optional(),
   validityDays: z.number().int().positive().optional(),
   certificateEnabled: z.boolean().optional(),
   faqs: z.array(z.object({ question: z.string(), answer: z.string() })).optional(),
@@ -196,19 +241,105 @@ courseRouter.patch(
     const course = await CourseModel.findById(req.params.id);
     if (!course) throw notFound('Course not found');
     assertTeacherOwnsCourse(req.user!.role, req.user!.id, course);
-    const nextThumb = req.body.thumbnail;
+
+    const body = req.body as Record<string, unknown>;
+    const nextThumb = body.thumbnail;
+
     if (nextThumb === null) {
       await destroyMedia(course.thumbnail?.publicId);
       course.set('thumbnail', undefined);
-      delete req.body.thumbnail;
-    } else if (nextThumb?.publicId) {
-      if (course.thumbnail?.publicId && course.thumbnail.publicId !== nextThumb.publicId) {
-        await destroyMedia(course.thumbnail.publicId);
+    } else if (nextThumb && typeof nextThumb === 'object' && 'publicId' in nextThumb) {
+      const thumb = nextThumb as { publicId?: string; url?: string };
+      if (thumb.publicId) {
+        if (course.thumbnail?.publicId && course.thumbnail.publicId !== thumb.publicId) {
+          await destroyMedia(course.thumbnail.publicId);
+        }
+        course.set('thumbnail', thumb);
       }
     }
-    Object.assign(course, req.body);
+
+    const nextBanner = body.banner;
+    if (nextBanner === null) {
+      await destroyMedia(course.banner?.publicId);
+      course.set('banner', undefined);
+    } else if (nextBanner && typeof nextBanner === 'object' && 'publicId' in nextBanner) {
+      const bnr = nextBanner as { publicId?: string; url?: string };
+      if (bnr.publicId) {
+        if (course.banner?.publicId && course.banner.publicId !== bnr.publicId) {
+          await destroyMedia(course.banner.publicId);
+        }
+        course.set('banner', bnr);
+      }
+    }
+
+    const allowed = [
+      'title',
+      'subtitle',
+      'description',
+      'category',
+      'subjects',
+      'examCategories',
+      'targetClass',
+      'targetExam',
+      'careerTrack',
+      'language',
+      'foundation',
+      'teacherName',
+      'startsOn',
+      'featured',
+      'pricingType',
+      'price',
+      'discountPercent',
+      'ratingAvg',
+      'ratingCount',
+      'enrollmentCount',
+      'validityDays',
+      'certificateEnabled',
+      'faqs',
+      'outcomes',
+      'status',
+      'teachers',
+      'seoTitle',
+      'seoDescription',
+      'badge',
+      'duration',
+      'level',
+      'comparePrice',
+      'banner',
+      'banners',
+      'highlights',
+      'statistics',
+      'features',
+      'includes',
+      'curriculum',
+      'instructorInfo',
+      'finalCta',
+      'sectionVisibility',
+      'sectionOrder',
+      'publishedAt',
+    ] as const;
+
+    for (const key of allowed) {
+      if (!Object.prototype.hasOwnProperty.call(body, key)) continue;
+      const value = body[key];
+      if (key === 'startsOn' && (value === null || value === '')) {
+        course.set('startsOn', undefined);
+        continue;
+      }
+      if (key === 'targetExam' || key === 'foundation' || key === 'language' || key === 'category') {
+        course.set(key, typeof value === 'string' ? value.trim() : value);
+        continue;
+      }
+      course.set(key, value);
+    }
+
+    if (body.status === 'published' && !course.publishedAt) {
+      course.publishedAt = new Date();
+    }
+
     await course.save();
-    res.json({ course });
+    const lean = course.toObject();
+    res.json({ course: withPublicThumbnail(lean) });
   }),
 );
 
@@ -745,6 +876,28 @@ catalogRouter.get(
   '/teachers/:id',
   asyncHandler(async (req, res) => {
     const id = String(req.params.id ?? '').trim();
+    const { getPublicTeacherBySlugOrId } = await import('../services/teacher.service.js');
+    const richTeacherData = await getPublicTeacherBySlugOrId(id);
+    if (richTeacherData && richTeacherData.teacher) {
+      const { CourseModel, BatchModel } = await import('../models/index.js');
+      const teacherObj = richTeacherData.teacher;
+      const batches = await BatchModel.find({
+        $or: [{ teachers: teacherObj._id }, ...(teacherObj.user ? [{ teachers: teacherObj.user }] : [])],
+        status: { $in: ['upcoming', 'open', 'ongoing'] },
+      })
+        .select('name slug price status startDate')
+        .lean();
+      return res.json({
+        teacher: teacherObj,
+        courses: richTeacherData.courses,
+        batches,
+        reviews: teacherObj.reviews || [],
+        achievements: teacherObj.achievements || [],
+        quote: teacherObj.quote,
+        doubtCTA: teacherObj.doubtCTA,
+      });
+    }
+
     const isObjectId = /^[a-f\d]{24}$/i.test(id);
     const { UserModel, CourseModel, BatchModel, ReviewModel } = await import('../models/index.js');
     const teacher = isObjectId

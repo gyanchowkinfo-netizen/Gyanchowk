@@ -15,6 +15,8 @@ import {
 } from './finance.routes.js';
 import { adminRouter, careerRouter, cmsRouter } from './admin.routes.js';
 import { bannerRouter } from './banner.routes.js';
+import { teacherRouter } from './teacher.routes.js';
+import { learningStackRouter } from './learningStack.routes.js';
 
 export const api = Router();
 
@@ -22,6 +24,7 @@ api.use('/auth', authRouter);
 api.use('/courses', courseRouter);
 api.use('/batches', batchRouter);
 api.use('/catalog', catalogRouter);
+api.use('/teachers', teacherRouter);
 api.use('/uploads', uploadRouter);
 api.use('/videos', videoRouter);
 api.use('/payments', paymentRouter);
@@ -42,3 +45,4 @@ api.use('/admin', adminRouter);
 api.use('/cms', cmsRouter);
 api.use('/banners', bannerRouter);
 api.use('/career', careerRouter);
+api.use('/learning-stack', learningStackRouter);

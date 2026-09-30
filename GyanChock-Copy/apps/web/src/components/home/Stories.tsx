@@ -24,7 +24,7 @@ export function Testimonials({
   if (!items.length) return null;
 
   return (
-    <section className="gc-container py-14 md:py-20" aria-labelledby="voices">
+    <section className="gc-container py-7 md:py-10" aria-labelledby="voices">
       <SectionHeading
         id="voices"
         kicker="Voices"
@@ -60,7 +60,7 @@ export function FAQ({ faqs }: { faqs: Array<{ _id: string; question: string; ans
 
   return (
     <section className="border-y border-gc-line/70" aria-labelledby="faq">
-      <div className="gc-container py-14 md:py-20">
+      <div className="gc-container py-7 md:py-10">
         <div className="mx-auto max-w-3xl">
           <SectionHeading id="faq" kicker="Questions" title="Questions" />
           <div className="divide-y divide-gc-line border-y border-gc-line">

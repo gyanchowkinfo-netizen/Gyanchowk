@@ -63,7 +63,15 @@ export function CourseFilterFields({
       <Select id={`${idPrefix}-lang`} label="Language" value={filters.language} onChange={(e) => onChange({ language: e.target.value })}>
         <option value="">All languages</option>
         {(meta?.languages ?? []).map((c) => (
-          <option key={c}>{c}</option>
+          <option key={c} value={c}>
+            {c === 'en' || c.toLowerCase() === 'english'
+              ? 'English'
+              : c === 'hi' || c.toLowerCase() === 'hindi'
+                ? 'Hindi'
+                : c.toLowerCase() === 'hinglish'
+                  ? 'Hinglish'
+                  : c}
+          </option>
         ))}
       </Select>
       <Select id={`${idPrefix}-price`} label="Price" value={filters.pricing} onChange={(e) => onChange({ pricing: e.target.value })}>

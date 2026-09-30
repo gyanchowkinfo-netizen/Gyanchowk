@@ -24,7 +24,9 @@ import {
   BarChart3,
   FileText,
   Images,
+  Info,
   IndianRupee,
+  Layers,
   Shield,
   X,
 } from 'lucide-react';
@@ -141,6 +143,7 @@ const adminNav: NavGroup[] = [
   {
     label: 'Catalogue',
     items: [
+      { href: '/admin/catalogue-courses', label: 'Catalogue Courses', icon: LayoutDashboard },
       { href: '/admin/courses', label: 'Courses', icon: BookOpen },
       { href: '/admin/batches', label: 'Batches', icon: GraduationCap },
       { href: '/admin/videos', label: 'Videos', icon: PlayCircle },
@@ -175,6 +178,10 @@ const adminNav: NavGroup[] = [
     items: [
       { href: '/admin/reviews', label: 'Reviews', icon: FileText },
       { href: '/admin/cms', label: 'CMS', icon: FileText },
+      { href: '/admin/about-page', label: 'About Page', icon: Info },
+      { href: '/admin/teachers-page', label: 'Teachers Page', icon: GraduationCap },
+      { href: '/admin/learning-stack', label: 'Why Gyan Chowk', icon: Layers },
+      { href: '/admin/homepage-cards', label: 'Homepage Cards', icon: LayoutDashboard },
       { href: '/admin/banners', label: 'Banners', icon: Images },
       { href: '/admin/career', label: 'Career', icon: GraduationCap },
       { href: '/admin/notifications', label: 'Notifications', icon: Bell },

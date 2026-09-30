@@ -5,3 +5,4 @@ export * from './assessment.models.js';
 export * from './support.models.js';
 export * from './finance.models.js';
 export * from './content.models.js';
+export * from './teacher.models.js';

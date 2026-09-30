@@ -1,12 +1,12 @@
 .section {
-  padding: 1.5rem 1rem 4rem;
+  padding: 1rem 1rem 2rem;
 }
 
 .inner {
   position: relative;
   max-width: 52rem;
   margin: 0 auto;
-  padding: 2.5rem 1.25rem 2.75rem;
+  padding: 1.5rem 1.25rem 1.75rem;
   text-align: center;
 }
 
@@ -119,19 +119,62 @@
 
 @media (min-width: 640px) {
   .section {
-    padding: 1.5rem 1.5rem 5.5rem;
+    padding: 1.25rem 1.5rem 2.5rem;
   }
 
   .inner {
-    padding: 3rem 2rem 3.25rem;
+    padding: 2rem 2rem 2.25rem;
   }
 }
 
 @media (max-width: 639px) {
+  .inner {
+    padding: 1.25rem 0.5rem 1.5rem;
+  }
+
+  .actions {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.35rem;
+    width: 100%;
+    margin-top: 1.25rem;
+  }
+
   .primary,
   .ghost {
     width: 100%;
-    max-width: 20rem;
+    max-width: none;
+    min-height: 2.6rem;
+    padding: 0.45rem 0.2rem;
+    font-size: 0.72rem;
+    font-weight: 600;
+    gap: 0.2rem;
+    text-align: center;
+    letter-spacing: -0.01em;
+    white-space: nowrap;
+    justify-content: center;
+  }
+
+  .primary svg,
+  .ghost svg {
+    display: none;
+  }
+}
+
+@media (min-width: 400px) and (max-width: 639px) {
+  .primary,
+  .ghost {
+    font-size: 0.78rem;
+    padding: 0.5rem 0.3rem;
+    gap: 0.25rem;
+  }
+
+  .primary svg,
+  .ghost svg {
+    display: inline-block;
+    width: 13px;
+    height: 13px;
+    flex-shrink: 0;
   }
 }
 

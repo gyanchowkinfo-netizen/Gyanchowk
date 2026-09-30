@@ -49,7 +49,7 @@ export function PracticeSection({ tests, loading }: { tests: HomeTest[]; loading
   const startHref = user ? '/student/tests' : '/login';
 
   return (
-    <section className="gc-container py-14 md:py-20" aria-labelledby="practice">
+    <section className="gc-container py-7 md:py-10" aria-labelledby="practice">
       <SectionHeading
         id="practice"
         kicker="Practice"

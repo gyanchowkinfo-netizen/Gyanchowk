@@ -1,53 +1,66 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
+import Link from 'next/link';
+import { Settings2 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
+import { useAuth } from '@/lib/auth';
 import { ScrollProgress } from '@/components/motion';
 import { ErrorState } from '@/components/ui/States';
-import type { CareerArticle, CareerCategory, CareerRoadmap } from '@/lib/types';
+import type { CareerPageConfig, CareerJob } from '@/lib/types';
+import { DEFAULT_CAREER_PAGE_CONFIG, normalizeCareerPageConfig } from '@/lib/types';
 import { CareerHero } from './CareerHero';
-import { CareerExplorer } from './CareerExplorer';
-import { CareerPath } from './CareerPath';
-import { CareerRoadmaps } from './CareerRoadmaps';
-import { CareerSkills } from './CareerSkills';
-import { CareerResources } from './CareerResources';
-import { CareerArticles } from './CareerArticles';
+import { WhyWorkWithUs } from './WhyWorkWithUs';
+import { OpenPositions } from './OpenPositions';
+import { LifeAtGyanChowk } from './LifeAtGyanChowk';
+import { TeamTestimonials } from './TeamTestimonials';
 import { CareerCTA } from './CareerCTA';
 
-interface Listing {
-  items: CareerArticle[];
-  categories?: CareerCategory[];
-  featured?: CareerArticle[];
+interface JobsResponse {
+  jobs: CareerJob[];
+  departments: string[];
+  locations: string[];
+  total: number;
 }
 
 export function CareerPageClient() {
-  const [category, setCategory] = useState('');
-  const articles = useQuery({
-    queryKey: ['career-articles'],
-    queryFn: () => api<Listing>('/api/career/articles'),
-  });
-  const roadmaps = useQuery({
-    queryKey: ['career-roadmaps'],
-    queryFn: () => api<{ items: CareerRoadmap[] }>('/api/career/roadmaps'),
+  const user = useAuth((s) => s.user);
+
+  const pageConfigQuery = useQuery({
+    queryKey: ['career-page-config'],
+    queryFn: () => api<{ config?: CareerPageConfig }>('/api/career/page-config'),
   });
 
-  const list = useMemo(() => {
-    const items = articles.data?.items ?? [];
-    if (category) return items.filter((item) => item.category === category);
-    const featured = articles.data?.featured ?? [];
-    if (featured.length) return featured;
-    return items.slice(0, 6);
-  }, [articles.data, category]);
+  const jobsQuery = useQuery({
+    queryKey: ['career-jobs-list'],
+    queryFn: () => api<JobsResponse>('/api/career/jobs'),
+  });
 
-  if (articles.isError && roadmaps.isError) {
+  const config: CareerPageConfig = useMemo(() => {
+    return normalizeCareerPageConfig(pageConfigQuery.data?.config);
+  }, [pageConfigQuery.data]);
+
+  const jobs = useMemo(() => {
+    return jobsQuery.data?.jobs ?? [];
+  }, [jobsQuery.data]);
+
+  const departments = useMemo(() => {
+    return jobsQuery.data?.departments ?? [];
+  }, [jobsQuery.data]);
+
+  const locations = useMemo(() => {
+    return jobsQuery.data?.locations ?? [];
+  }, [jobsQuery.data]);
+
+  if (pageConfigQuery.isError && jobsQuery.isError) {
     return (
-      <main className="mx-auto max-w-3xl px-4 py-16">
+      <main className="mx-auto max-w-3xl px-4 py-24 text-center">
         <ErrorState
-          message="Unable to load career resources."
+          message="Unable to load career opportunities right now."
           onRetry={() => {
-            void articles.refetch();
-            void roadmaps.refetch();
+            void pageConfigQuery.refetch();
+            void jobsQuery.refetch();
           }}
         />
       </main>
@@ -55,24 +68,45 @@ export function CareerPageClient() {
   }
 
   return (
-    <main>
+    <main className="min-h-screen bg-[#FAF7F2] text-[#1C1815]">
       <ScrollProgress />
-      <CareerHero />
-      <CareerExplorer
-        categories={articles.data?.categories ?? []}
-        articleCount={articles.data?.items?.length ?? 0}
-        roadmapCount={roadmaps.data?.items?.length ?? 0}
-        onCategory={(name) => {
-          setCategory(name);
-          document.getElementById('articles')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }}
+
+      {/* Section 1: Hero */}
+      <CareerHero hero={config.hero} />
+
+      {/* Section 2: Why Work With Us */}
+      <WhyWorkWithUs config={config.whyWorkWithUs} />
+
+      {/* Section 3: Open Positions (with Search & Filters) */}
+      <OpenPositions
+        header={config.openPositionsHeader}
+        jobs={jobs}
+        departments={departments}
+        locations={locations}
+        loading={jobsQuery.isLoading}
       />
-      <CareerPath />
-      <CareerRoadmaps items={roadmaps.data?.items ?? []} loading={roadmaps.isLoading} />
-      <CareerSkills />
-      <CareerResources />
-      <CareerArticles items={list} category={category} onClear={() => setCategory('')} loading={articles.isLoading} />
-      <CareerCTA />
+
+      {/* Section 4: Life At Gyan Chowk */}
+      <LifeAtGyanChowk config={config.lifeAtGyanChowk} />
+
+      {/* Section 5: Team Testimonials */}
+      <TeamTestimonials config={config.testimonials} />
+
+      {/* Section 6: Final Career CTA */}
+      <CareerCTA config={config.cta} />
+
+      {/* Admin Quick Editor Button */}
+      {user?.role === 'admin' && (
+        <div className="fixed bottom-6 right-6 z-50">
+          <Link
+            href="/admin/career"
+            className="flex items-center gap-2 rounded-full border border-blue-400/50 bg-[#0c1a30] px-4 py-2.5 text-xs font-bold text-white shadow-2xl transition-all duration-300 hover:scale-105 hover:bg-[#152a4e]"
+          >
+            <Settings2 className="h-4 w-4 text-blue-400" />
+            <span>Manage Career Page</span>
+          </Link>
+        </div>
+      )}
     </main>
   );
 }

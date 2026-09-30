@@ -84,7 +84,10 @@ const userSchema = new Schema(
 
 userSchema.index({ role: 1, status: 1 });
 userSchema.index({ teacherStatus: 1 });
-userSchema.index({ name: 'text', email: 'text', headline: 'text' });
+userSchema.index(
+  { name: 'text', email: 'text', headline: 'text' },
+  { name: 'user_text_search', default_language: 'none', language_override: '_searchLang' },
+);
 
 const sessionSchema = new Schema(
   {

@@ -1,250 +1,176 @@
 'use client';
 
 import { FormEvent, Suspense, useMemo, useState } from 'react';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { useDebounce } from '@/lib/hooks';
 import { ScrollProgress } from '@/components/motion';
-import type { HomeFacultyCard, TeacherCardData, TeacherCatalogStats, TeacherFacet } from '@/lib/types';
+import type { TeacherCardData, TeachersPageConfig } from '@/lib/types';
+import { DEFAULT_TEACHERS_PAGE_CONFIG } from '@/lib/types';
 import { TeachersHero } from './TeachersHero';
-import { TeacherSearch, type TeacherFiltersState } from './TeacherSearch';
-import { FeaturedTeachers } from './FeaturedTeachers';
-import { TeacherStats } from './TeacherStats';
-import { TeacherExpertise } from './TeacherExpertise';
-import { TeacherCategories } from './TeacherCategories';
+import { TeachersWhySection } from './TeachersWhySection';
 import { TeacherGrid } from './TeacherGrid';
 import { BecomeTeacherCTA } from './BecomeTeacherCTA';
 
 const PAGE_SIZE = 12;
 
-interface Catalog {
+interface TeachersResponse {
   items: TeacherCardData[];
-  featured?: TeacherCardData[];
-  stats?: TeacherCatalogStats;
-  facets?: {
-    subjects: TeacherFacet[];
-    exams: TeacherFacet[];
-    languages: TeacherFacet[];
-    categories: TeacherFacet[];
-  };
+  total: number;
+  page: number;
+  limit: number;
+  pages: number;
+  categories: string[];
 }
 
-function sortTeachers(items: TeacherCardData[], sort: string) {
-  const next = [...items];
-  next.sort((a, b) => {
-    if (sort === 'students') return (b.enrollmentCount ?? 0) - (a.enrollmentCount ?? 0) || a.name.localeCompare(b.name);
-    if (sort === 'courses') return (b.courseCount ?? 0) - (a.courseCount ?? 0) || a.name.localeCompare(b.name);
-    if (sort === 'name') return a.name.localeCompare(b.name);
-    if (sort === 'new') return new Date(b.createdAt ?? 0).getTime() - new Date(a.createdAt ?? 0).getTime();
-    return (b.ratingAvg ?? 0) - (a.ratingAvg ?? 0) || (b.enrollmentCount ?? 0) - (a.enrollmentCount ?? 0) || a.name.localeCompare(b.name);
-  });
-  return next;
-}
-
-function WaveDivider() {
-  return <div className="h-12 bg-gradient-to-b from-transparent via-gc-blue/5 to-transparent" aria-hidden />;
-}
-
-function TeachersExperience() {
+function TeachersExperience({ initialData }: { initialData?: TeachersResponse }) {
   const params = useSearchParams();
-  const router = useRouter();
-  const pathname = usePathname();
-  const [drawer, setDrawer] = useState(false);
+  const [query, setQuery] = useState(params.get('q') ?? '');
+  const [selectedCategory, setSelectedCategory] = useState(params.get('category') ?? 'All');
+  const [experienceFilter, setExperienceFilter] = useState('all');
+  const [ratingFilter, setRatingFilter] = useState(0);
+  const [sortFilter, setSortFilter] = useState('featured');
   const [page, setPage] = useState(Math.max(1, Number(params.get('page') ?? 1) || 1));
-  const [filters, setFilters] = useState<TeacherFiltersState>({
-    q: params.get('q') ?? '',
-    subject: params.get('subject') ?? '',
-    exam: params.get('exam') ?? '',
-    language: params.get('language') ?? '',
-    minRating: params.get('minRating') ?? '',
-    sort: params.get('sort') ?? 'featured',
-  });
-  const dq = useDebounce(filters.q, 280);
+  const dq = useDebounce(query, 280);
 
-  const catalog = useQuery({
-    queryKey: ['teachers-catalog'],
-    queryFn: () => api<Catalog>('/api/catalog/teachers?limit=100'),
-  });
-  const cms = useQuery({
-    queryKey: ['cms-public'],
-    queryFn: () => api<{ faculty?: HomeFacultyCard[] }>('/api/cms/public'),
+  // Fetch published CMS configuration for Teachers Page (Hero, Why, Become CTA)
+  const cmsPageQuery = useQuery({
+    queryKey: ['teachers-page-cms'],
+    queryFn: () => api<{ teachersPage?: TeachersPageConfig | null }>('/api/cms/teachers-page'),
   });
 
-  function syncUrl(next: TeacherFiltersState, nextPage = 1) {
-    const u = new URLSearchParams();
-    if (next.q) u.set('q', next.q);
-    if (next.subject) u.set('subject', next.subject);
-    if (next.exam) u.set('exam', next.exam);
-    if (next.language) u.set('language', next.language);
-    if (next.minRating) u.set('minRating', next.minRating);
-    if (next.sort && next.sort !== 'featured') u.set('sort', next.sort);
-    if (nextPage > 1) u.set('page', String(nextPage));
-    const qs = u.toString();
-    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
-  }
+  const cmsConfig: TeachersPageConfig = useMemo(() => {
+    const remote = cmsPageQuery.data?.teachersPage;
+    if (!remote) return DEFAULT_TEACHERS_PAGE_CONFIG;
+    return {
+      hero: {
+        ...DEFAULT_TEACHERS_PAGE_CONFIG.hero,
+        ...remote.hero,
+        badges: remote.hero?.badges?.length ? remote.hero.badges : DEFAULT_TEACHERS_PAGE_CONFIG.hero.badges,
+      },
+      whyLearn: {
+        ...DEFAULT_TEACHERS_PAGE_CONFIG.whyLearn,
+        ...remote.whyLearn,
+        cards: remote.whyLearn?.cards?.length ? remote.whyLearn.cards : DEFAULT_TEACHERS_PAGE_CONFIG.whyLearn.cards,
+      },
+      becomeTeacher: {
+        ...DEFAULT_TEACHERS_PAGE_CONFIG.becomeTeacher,
+        ...remote.becomeTeacher,
+      },
+    };
+  }, [cmsPageQuery.data?.teachersPage]);
 
-  function patch(partial: Partial<TeacherFiltersState>) {
-    const next = { ...filters, ...partial };
-    setFilters(next);
-    setPage(1);
-    syncUrl(next, 1);
-  }
-
-  function clear() {
-    const next: TeacherFiltersState = { q: '', subject: '', exam: '', language: '', minRating: '', sort: 'featured' };
-    setFilters(next);
-    setPage(1);
-    syncUrl(next, 1);
-  }
-
-  const cmsFacultySource = cms.data?.faculty ?? [];
-  const usingCmsFaculty = !cms.isLoading && cmsFacultySource.length > 0;
-
-  const cmsFaculty = useMemo(() => {
-    let items = cmsFacultySource;
-    if (dq) {
-      const rx = new RegExp(dq.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
-      items = items.filter(
-        (t) =>
-          rx.test(t.name) ||
-          rx.test(t.headline ?? '') ||
-          rx.test(t.bio ?? '') ||
-          (t.subjects ?? []).some((s) => rx.test(s)),
-      );
-    }
-    if (filters.subject) {
-      const s = filters.subject.toLowerCase();
-      items = items.filter(
-        (t) => (t.subjects ?? []).some((x) => x.toLowerCase() === s) || (t.headline ?? '').toLowerCase() === s,
-      );
-    }
-    return items;
-  }, [cmsFacultySource, dq, filters.subject]);
-
-  const cmsSubjects = useMemo<TeacherFacet[]>(() => {
-    const counts = new Map<string, number>();
-    for (const teacher of cmsFacultySource) {
-      const labels = teacher.subjects?.length ? teacher.subjects : teacher.headline ? [teacher.headline] : [];
-      for (const label of labels) {
-        const name = label.trim();
-        if (!name) continue;
-        counts.set(name, (counts.get(name) ?? 0) + 1);
+  // Main Teachers Query
+  const teachersQuery = useQuery({
+    queryKey: ['teachers-list', dq, selectedCategory, experienceFilter, ratingFilter, sortFilter, page],
+    queryFn: async () => {
+      const qParams = new URLSearchParams();
+      if (dq) qParams.set('q', dq);
+      if (selectedCategory && selectedCategory.toLowerCase() !== 'all') {
+        qParams.set('category', selectedCategory);
       }
-    }
-    return [...counts.entries()].map(([name, count]) => ({ name, count }));
-  }, [cmsFacultySource]);
+      if (experienceFilter && experienceFilter !== 'all') {
+        qParams.set('experience', experienceFilter);
+      }
+      if (ratingFilter > 0) {
+        qParams.set('minRating', String(ratingFilter));
+      }
+      if (sortFilter) {
+        qParams.set('sort', sortFilter);
+      }
+      qParams.set('page', String(page));
+      qParams.set('limit', String(PAGE_SIZE));
 
-  const catalogTeachers = useMemo(() => {
-    let items = catalog.data?.items ?? [];
-    if (dq) {
-      const rx = new RegExp(dq.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
-      items = items.filter(
-        (t) =>
-          rx.test(t.name) ||
-          rx.test(t.headline ?? '') ||
-          rx.test(t.bio ?? '') ||
-          (t.subjects ?? []).some((s) => rx.test(s)) ||
-          (t.exams ?? []).some((s) => rx.test(s)),
-      );
-    }
-    if (filters.subject) {
-      const s = filters.subject.toLowerCase();
-      items = items.filter(
-        (t) =>
-          (t.subjects ?? []).some((x) => x.toLowerCase() === s) ||
-          (t.categories ?? []).some((x) => x.toLowerCase() === s),
-      );
-    }
-    if (filters.exam) {
-      const s = filters.exam.toLowerCase();
-      items = items.filter((t) => (t.exams ?? []).some((x) => x.toLowerCase() === s));
-    }
-    if (filters.language) {
-      const s = filters.language.toLowerCase();
-      items = items.filter((t) => (t.languages ?? []).some((x) => x.toLowerCase() === s));
-    }
-    if (filters.minRating) items = items.filter((t) => (t.ratingAvg ?? 0) >= Number(filters.minRating));
-    return sortTeachers(items, filters.sort);
-  }, [catalog.data?.items, dq, filters.subject, filters.exam, filters.language, filters.minRating, filters.sort]);
+      return api<TeachersResponse>(`/api/teachers?${qParams.toString()}`);
+    },
+    initialData:
+      dq || selectedCategory !== 'All' || experienceFilter !== 'all' || ratingFilter > 0 || sortFilter !== 'featured' || page !== 1
+        ? undefined
+        : initialData,
+  });
 
-  const list = usingCmsFaculty ? cmsFaculty : catalogTeachers;
-  const pages = usingCmsFaculty ? 1 : Math.max(1, Math.ceil(list.length / PAGE_SIZE));
-  const currentPage = Math.min(page, pages);
-  const pageItems = usingCmsFaculty ? list : list.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+  const items = teachersQuery.data?.items ?? [];
+  const pages = teachersQuery.data?.pages ?? 1;
+  const categories = teachersQuery.data?.categories ?? [];
 
   function onHeroSearch(e: FormEvent) {
     e.preventDefault();
+    setPage(1);
     document.getElementById('all-teachers')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function clearSearch() {
+    setQuery('');
+    setSelectedCategory('All');
+    setExperienceFilter('all');
+    setRatingFilter(0);
+    setSortFilter('featured');
+    setPage(1);
   }
 
   return (
     <main>
       <ScrollProgress />
-      <TeachersHero stats={catalog.data?.stats} query={filters.q} onQuery={(q) => patch({ q })} onSearch={onHeroSearch} />
-      <WaveDivider />
-      <div className="mt-8">
-        <TeacherSearch
-          filters={filters}
-          facets={{
-            subjects: usingCmsFaculty ? cmsSubjects : catalog.data?.facets?.subjects ?? [],
-            exams: usingCmsFaculty ? [] : catalog.data?.facets?.exams ?? [],
-            languages: usingCmsFaculty ? [] : catalog.data?.facets?.languages ?? [],
-          }}
-          drawer={drawer}
-          onDrawer={setDrawer}
-          onChange={patch}
-          onClear={clear}
-        />
-      </div>
-      {usingCmsFaculty ? null : <FeaturedTeachers teachers={(catalog.data?.featured ?? []).slice(0, 6)} />}
-      <TeacherStats stats={catalog.data?.stats} />
-      <TeacherExpertise />
-      <TeacherCategories
-        categories={
-          usingCmsFaculty
-            ? cmsSubjects
-            : catalog.data?.facets?.categories?.length
-              ? catalog.data.facets.categories
-              : catalog.data?.facets?.subjects ?? []
-        }
-        onSelect={(name) => {
-          patch({ subject: name });
-          document.getElementById('all-teachers')?.scrollIntoView({ behavior: 'smooth' });
-        }}
+
+      {/* 1. YOUR LEARNING PARTNER / HERO (CMS Manageable) */}
+      <TeachersHero
+        heroConfig={cmsConfig.hero}
+        query={query}
+        onQuery={setQuery}
+        onSearch={onHeroSearch}
       />
+
+      {/* 2. WHY LEARN FROM GYAN CHOWK TEACHERS (CMS Manageable) */}
+      <TeachersWhySection whyConfig={cmsConfig.whyLearn} />
+
+      {/* 3. ALL TEACHERS (Rich cards, Category Filter, Rating, Experience, Sorting) */}
       <TeacherGrid
-        teachers={usingCmsFaculty ? [] : (pageItems as TeacherCardData[])}
-        faculty={usingCmsFaculty ? (pageItems as HomeFacultyCard[]) : undefined}
-        loading={cms.isLoading || (!usingCmsFaculty && catalog.isLoading)}
-        error={
-          usingCmsFaculty
-            ? cms.isError
-              ? 'Unable to load teachers. Please try again.'
-              : undefined
-            : catalog.isError
-              ? 'Unable to load teachers. Please try again.'
-              : undefined
-        }
-        onRetry={() => void (usingCmsFaculty ? cms.refetch() : catalog.refetch())}
-        onClear={clear}
-        page={currentPage}
+        teachers={items}
+        loading={teachersQuery.isLoading}
+        error={teachersQuery.isError ? 'Unable to load teachers. Please try again.' : undefined}
+        onRetry={() => void teachersQuery.refetch()}
+        onClear={clearSearch}
+        page={page}
         pages={pages}
         onPage={(p) => {
           setPage(p);
-          syncUrl(filters, p);
           document.getElementById('all-teachers')?.scrollIntoView({ behavior: 'smooth' });
         }}
+        categories={categories}
+        selectedCategory={selectedCategory}
+        onSelectCategory={(cat) => {
+          setSelectedCategory(cat);
+          setPage(1);
+        }}
+        experienceFilter={experienceFilter}
+        onExperienceFilter={(exp) => {
+          setExperienceFilter(exp);
+          setPage(1);
+        }}
+        ratingFilter={ratingFilter}
+        onRatingFilter={(rat) => {
+          setRatingFilter(rat);
+          setPage(1);
+        }}
+        sortFilter={sortFilter}
+        onSortFilter={(sort) => {
+          setSortFilter(sort);
+          setPage(1);
+        }}
       />
-      <BecomeTeacherCTA />
+
+      {/* 4. SHARE YOUR KNOWLEDGE / BECOME A GYAN CHOWK TEACHER (CMS Manageable) */}
+      <BecomeTeacherCTA ctaConfig={cmsConfig.becomeTeacher} />
     </main>
   );
 }
 
-export function TeachersPageClient() {
+export function TeachersPageClient({ initialData }: { initialData?: TeachersResponse }) {
   return (
     <Suspense>
-      <TeachersExperience />
+      <TeachersExperience initialData={initialData} />
     </Suspense>
   );
 }
+

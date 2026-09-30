@@ -39,7 +39,7 @@ export function DoubtMentorSection({ copy }: { copy?: HomeSectionCopy }) {
   const href = user ? '/student/doubts' : '/login';
 
   return (
-    <section className="gc-container py-14 md:py-20" aria-labelledby="doubts">
+    <section className="gc-container py-7 md:py-10" aria-labelledby="doubts">
       <SectionHeading
         id="doubts"
         kicker={copy?.kicker || 'Mentorship'}

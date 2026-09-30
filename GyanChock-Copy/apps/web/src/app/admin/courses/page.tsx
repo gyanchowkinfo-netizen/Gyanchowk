@@ -8,7 +8,8 @@ const courseFields: ManagerField[] = [
   { name: 'subtitle', label: 'Subtitle / short description' },
   { name: 'category', label: 'Category', placeholder: 'JEE, NEET, UPSC…' },
   { name: 'targetExam', label: 'Target exam', placeholder: 'JEE Main' },
-  { name: 'language', label: 'Language', placeholder: 'en' },
+  { name: 'language', label: 'Language', placeholder: 'English / Hindi / Hinglish' },
+  { name: 'foundation', label: 'Foundation / level', placeholder: 'Foundation' },
   { name: 'careerTrack', label: 'Career track', placeholder: 'government-exam' },
   { name: 'subjects', label: 'Subjects (comma separated)' },
   {
@@ -35,6 +36,7 @@ function coursePayload(form: FormData) {
     category: form.get('category'),
     targetExam: form.get('targetExam'),
     language: form.get('language'),
+    foundation: form.get('foundation'),
     careerTrack: form.get('careerTrack'),
     subjects,
     pricingType: form.get('pricingType'),
@@ -51,6 +53,7 @@ function courseFromRow(row: Record<string, unknown>) {
     category: String(row.category ?? ''),
     targetExam: String(row.targetExam ?? ''),
     language: String(row.language ?? ''),
+    foundation: String(row.foundation ?? ''),
     careerTrack: String(row.careerTrack ?? ''),
     subjects,
     pricingType: String(row.pricingType ?? 'paid'),
@@ -70,6 +73,7 @@ export default function Page() {
         emptyCta="Create your first course"
         columns={[
           { key: 'title', label: 'Title' },
+          { key: 'targetExam', label: 'Target Exam' },
           { key: 'category', label: 'Category' },
           { key: 'status', label: 'Status', kind: 'status' },
           { key: 'pricingType', label: 'Pricing', kind: 'status' },

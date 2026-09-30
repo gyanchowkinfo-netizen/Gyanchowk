@@ -26,7 +26,7 @@ export const DEFAULT_HOME_SECTION_COPY: HomeSectionCopyMap = {
   platform: {
     kicker: 'Platform',
     title: 'Built for deep work',
-    subtitle: 'Recorded video, tests & ranks, doubts & mentors — plus the workspace that holds them together.',
+    subtitle: 'Personalized video, tests & ranking, doubt support — plus the workspace that holds them together.',
   },
   mentorship: {
     kicker: 'Mentorship',

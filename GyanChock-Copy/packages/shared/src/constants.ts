@@ -98,7 +98,7 @@ export type PayoutStatus = (typeof PAYOUT_STATUSES)[number];
 export const NOTIFICATION_CHANNELS = ['in_app', 'email', 'push'] as const;
 export type NotificationChannel = (typeof NOTIFICATION_CHANNELS)[number];
 
-export const LANGUAGES = ['en', 'hi', 'hinglish'] as const;
+export const LANGUAGES = ['en', 'hi', 'hinglish', 'English', 'Hindi', 'Hinglish', 'Bilingual'] as const;
 export type Language = (typeof LANGUAGES)[number];
 
 export const RANK_SCOPES = ['all_india', 'state', 'batch', 'course', 'subject'] as const;

@@ -13,6 +13,7 @@ import type {
   HomePlatformFeature,
   HomeSectionCopyMap,
   HomeTestSubscription,
+  HomeWhyCard,
   PublicPlatformStats,
   TeacherCardData,
 } from '@/lib/types';
@@ -30,7 +31,8 @@ import { DEFAULT_HOME_TEST_SUBSCRIPTION } from './testSubscription/defaults';
 import { DoubtMentorSection } from './DoubtMentorSection';
 import { WhyGyanChowk } from './WhyGyanChowk';
 import { DashboardPreview, ContinueLearning } from './Workspace';
-import { Testimonials, FAQ, FinalCTA } from './Stories';
+import { FAQ, FinalCTA } from './Stories';
+import { LandingStudentReviews } from './LandingStudentReviews';
 
 export type HomeReview = {
   _id: string;
@@ -65,6 +67,7 @@ export function HomeExperience() {
         faculty?: HomeFacultyCard[];
         sections?: HomeSectionCopyMap;
         testSubscription?: HomeTestSubscription | null;
+        why?: HomeWhyCard[];
       }>('/api/cms/public'),
     enabled: ready,
   });
@@ -119,6 +122,9 @@ export function HomeExperience() {
 
   return (
     <main>
+      <SectionError label="Promotions could not load.">
+        <BannerCarousel />
+      </SectionError>
       <Hero
         kicker={t.hero.kicker}
         title={t.hero.title}
@@ -127,9 +133,6 @@ export function HomeExperience() {
         secondary={t.hero.secondary}
         onSearch={onSearch}
       />
-      <SectionError label="Promotions could not load.">
-        <BannerCarousel />
-      </SectionError>
       <TrustStrip highlights={cms.data?.highlights} />
       <CategoryExplorer counts={categoryCounts} paths={cms.data?.discovery} copy={cms.data?.sections?.discovery} />
       <SectionError label="Courses could not load.">
@@ -155,12 +158,12 @@ export function HomeExperience() {
       </SectionError>
       <DashboardPreview completion={analytics.data?.avgCompletion} />
       <ContinueLearning items={continueItems} />
-      <WhyGyanChowk />
-      <SectionError>
-        <Testimonials reviews={cms.data?.featuredReviews ?? []} />
-      </SectionError>
+      <WhyGyanChowk cards={cms.data?.why} />
       <FAQ faqs={cms.data?.faqs ?? []} />
       <FinalCTA />
+      <SectionError label="Student reviews could not load.">
+        <LandingStudentReviews reviews={cms.data?.featuredReviews as any} />
+      </SectionError>
     </main>
   );
 }

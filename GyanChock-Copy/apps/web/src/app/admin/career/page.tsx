@@ -1,157 +1,28 @@
 'use client';
 
-import { FormEvent } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { api } from '@/lib/api';
-import { Button } from '@/components/ui/Button';
-import { Input, Textarea } from '@/components/ui/Input';
-import { toast } from '@/lib/toast';
-import { EmptyState, LoadingState } from '@/components/ui/States';
+import dynamic from 'next/dynamic';
+
+const CareerPageContentEditor = dynamic(
+  () =>
+    import('@/components/admin/CareerPageContentEditor').then(
+      (mod) => mod.CareerPageContentEditor
+    ),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="space-y-6 animate-pulse" suppressHydrationWarning>
+        <div className="h-16 rounded-2xl bg-slate-100" />
+        <div className="h-12 rounded-xl bg-slate-100" />
+        <div className="h-96 rounded-2xl bg-slate-100" />
+      </div>
+    ),
+  }
+);
 
 export default function AdminCareerPage() {
-  const articles = useQuery({
-    queryKey: ['career-articles'],
-    queryFn: () => api<{ items: Array<{ _id: string; title: string; slug: string }> }>('/api/career/articles'),
-  });
-  const scholarships = useQuery({
-    queryKey: ['career-scholarships-admin'],
-    queryFn: () => api<{ items: Array<{ _id: string; title: string; amount?: string }> }>('/api/career/admin/scholarships'),
-  });
-  const roadmaps = useQuery({
-    queryKey: ['career-roadmaps'],
-    queryFn: () => api<{ items: Array<{ _id: string; title: string; slug: string }> }>('/api/career/roadmaps'),
-  });
-
-  async function createArticle(e: FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    const f = new FormData(e.currentTarget);
-    const slug = String(f.get('slug'))
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-|-$/g, '');
-    try {
-      await api('/api/career/admin/articles', {
-        method: 'POST',
-        body: JSON.stringify({
-          title: f.get('title'),
-          slug,
-          excerpt: f.get('excerpt'),
-          body: f.get('body'),
-          category: f.get('category'),
-          featured: f.get('featured') === 'on',
-          published: true,
-        }),
-      });
-      toast.success('Article published');
-      await articles.refetch();
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed');
-    }
-  }
-
-  async function createRoadmap(e: FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    const f = new FormData(e.currentTarget);
-    const slug = String(f.get('slug'))
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-|-$/g, '');
-    try {
-      await api('/api/career/admin/roadmaps', {
-        method: 'POST',
-        body: JSON.stringify({
-          title: f.get('title'),
-          slug,
-          description: f.get('description'),
-          published: true,
-        }),
-      });
-      toast.success('Roadmap published');
-      await roadmaps.refetch();
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed');
-    }
-  }
-
   return (
-    <div className="space-y-8">
-      <h1 className="font-display text-3xl text-gc-black">Career CMS</h1>
-      <form onSubmit={createArticle} className="gc-card space-y-3 p-5">
-        <h2 className="font-display text-xl">New article</h2>
-        <Input name="title" label="Title" required />
-        <Input name="slug" label="Slug" required />
-        <Input name="excerpt" label="Excerpt" />
-        <Input name="category" label="Category" placeholder="Career, Exams, Interviews" />
-        <label className="flex items-center gap-2 text-sm text-gc-mist">
-          <input type="checkbox" name="featured" className="accent-gc-gold" />
-          Feature this article
-        </label>
-        <Textarea name="body" label="Body" required />
-        <Button type="submit">Publish</Button>
-      </form>
-      {articles.isLoading ? <LoadingState /> : null}
-      <ul className="space-y-2 text-sm">
-        {(articles.data?.items ?? []).map((a) => (
-          <li key={a._id} className="gc-card p-3">
-            {a.title} · /career/{a.slug}
-          </li>
-        ))}
-      </ul>
-      {!articles.data?.items?.length ? <EmptyState title="No career articles yet" /> : null}
-      <form onSubmit={createRoadmap} className="gc-card space-y-3 p-5">
-        <h2 className="font-display text-xl">New roadmap</h2>
-        <Input name="title" label="Title" required />
-        <Input name="slug" label="Slug" required />
-        <Textarea name="description" label="Description" />
-        <Button type="submit">Publish roadmap</Button>
-      </form>
-      <ul className="space-y-2 text-sm">
-        {(roadmaps.data?.items ?? []).map((a) => (
-          <li key={a._id} className="gc-card p-3">
-            {a.title} · /career/roadmaps/{a.slug}
-          </li>
-        ))}
-      </ul>
-      <form
-        className="gc-card space-y-3 p-5"
-        onSubmit={async (e) => {
-          e.preventDefault();
-          const f = new FormData(e.currentTarget);
-          try {
-            await api('/api/career/admin/scholarships', {
-              method: 'POST',
-              body: JSON.stringify({
-                title: f.get('title'),
-                eligibility: f.get('eligibility'),
-                amount: f.get('amount'),
-                deadline: f.get('deadline') || undefined,
-                applyUrl: f.get('applyUrl') || undefined,
-                published: true,
-              }),
-            });
-            toast.success('Scholarship published');
-            await scholarships.refetch();
-            e.currentTarget.reset();
-          } catch (err) {
-            toast.error(err instanceof Error ? err.message : 'Failed');
-          }
-        }}
-      >
-        <h2 className="font-display text-xl">New scholarship</h2>
-        <Input name="title" label="Title" required />
-        <Input name="amount" label="Amount" />
-        <Input name="deadline" type="date" label="Deadline" />
-        <Input name="applyUrl" label="Apply URL" />
-        <Textarea name="eligibility" label="Eligibility" />
-        <Button type="submit">Publish scholarship</Button>
-      </form>
-      <ul className="space-y-2 text-sm">
-        {(scholarships.data?.items ?? []).map((s) => (
-          <li key={s._id} className="gc-card p-3">
-            {s.title} {s.amount ? `· ${s.amount}` : ''}
-          </li>
-        ))}
-      </ul>
+    <div className="space-y-6" suppressHydrationWarning>
+      <CareerPageContentEditor />
     </div>
   );
 }

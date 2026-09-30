@@ -1,6 +1,6 @@
 import { cache } from 'react';
 import { api } from '@/lib/api';
-import type { BlogPost, CareerArticle, CareerCategory, CareerRoadmap, CmsPage, PublicPlatformStats } from '@/lib/types';
+import type { AboutPageConfig, BlogPost, CareerArticle, CareerCategory, CareerRoadmap, CmsPage, PublicPlatformStats } from '@/lib/types';
 
 export const getCareerListing = cache(async () => {
   try {
@@ -61,9 +61,10 @@ export const getPublicCms = cache(async () => {
     return await api<{
       pages?: CmsPage[];
       stats?: PublicPlatformStats;
+      aboutPage?: AboutPageConfig | null;
     }>('/api/cms/public');
   } catch {
-    return { pages: [] as CmsPage[], stats: undefined };
+    return { pages: [] as CmsPage[], stats: undefined, aboutPage: null };
   }
 });
 
