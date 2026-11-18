@@ -33,7 +33,7 @@ export function BannerCarousel() {
   if (query.isLoading) {
     return (
       <section className="gc-container pb-3 pt-4 sm:pb-4 sm:pt-5" aria-label="Promotions loading">
-        <div className="h-[148px] animate-pulse rounded-[22px] border border-gc-line bg-[color:var(--gyan-primary-soft)] sm:h-[188px] lg:h-[220px]" />
+        <div className="h-[22.5rem] animate-pulse rounded-[1.55rem] border border-gc-line bg-[color:var(--gyan-primary-soft)] sm:h-[24rem]" />
       </section>
     );
   }
@@ -103,7 +103,7 @@ function Carousel({ items }: { items: PublicBanner[] }) {
     <section className="gc-container pb-3 pt-4 sm:pb-5 sm:pt-5" aria-roledescription="carousel" aria-label="Gyan Chowk promotions">
       <div
         ref={region}
-        className="relative overflow-hidden rounded-[22px] border border-gc-line bg-[color:var(--brand-navy)] shadow-[var(--shadow-md)]"
+        className="relative overflow-hidden rounded-[1.55rem] border border-gc-line bg-[color:var(--brand-navy)] shadow-[var(--shadow-md)]"
         tabIndex={0}
         onKeyDown={onKey}
         onMouseEnter={() => setPaused(true)}
@@ -124,7 +124,7 @@ function Carousel({ items }: { items: PublicBanner[] }) {
           go(dx < 0 ? 1 : -1);
         }}
       >
-        <div className="relative h-[148px] sm:h-[188px] lg:h-[220px]">
+        <div className="relative h-[22.5rem] sm:h-[24rem]">
           {items.map((banner, i) => {
             const src = isMobile ? banner.mobileImageUrl || banner.imageUrl : banner.imageUrl || banner.mobileImageUrl;
             const offset = i - index;
@@ -152,16 +152,12 @@ function Carousel({ items }: { items: PublicBanner[] }) {
                 )}
                 <div className="absolute inset-0 bg-gradient-to-r from-[color:var(--brand-navy)]/80 via-[color:var(--brand-navy)]/35 to-transparent" />
                 <div className="relative z-10 flex h-full max-w-xl flex-col justify-end p-4 sm:p-6 lg:p-7">
-                  <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-white/70">Promotion</p>
-                  <h2 className="mt-1 font-display text-xl leading-tight text-white sm:text-2xl lg:text-[1.75rem]">{banner.title}</h2>
-                  {banner.subtitle ? (
-                    <p className="mt-1 line-clamp-1 text-sm text-white/80 sm:line-clamp-2">{banner.subtitle}</p>
-                  ) : null}
-                  {banner.ctaUrl ? (
-                    <Link href={banner.ctaUrl} className="gc-btn mt-3 w-fit bg-white text-[color:var(--brand-navy)] hover:bg-white/90">
-                      {banner.ctaText || 'Learn more'}
-                    </Link>
-                  ) : null}
+                  <Link
+                    href={banner.ctaUrl || '/courses'}
+                    className="gc-btn w-fit bg-white text-[color:var(--brand-navy)] hover:bg-white/90 shadow-md"
+                  >
+                    {banner.ctaText || 'Learn more'}
+                  </Link>
                 </div>
               </article>
             );

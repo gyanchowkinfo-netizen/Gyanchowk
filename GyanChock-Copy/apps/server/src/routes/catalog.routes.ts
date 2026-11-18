@@ -570,10 +570,10 @@ batchRouter.get(
       },
       enrollment: enrollment
         ? {
-            status: enrollment.status,
-            expiresAt: enrollment.expiresAt,
-            expired: enrollment.status === 'expired' || (enrollment.expiresAt ? new Date(enrollment.expiresAt) < new Date() : false),
-          }
+          status: enrollment.status,
+          expiresAt: enrollment.expiresAt,
+          expired: enrollment.status === 'expired' || (enrollment.expiresAt ? new Date(enrollment.expiresAt) < new Date() : false),
+        }
         : null,
       progressPercent,
     });
@@ -902,13 +902,13 @@ catalogRouter.get(
     const { UserModel, CourseModel, BatchModel, ReviewModel } = await import('../models/index.js');
     const teacher = isObjectId
       ? await UserModel.findOne({
-          _id: id,
-          role: 'teacher',
-          teacherStatus: 'approved',
-          status: 'active',
-        })
-          .select('name headline bio avatar createdAt')
-          .lean()
+        _id: id,
+        role: 'teacher',
+        teacherStatus: 'approved',
+        status: 'active',
+      })
+        .select('name headline bio avatar createdAt')
+        .lean()
       : null;
     if (!teacher) {
       const faculty = await loadFacultyProfile(id);
@@ -937,13 +937,13 @@ catalogRouter.get(
   '/search',
   asyncHandler(async (req, res) => {
     const q = String(req.query.q ?? '').trim();
-    if (q.length < 2) return res.json({ courses: [], batches: [], teachers: [], blogs: [], career: [] });
+    if (q.length < 1) return res.json({ courses: [], batches: [], teachers: [], blogs: [], career: [] });
     const rx = new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
     const { UserModel, BlogModel, CareerArticleModel } = await import('../models/index.js');
     const [courses, batches, teachers, blogs, career] = await Promise.all([
       CourseModel.find({ status: 'published', $or: [{ title: rx }, { subtitle: rx }, { category: rx }] })
-        .select('title slug pricingType price')
-        .limit(6)
+        .select('title slug pricingType price category')
+        .limit(8)
         .lean(),
       BatchModel.find({ status: { $in: ['upcoming', 'open', 'ongoing'] }, name: rx })
         .select('name slug price status')

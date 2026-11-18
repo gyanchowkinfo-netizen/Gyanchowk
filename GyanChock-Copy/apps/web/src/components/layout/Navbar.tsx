@@ -22,9 +22,47 @@ export function Navbar() {
   const [open, setOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [visible, setVisible] = useState(true);
   const [mounted, setMounted] = useState(false);
   const headerRef = useRef<HTMLElement>(null);
   const [navHeight, setNavHeight] = useState(72);
+
+  const hideTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const lastScrollYRef = useRef(0);
+  const openRef = useRef(open);
+  openRef.current = open;
+  const searchOpenRef = useRef(searchOpen);
+  searchOpenRef.current = searchOpen;
+  const isInteractingRef = useRef(false);
+
+  const clearTimer = () => {
+    if (hideTimerRef.current) {
+      clearTimeout(hideTimerRef.current);
+      hideTimerRef.current = null;
+    }
+  };
+
+  const startHideTimer = () => {
+    clearTimer();
+    // Only schedule auto-hide if user is scrolled away from the top and not interacting
+    if (
+      window.scrollY > 10 &&
+      !openRef.current &&
+      !searchOpenRef.current &&
+      !isInteractingRef.current
+    ) {
+      hideTimerRef.current = setTimeout(() => {
+        if (
+          window.scrollY > 10 &&
+          !openRef.current &&
+          !searchOpenRef.current &&
+          !isInteractingRef.current
+        ) {
+          setVisible(false);
+        }
+      }, 5000);
+    }
+  };
 
   useEffect(() => {
     setMounted(true);
@@ -36,6 +74,11 @@ export function Navbar() {
 
   useEffect(() => {
     setOpen(false);
+    clearTimer();
+    setVisible(true);
+    if (window.scrollY > 10) {
+      startHideTimer();
+    }
   }, [pathname]);
 
   useEffect(() => {
@@ -45,28 +88,122 @@ export function Navbar() {
     };
   }, [open]);
 
+  // Mobile drawer open/close edge case
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 8);
+    if (open) {
+      clearTimer();
+      setVisible(true);
+    } else if (window.scrollY > 10) {
+      startHideTimer();
+    }
+  }, [open]);
+
+  // Search dialog open/close edge case
+  useEffect(() => {
+    if (searchOpen) {
+      clearTimer();
+      setVisible(true);
+    } else if (window.scrollY > 10) {
+      startHideTimer();
+    }
+  }, [searchOpen]);
+
+  // Scroll listener: hides on scroll down, reveals on scroll up for 5 seconds
+  useEffect(() => {
+    lastScrollYRef.current = window.scrollY;
+
+    const onScroll = () => {
+      const currentScrollY = window.scrollY;
+      setScrolled(currentScrollY > 8);
+
+      // 1. Initial / At top of page: Keep visible, never auto-hide
+      if (currentScrollY <= 10) {
+        clearTimer();
+        setVisible(true);
+        lastScrollYRef.current = currentScrollY;
+        return;
+      }
+
+      // If mobile drawer, search modal, or hover interaction is active, keep visible
+      if (openRef.current || searchOpenRef.current || isInteractingRef.current) {
+        clearTimer();
+        setVisible(true);
+        lastScrollYRef.current = currentScrollY;
+        return;
+      }
+
+      const diff = currentScrollY - lastScrollYRef.current;
+
+      // 2. Scrolling DOWN (diff > 4): hide Navbar immediately
+      if (diff > 4) {
+        clearTimer();
+        setVisible(false);
+      }
+      // 3. Scrolling UP (diff < -4): show Navbar and start 5-second inactivity timer
+      else if (diff < -4) {
+        setVisible(true);
+        startHideTimer();
+      }
+
+      lastScrollYRef.current = currentScrollY;
+    };
+
     onScroll();
+
     window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
+    window.addEventListener('touchstart', onScroll, { passive: true });
+    window.addEventListener('touchmove', onScroll, { passive: true });
+
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('touchstart', onScroll);
+      window.removeEventListener('touchmove', onScroll);
+      clearTimer();
+    };
   }, []);
 
   useEffect(() => {
     const updateNavHeight = () => {
       if (headerRef.current) {
-        const rect = headerRef.current.getBoundingClientRect();
-        setNavHeight(Math.max(56, Math.round(rect.bottom)));
+        // Measure un-transformed height to avoid collapsing when translateY(-100%)
+        const h = headerRef.current.offsetHeight || (window.innerWidth >= 640 ? 80 : 72);
+        setNavHeight(h);
       }
     };
     updateNavHeight();
     window.addEventListener('resize', updateNavHeight);
-    window.addEventListener('scroll', updateNavHeight, { passive: true });
     return () => {
       window.removeEventListener('resize', updateNavHeight);
-      window.removeEventListener('scroll', updateNavHeight);
     };
-  }, [open, scrolled]);
+  }, []);
+
+  const handleMouseEnter = () => {
+    isInteractingRef.current = true;
+    clearTimer();
+    setVisible(true);
+  };
+
+  const handleMouseLeave = () => {
+    isInteractingRef.current = false;
+    if (window.scrollY > 10 && !openRef.current && !searchOpenRef.current) {
+      startHideTimer();
+    }
+  };
+
+  const handleFocus = () => {
+    isInteractingRef.current = true;
+    clearTimer();
+    setVisible(true);
+  };
+
+  const handleBlur = (e: React.FocusEvent) => {
+    if (headerRef.current && !headerRef.current.contains(e.relatedTarget as Node)) {
+      isInteractingRef.current = false;
+      if (window.scrollY > 10 && !openRef.current && !searchOpenRef.current) {
+        startHideTimer();
+      }
+    }
+  };
 
   if (isAppPanelPath(pathname)) {
     return null;
@@ -82,66 +219,87 @@ export function Navbar() {
   };
 
   return (
-    <header
-      ref={headerRef}
-      className={cn(
-        'gc-navbar sticky top-0 z-50 overflow-visible',
-        !open && 'backdrop-blur-md',
-        scrolled && 'is-scrolled',
-      )}
-    >
-      <div className="gc-navbar-inner gc-container flex items-center gap-5 overflow-visible sm:gap-6 lg:gap-8">
-        <BrandLogo size={36} imageClassName="gc-navbar-logo" />
-        <nav className="hidden flex-1 items-center justify-center gap-6 overflow-visible text-[15px] xl:gap-9 lg:flex" aria-label="Primary">
-          <CoursesNavMenu label={t.nav.courses} />
-          {navLink('/teachers', t.nav.teachers)}
-          {navLink('/career', t.nav.career)}
-          {navLink('/about', t.nav.about)}
-        </nav>
-        <div className="ml-auto flex items-center gap-2 sm:gap-3">
-          <div className="hidden w-[min(100%,18rem)] md:block lg:w-[min(100%,20rem)]">
-            <SearchTrigger className="h-10 w-full" onClick={() => setSearchOpen(true)} />
-          </div>
-          <button
-            className="gc-navbar-icon-btn grid h-10 w-10 place-items-center rounded-full md:hidden"
-            aria-label="Search"
-            suppressHydrationWarning
-            onClick={() => setSearchOpen(true)}
-          >
-            <Search size={18} />
-          </button>
-          {user ? (
-            <UserMenu
-              user={user}
-              onNavigate={() => {
-                setOpen(false);
-              }}
-            />
-          ) : (
-            <>
-              <Link href="/login" className="gc-nav-link hidden min-h-10 items-center px-2 text-sm sm:inline-flex">
-                {t.nav.login}
-              </Link>
-              <Link href="/register" className="gc-btn-primary !hidden h-10 px-5 text-sm sm:!inline-flex">
-                {t.nav.register}
-              </Link>
-            </>
-          )}
-          <div className="lg:hidden">
+    <>
+      {/* Structural layout spacer to prevent layout shift while Navbar is position: fixed */}
+      <div
+        style={{ height: navHeight }}
+        className="w-full shrink-0 invisible pointer-events-none select-none"
+        aria-hidden="true"
+      />
+      <header
+        ref={headerRef}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+        onFocusCapture={handleFocus}
+        onBlurCapture={handleBlur}
+        className={cn(
+          'gc-navbar fixed top-0 left-0 right-0 z-50 overflow-visible',
+          !open && 'backdrop-blur-md',
+          scrolled && 'is-scrolled',
+          visible ? 'is-visible' : 'is-hidden',
+        )}
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          transform: visible ? 'translateY(0)' : 'translateY(-100%)',
+          transition:
+            'transform 350ms ease-in-out, background-color 220ms ease, border-color 220ms ease, box-shadow 220ms ease',
+        }}
+      >
+        <div className="gc-navbar-inner gc-container flex items-center gap-5 overflow-visible sm:gap-6 lg:gap-8">
+          <BrandLogo size={36} imageClassName="gc-navbar-logo" />
+          <nav className="hidden flex-1 items-center justify-center gap-6 overflow-visible text-[15px] xl:gap-9 lg:flex" aria-label="Primary">
+            <CoursesNavMenu label={t.nav.courses} />
+            {navLink('/teachers', t.nav.teachers)}
+            {navLink('/career', t.nav.career)}
+            {navLink('/about', t.nav.about)}
+          </nav>
+          <div className="ml-auto flex items-center gap-2 sm:gap-3">
+            <div className="hidden w-[min(100%,18rem)] md:block lg:w-[min(100%,20rem)]">
+              <SearchTrigger className="h-10 w-full" onClick={() => setSearchOpen(true)} />
+            </div>
             <button
-              className="gc-navbar-icon-btn grid h-10 w-10 place-items-center rounded-full"
-              aria-label={open ? 'Close menu' : 'Open menu'}
-              aria-expanded={open}
+              className="gc-navbar-icon-btn grid h-10 w-10 place-items-center rounded-full md:hidden"
+              aria-label="Search"
               suppressHydrationWarning
-              onClick={() => setOpen((v) => !v)}
+              onClick={() => setSearchOpen(true)}
             >
-              {open ? <X size={18} /> : <Menu size={18} />}
+              <Search size={18} />
             </button>
+            {user ? (
+              <UserMenu
+                user={user}
+                onNavigate={() => {
+                  setOpen(false);
+                }}
+              />
+            ) : (
+              <>
+                <Link href="/login" className="gc-nav-link hidden min-h-10 items-center px-2 text-sm whitespace-nowrap shrink-0 sm:inline-flex">
+                  {t.nav.login}
+                </Link>
+                <Link href="/register" className="gc-btn-primary !hidden h-10 px-5 text-sm whitespace-nowrap shrink-0 sm:!inline-flex">
+                  {t.nav.register}
+                </Link>
+              </>
+            )}
+            <div className="lg:hidden">
+              <button
+                className="gc-navbar-icon-btn grid h-10 w-10 place-items-center rounded-full"
+                aria-label={open ? 'Close menu' : 'Open menu'}
+                aria-expanded={open}
+                suppressHydrationWarning
+                onClick={() => setOpen((v) => !v)}
+              >
+                {open ? <X size={18} /> : <Menu size={18} />}
+              </button>
+            </div>
           </div>
         </div>
-      </div>
-      {open && mounted
-        ? createPortal(
+        {open && mounted
+          ? createPortal(
             <div
               className="gc-navbar-drawer fixed inset-x-0 bottom-0 z-[49] overflow-y-auto px-5 py-6"
               style={{ top: navHeight }}
@@ -218,10 +376,10 @@ export function Navbar() {
                     </>
                   ) : (
                     <>
-                      <Link href="/login" className="gc-btn-outline w-full justify-center" onClick={() => setOpen(false)}>
+                      <Link href="/login" className="gc-btn-outline w-full justify-center whitespace-nowrap" onClick={() => setOpen(false)}>
                         {t.nav.login}
                       </Link>
-                      <Link href="/register" className="gc-btn-primary w-full justify-center" onClick={() => setOpen(false)}>
+                      <Link href="/register" className="gc-btn-primary w-full justify-center whitespace-nowrap" onClick={() => setOpen(false)}>
                         {t.nav.register}
                       </Link>
                     </>
@@ -231,13 +389,14 @@ export function Navbar() {
             </div>,
             document.body,
           )
-        : null}
-      {mounted
-        ? createPortal(
+          : null}
+        {mounted
+          ? createPortal(
             <SearchCommand open={searchOpen} onOpenChange={setSearchOpen} />,
             document.body,
           )
-        : null}
-    </header>
+          : null}
+      </header>
+    </>
   );
 }

@@ -3,6 +3,7 @@ import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { AnnouncementBar } from '@/components/layout/AnnouncementBar';
 import { MobileBottomNavigation } from '@/components/layout/MobileBottomNavigation';
+import { DoubtToggleWidget } from '@/components/layout/DoubtToggleWidget';
 import { Providers } from '@/components/providers';
 import { PageTransition } from '@/components/motion';
 import './globals.css';
@@ -54,6 +55,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <PageTransition>{children}</PageTransition>
           <Footer />
           <MobileBottomNavigation />
+          <DoubtToggleWidget />
         </Providers>
       </body>
     </html>

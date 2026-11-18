@@ -31,7 +31,7 @@ import { DEFAULT_HOME_TEST_SUBSCRIPTION } from './testSubscription/defaults';
 import { DoubtMentorSection } from './DoubtMentorSection';
 import { WhyGyanChowk } from './WhyGyanChowk';
 import { DashboardPreview, ContinueLearning } from './Workspace';
-import { FAQ, FinalCTA } from './Stories';
+import { FAQ } from './Stories';
 import { LandingStudentReviews } from './LandingStudentReviews';
 
 export type HomeReview = {
@@ -160,7 +160,6 @@ export function HomeExperience() {
       <ContinueLearning items={continueItems} />
       <WhyGyanChowk cards={cms.data?.why} />
       <FAQ faqs={cms.data?.faqs ?? []} />
-      <FinalCTA />
       <SectionError label="Student reviews could not load.">
         <LandingStudentReviews reviews={cms.data?.featuredReviews as any} />
       </SectionError>

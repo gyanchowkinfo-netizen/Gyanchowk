@@ -12,11 +12,13 @@ import {
   Calendar,
   ClipboardList,
   GraduationCap,
+  Home,
   LayoutDashboard,
   LogOut,
   Menu,
   Settings,
   Trophy,
+  User,
   Users,
   Wallet,
   PlayCircle,
@@ -39,6 +41,7 @@ const studentNav: NavGroup[] = [
   {
     label: 'Learn',
     items: [
+      { href: '/', label: 'Home Page', icon: Home },
       { href: '/student', label: 'Dashboard', icon: LayoutDashboard },
       { href: '/student/courses', label: 'My courses', icon: BookOpen },
       { href: '/student/batches', label: 'My batches', icon: GraduationCap },
@@ -69,6 +72,7 @@ const studentNav: NavGroup[] = [
   {
     label: 'Account',
     items: [
+      { href: '/student/profile', label: 'Profile', icon: User },
       { href: '/student/certificates', label: 'Certificates', icon: GraduationCap },
       { href: '/student/downloads', label: 'Downloads', icon: PlayCircle },
       { href: '/student/wallet', label: 'Wallet', icon: Wallet },
@@ -77,7 +81,6 @@ const studentNav: NavGroup[] = [
       { href: '/student/payments', label: 'Payments', icon: IndianRupee },
       { href: '/student/notifications', label: 'Notifications', icon: Bell },
       { href: '/student/help', label: 'Help', icon: HelpCircle },
-      { href: '/student/settings', label: 'Settings', icon: Settings },
     ],
   },
 ];
@@ -86,6 +89,7 @@ const teacherNav: NavGroup[] = [
   {
     label: 'Teaching',
     items: [
+      { href: '/', label: 'Home Page', icon: Home },
       { href: '/teacher', label: 'Dashboard', icon: LayoutDashboard },
       { href: '/teacher/courses', label: 'Courses', icon: BookOpen },
       { href: '/teacher/batches', label: 'Batches', icon: GraduationCap },
@@ -126,6 +130,7 @@ const adminNav: NavGroup[] = [
   {
     label: 'Overview',
     items: [
+      { href: '/', label: 'Home Page', icon: Home },
       { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
       { href: '/admin/reports', label: 'Reports', icon: BarChart3 },
       { href: '/admin/audit-logs', label: 'Audit logs', icon: Shield },
@@ -204,7 +209,7 @@ function NavLinks({ groups, pathname, onNavigate }: { groups: NavGroup[]; pathna
           <div className="mt-1.5 space-y-0.5">
             {group.items.map((item) => {
               const Icon = item.icon;
-              const active = pathname === item.href || (item.href.split('/').length > 2 && pathname.startsWith(`${item.href}/`));
+              const active = pathname === item.href || (item.href !== '/' && item.href.split('/').length > 2 && pathname.startsWith(`${item.href}/`));
               return (
                 <Link
                   key={item.href}
@@ -240,7 +245,7 @@ export function PanelShell({
   const nav = flatten(groups);
   const [mobileNav, setMobileNav] = useState(false);
   const [headerReady, setHeaderReady] = useState(false);
-  const current = nav.find((item) => item.href !== `/${role}` && pathname.startsWith(item.href)) ?? nav.find((item) => item.href === pathname);
+  const current = nav.find((item) => item.href !== `/${role}` && item.href !== '/' && pathname.startsWith(item.href)) ?? nav.find((item) => item.href === pathname);
 
   useEffect(() => {
     setHeaderReady(true);
@@ -352,6 +357,7 @@ export function PanelShell({
                 <X size={18} />
               </button>
             </div>
+            <p className="mt-3 px-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-gc-mute">{role} workspace</p>
             <NavLinks groups={groups} pathname={pathname} onNavigate={() => setMobileNav(false)} />
           </aside>
         </div>

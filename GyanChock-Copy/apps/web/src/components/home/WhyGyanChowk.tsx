@@ -1,7 +1,9 @@
 'use client';
 
-import React from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
+import { ChevronLeft, ChevronRight, ArrowRight } from 'lucide-react';
 import { api } from '@/lib/api';
 
 export type LearningStackAccent =
@@ -22,137 +24,151 @@ export type LearningStackCardItem = {
   accentColor: LearningStackAccent | string;
   displayOrder?: number;
   isActive?: boolean;
+  kicker?: string;
+  badge?: string;
+  imageUrl?: string;
+  href?: string;
 };
 
-const DEFAULT_CARDS: LearningStackCardItem[] = [
+const DEFAULT_STACK_CARDS: LearningStackCardItem[] = [
   {
+    _id: 'card-video',
+    kicker: '01 / Video Lectures',
+    badge: 'HLS Playback',
     title: 'Recorded Video Learning',
-    description: 'HLS lessons you can pause, resume and revisit on your own time.',
-    accentColor: 'amber',
+    description: 'Studio-quality lessons with persistent resume, 2x speed adjustment, and offline notes.',
+    accentColor: '#F59E0B',
+    imageUrl: '/overlays/overlay-recorded.png',
+    href: '/courses',
   },
   {
+    _id: 'card-batches',
+    kicker: '02 / Cohorts',
+    badge: 'Syllabus Schedule',
     title: 'Structured Batches',
-    description: 'Cohorts with a syllabus, schedule and faculty guidance.',
-    accentColor: 'violet',
+    description: 'Organized term cohorts with clear timelines, topic pacing, and faculty guidance.',
+    accentColor: '#7C3AED',
+    imageUrl: '/about-hero-students.jpg',
+    href: '/batches',
   },
   {
+    _id: 'card-materials',
+    kicker: '03 / Resources',
+    badge: 'Formula Sheets & PDFs',
     title: 'Study Materials',
-    description: 'Notes and PDFs unlocked after verified enrollment.',
-    accentColor: 'green',
+    description: 'Downloadable chapter summary notes and verified formula sheets unlocked upon enrollment.',
+    accentColor: '#059669',
+    imageUrl: '/overlays/overlay-notes.png',
+    href: '/student',
   },
   {
-    title: 'Tests',
-    description: 'Timed papers, negative marking and all-India ranks.',
-    accentColor: 'coral',
+    _id: 'card-tests',
+    kicker: '04 / Assessments',
+    badge: 'Autosave & Timed',
+    title: 'Timed Mocks & Tests',
+    description: 'Real-time autosaving exam portal, countdown timer alerts, and detailed scorecards.',
+    accentColor: '#EF4444',
+    imageUrl: '/practice-workspace.png',
+    href: '/student',
   },
   {
-    title: 'Assignments',
-    description: 'Published work evaluated rigorously on the server.',
-    accentColor: 'orange',
+    _id: 'card-assignments',
+    kicker: '05 / Practice',
+    badge: 'Evaluated Work',
+    title: 'Assignments & Drills',
+    description: 'Server-evaluated practice question sets to solidify concepts after every lecture.',
+    accentColor: '#F97316',
+    imageUrl: '/overlays/overlay-library.png',
+    href: '/student',
   },
   {
-    title: 'Doubt Resolution',
-    description: 'Async doubt engine with direct faculty replies.',
-    accentColor: 'blue',
+    _id: 'card-doubts',
+    kicker: '06 / Support',
+    badge: 'Timestamp Doubts',
+    title: 'Async Doubt Desk',
+    description: 'Tag exact video timestamps or upload photos; verified mentors post written answers.',
+    accentColor: '#0284C7',
+    imageUrl: '/mentorship-workspace.png',
+    href: '/student/doubts',
   },
   {
-    title: 'Mentorship',
-    description: 'Guided reviews with faculty on a recorded learning cadence.',
-    accentColor: 'indigo',
+    _id: 'card-mentorship',
+    kicker: '07 / Guidance',
+    badge: 'Faculty Reviews',
+    title: 'Guided Mentorship',
+    description: 'Structured progress evaluations and academic advice tailored for self-paced students.',
+    accentColor: '#4F46E5',
+    imageUrl: '/career-life-3.jpg',
+    href: '/student',
   },
   {
-    title: 'Analytics',
-    description: 'Progress from actual watch and attempt data.',
-    accentColor: 'teal',
+    _id: 'card-analytics',
+    kicker: '08 / Metrics',
+    badge: 'Watch & Quiz Data',
+    title: 'Deep Learning Analytics',
+    description: 'Honest progress metrics generated from actual watch sessions and test accuracies.',
+    accentColor: '#0D9488',
+    imageUrl: '/overlays/overlay-progress.png',
+    href: '/student',
   },
   {
-    title: 'Rankings',
-    description: 'Leaderboards from submitted tests, not estimates.',
-    accentColor: 'pink',
+    _id: 'card-rankings',
+    kicker: '09 / Competition',
+    badge: 'All-India Ranks',
+    title: 'Ranked Leaderboards',
+    description: 'Accurate comparative rankings calculated directly from completed mock test papers.',
+    accentColor: '#DB2777',
+    imageUrl: '/career-life-4.jpg',
+    href: '/student',
   },
   {
-    title: 'Certificates',
-    description: 'Issued from completion rules you can verify publicly.',
-    accentColor: 'indigo',
+    _id: 'card-certificates',
+    kicker: '10 / Credentials',
+    badge: 'Tamper-Proof ID',
+    title: 'Verifiable Certificates',
+    description: 'Issued at 90% completion with a unique ID shareable on LinkedIn and portfolios.',
+    accentColor: '#6366F1',
+    imageUrl: '/overlays/overlay-certificate.png',
+    href: '/verify/certificate',
   },
   {
-    title: 'Career Resources',
-    description: 'Roadmaps and articles from the career desk.',
-    accentColor: 'teal',
+    _id: 'card-career',
+    kicker: '11 / Career Desk',
+    badge: 'Industry Roadmaps',
+    title: 'Career Roadmaps & Guidance',
+    description: 'Curated career roadmaps, interview preparation notes, and practical industry insights.',
+    accentColor: '#14B8A6',
+    imageUrl: '/career-hero.jpg',
+    href: '/career',
   },
 ];
 
-export interface AccentTheme {
-  bar: string;
-  waveStart: string;
-  waveEnd: string;
-}
-
-export const ACCENT_PALETTE: Record<string, AccentTheme> = {
-  amber: {
-    bar: '#F59E0B',
-    waveStart: '#F59E0B',
-    waveEnd: '#FBBF24',
-  },
-  violet: {
-    bar: '#7C3AED',
-    waveStart: '#7C3AED',
-    waveEnd: '#A78BFA',
-  },
-  green: {
-    bar: '#059669',
-    waveStart: '#059669',
-    waveEnd: '#34D399',
-  },
-  coral: {
-    bar: '#EF4444',
-    waveStart: '#EF4444',
-    waveEnd: '#F87171',
-  },
-  orange: {
-    bar: '#F97316',
-    waveStart: '#F97316',
-    waveEnd: '#FB923C',
-  },
-  blue: {
-    bar: '#0284C7',
-    waveStart: '#0284C7',
-    waveEnd: '#38BDF8',
-  },
-  indigo: {
-    bar: '#4F46E5',
-    waveStart: '#4F46E5',
-    waveEnd: '#818CF8',
-  },
-  teal: {
-    bar: '#0D9488',
-    waveStart: '#0D9488',
-    waveEnd: '#2DD4BF',
-  },
-  pink: {
-    bar: '#DB2777',
-    waveStart: '#DB2777',
-    waveEnd: '#F472B6',
-  },
-};
-
-const DEFAULT_THEME: AccentTheme = ACCENT_PALETTE.amber;
-
-function getAccentTheme(accent?: string): AccentTheme {
-  if (!accent) return DEFAULT_THEME;
-  const key = accent.toLowerCase().trim();
-  return ACCENT_PALETTE[key] || DEFAULT_THEME;
-}
+const SPEED = 36; // px per second drift
+const NUDGE_AMOUNT = 300;
 
 export function WhyGyanChowk({ cards: initialCards }: { cards?: unknown }) {
-  const { data, isLoading } = useQuery({
+  const { data } = useQuery({
     queryKey: ['learning-stack-cards-public'],
     queryFn: () => api<{ cards: LearningStackCardItem[] }>('/api/learning-stack/cards'),
-    initialData: { cards: DEFAULT_CARDS },
+    initialData: { cards: DEFAULT_STACK_CARDS },
     staleTime: 60_000,
   });
 
-  const cards = data?.cards && data.cards.length > 0 ? data.cards : DEFAULT_CARDS;
+  const cards = useMemo(() => {
+    const raw = data?.cards && data.cards.length > 0 ? data.cards : DEFAULT_STACK_CARDS;
+    // Merge fallback visual metadata if API returned minimal items
+    return raw.map((item, idx) => {
+      const fallback = DEFAULT_STACK_CARDS[idx % DEFAULT_STACK_CARDS.length];
+      return {
+        ...fallback,
+        ...item,
+        imageUrl: item.imageUrl || fallback.imageUrl,
+        badge: item.badge || fallback.badge,
+        kicker: item.kicker || fallback.kicker,
+        href: item.href || fallback.href,
+      };
+    });
+  }, [data?.cards]);
 
   return (
     <section
@@ -160,7 +176,7 @@ export function WhyGyanChowk({ cards: initialCards }: { cards?: unknown }) {
       aria-labelledby="why-gyan-chowk-heading"
       className="relative overflow-hidden bg-[#FAF7F2] py-14 sm:py-20 border-b border-[#ECE6DE]"
     >
-      {/* Subtle depth - minimal and warm */}
+      {/* Subtle depth */}
       <div
         className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,rgba(247,242,233,0.7),transparent_65%)]"
         aria-hidden="true"
@@ -168,8 +184,7 @@ export function WhyGyanChowk({ cards: initialCards }: { cards?: unknown }) {
 
       <div className="gc-container relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         {/* SECTION HEADER - Matching Reference Image */}
-        <div className="max-w-3xl mb-10 sm:mb-12">
-          {/* Badge with horizontal lines */}
+        <div className="max-w-3xl mb-8 sm:mb-10">
           <div className="inline-flex items-center gap-2.5 mb-3.5">
             <span className="w-5 h-px bg-[#D6CBBB]" aria-hidden="true" />
             <span className="inline-block rounded-full bg-[#FAF0E4] border border-[#E8DCC8] px-3.5 py-0.5 text-[11px] font-bold tracking-[0.18em] uppercase text-[#8C6228]">
@@ -178,7 +193,6 @@ export function WhyGyanChowk({ cards: initialCards }: { cards?: unknown }) {
             <span className="w-5 h-px bg-[#D6CBBB]" aria-hidden="true" />
           </div>
 
-          {/* Main Heading: "A complete recorded learning stack" */}
           <h2
             id="why-gyan-chowk-heading"
             className="font-serif text-3xl sm:text-4xl lg:text-[2.85rem] font-bold tracking-tight text-[#0F172A] leading-[1.14]"
@@ -189,97 +203,305 @@ export function WhyGyanChowk({ cards: initialCards }: { cards?: unknown }) {
             </span>
           </h2>
 
-          {/* Supporting Text */}
           <p className="mt-3.5 text-xs sm:text-[14px] text-slate-500 font-normal leading-relaxed max-w-2xl">
             Everything is built from the ground up for serious learners who value clarity and
             proof of progress.
           </p>
         </div>
+      </div>
 
-        {/* LOADING SKELETON */}
-        {isLoading && !data ? (
-          <div className="grid grid-cols-12 gap-5 sm:gap-6">
-            {Array.from({ length: 8 }).map((_, i) => (
+      {/* ARCHED RECOMMENDATION CARDS CAROUSEL */}
+      <ArchedCardsCarousel items={cards} />
+    </section>
+  );
+}
+
+function ArchedCardsCarousel({ items }: { items: LearningStackCardItem[] }) {
+  const count = items.length;
+  const viewportRef = useRef<HTMLDivElement>(null);
+  const trackRef = useRef<HTMLDivElement>(null);
+  const offsetRef = useRef(0);
+  const speedRef = useRef(SPEED);
+  const pausedRef = useRef(false);
+  const draggingRef = useRef(false);
+  const dragXRef = useRef(0);
+  const dragOriginRef = useRef(0);
+  const loopWidthRef = useRef(0);
+  const rafRef = useRef(0);
+  const [reduce, setReduce] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  const [ready, setReady] = useState(false);
+
+  // 3 duplicate sets of slides ensures seamless wrap-around with wide viewport coverage
+  const duplicatedSlides = useMemo(() => {
+    return [...items, ...items, ...items];
+  }, [items]);
+
+  const cardWidth = isMobile ? 228 : 268;
+  const cardGap = isMobile ? 16 : 20;
+  const stride = cardWidth + cardGap;
+  const singleSetWidth = count * stride;
+
+  // Track window resizing & reduced motion
+  useEffect(() => {
+    const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const widthQuery = window.matchMedia('(max-width: 640px)');
+
+    const sync = () => {
+      setReduce(mq.matches);
+      setIsMobile(widthQuery.matches);
+    };
+
+    sync();
+    mq.addEventListener('change', sync);
+    widthQuery.addEventListener('change', sync);
+
+    return () => {
+      mq.removeEventListener('change', sync);
+      widthQuery.removeEventListener('change', sync);
+    };
+  }, []);
+
+  // Update layout loop width
+  useEffect(() => {
+    loopWidthRef.current = singleSetWidth;
+    setReady(true);
+  }, [singleSetWidth]);
+
+  // RequestAnimationFrame animation loop with arch parabola transform calculation
+  useEffect(() => {
+    if (!ready || reduce || count < 2) return;
+
+    let last = performance.now();
+    const tick = (now: number) => {
+      const dt = Math.min(32, now - last) / 1000;
+      last = now;
+
+      if (!pausedRef.current && !draggingRef.current) {
+        offsetRef.current -= speedRef.current * dt;
+        const lw = loopWidthRef.current;
+        if (lw > 0) {
+          while (offsetRef.current <= -lw) offsetRef.current += lw;
+          while (offsetRef.current > 0) offsetRef.current -= lw;
+        }
+      }
+
+      // Calculate the arch curve transforms for every card
+      const vp = viewportRef.current;
+      const track = trackRef.current;
+
+      if (vp && track) {
+        const vpWidth = vp.clientWidth;
+        const halfVp = vpWidth / 2;
+        const cardsEls = track.children;
+
+        for (let i = 0; i < cardsEls.length; i++) {
+          const cardEl = cardsEls[i] as HTMLElement;
+          // Card center relative to track start
+          const cardCenter = offsetRef.current + i * stride + cardWidth / 2;
+          // Distance from viewport center
+          const delta = cardCenter - halfVp;
+          // Normalized ratio (-1 at left edge, 0 at center, +1 at right edge)
+          const u = Math.max(-1.4, Math.min(1.4, delta / (halfVp * 0.92)));
+
+          // Parabolic arch: center card is highest (translateY = 0), edge cards dip downwards
+          const translateY = Math.pow(u, 2) * (isMobile ? 18 : 28);
+          // Rotation: tilt outwards from center (-6deg to +6deg)
+          const rotate = u * (isMobile ? 4.5 : 6.2);
+          // Scale: center card is slightly more prominent
+          const scale = 1 - Math.pow(u, 2) * 0.025;
+
+          const innerCard = cardEl.firstElementChild as HTMLElement;
+          if (innerCard) {
+            innerCard.style.transform = `translate3d(0, ${translateY.toFixed(2)}px, 0) rotate(${rotate.toFixed(2)}deg) scale(${scale.toFixed(3)})`;
+          }
+        }
+
+        track.style.transform = `translate3d(${offsetRef.current}px, 0, 0)`;
+      }
+
+      rafRef.current = requestAnimationFrame(tick);
+    };
+
+    rafRef.current = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(rafRef.current);
+  }, [ready, reduce, count, stride, cardWidth, isMobile]);
+
+  const nudge = (dir: 1 | -1) => {
+    const lw = loopWidthRef.current;
+    offsetRef.current += dir * NUDGE_AMOUNT;
+    if (lw > 0) {
+      while (offsetRef.current <= -lw) offsetRef.current += lw;
+      while (offsetRef.current > 0) offsetRef.current -= lw;
+    }
+  };
+
+  return (
+    <div className="relative w-full overflow-hidden pt-4 pb-12 sm:pb-16 select-none">
+      {/* Viewport with lateral gradient masks */}
+      <div
+        ref={viewportRef}
+        role="region"
+        aria-roledescription="carousel"
+        aria-label="Why Gyan Chowk Learning Stack Showcase"
+        tabIndex={0}
+        onMouseEnter={() => {
+          pausedRef.current = true;
+        }}
+        onMouseLeave={() => {
+          if (!draggingRef.current) pausedRef.current = false;
+        }}
+        onFocus={() => {
+          pausedRef.current = true;
+        }}
+        onBlur={() => {
+          pausedRef.current = false;
+        }}
+        onPointerDown={(e) => {
+          if (e.pointerType === 'mouse' && e.button !== 0) return;
+          draggingRef.current = true;
+          dragXRef.current = e.clientX;
+          dragOriginRef.current = offsetRef.current;
+          pausedRef.current = true;
+          viewportRef.current?.setPointerCapture(e.pointerId);
+        }}
+        onPointerMove={(e) => {
+          if (!draggingRef.current) return;
+          const dx = e.clientX - dragXRef.current;
+          offsetRef.current = dragOriginRef.current + dx;
+          const lw = loopWidthRef.current;
+          if (lw > 0) {
+            while (offsetRef.current <= -lw) offsetRef.current += lw;
+            while (offsetRef.current > 0) offsetRef.current -= lw;
+          }
+        }}
+        onPointerUp={() => {
+          draggingRef.current = false;
+          pausedRef.current = false;
+        }}
+        onPointerCancel={() => {
+          draggingRef.current = false;
+          pausedRef.current = false;
+        }}
+        className="w-full overflow-hidden cursor-grab active:cursor-grabbing [mask-image:linear-gradient(90deg,transparent_0%,#000_5%,#000_95%,transparent_100%)] [-webkit-mask-image:linear-gradient(90deg,transparent_0%,#000_5%,#000_95%,transparent_100%)]"
+        style={{ minHeight: isMobile ? '350px' : '410px' }}
+      >
+        <div
+          ref={trackRef}
+          className="flex will-change-transform py-4"
+          style={{ width: 'max-content' }}
+        >
+          {duplicatedSlides.map((card, i) => {
+            return (
               <div
-                key={i}
-                className="col-span-12 sm:col-span-6 lg:col-span-3 h-36 rounded-[22px] border border-slate-200/60 bg-white/70 p-6 animate-pulse"
+                key={`${card._id || card.title}-${i}`}
+                style={{
+                  width: `${cardWidth}px`,
+                  flex: `0 0 ${cardWidth}px`,
+                  marginRight: `${cardGap}px`,
+                }}
+                className="perspective-[1000px]"
+                aria-hidden={i >= count}
               >
-                <div className="h-5 w-3/4 rounded bg-slate-200/80 mb-3" />
-                <div className="h-3.5 w-full rounded bg-slate-200/60 mb-2" />
-                <div className="h-3.5 w-2/3 rounded bg-slate-200/60" />
-              </div>
-            ))}
-          </div>
-        ) : cards.length > 0 ? (
-          /* FEATURE CARDS GRID */
-          <div className="grid grid-cols-12 gap-5 sm:gap-6">
-            {cards.map((item, idx) => {
-              const theme = getAccentTheme(item.accentColor);
-              const gradId = `wave-grad-${item._id || idx}`;
-              const is11Items = cards.length === 11;
-              const isBottomRow = is11Items && idx >= 8;
-
-              // Row 1 & 2: 4 cards (span 3 on desktop)
-              // Row 3: 3 cards (span 4 on desktop for wider proportions matching reference)
-              const colSpanClass = isBottomRow
-                ? 'col-span-12 sm:col-span-6 lg:col-span-4'
-                : 'col-span-12 sm:col-span-6 lg:col-span-3';
-
-              return (
-                <div key={item._id || `${item.title}-${idx}`} className={colSpanClass}>
-                  <div
-                    tabIndex={0}
-                    className="group relative h-full rounded-[22px] border border-slate-200/70 bg-white p-6 sm:p-7 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.04)] transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-[0_12px_30px_-6px_rgba(0,0,0,0.08)] hover:border-slate-300/80 overflow-hidden flex flex-col justify-between min-h-[148px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/30"
+                {/* Inner Card Container that receives arch transform */}
+                <div
+                  className="transition-[box-shadow,border-color] duration-200 will-change-transform"
+                  style={{
+                    transformOrigin: '50% 100%',
+                    transform: 'translate3d(0, 0, 0) rotate(0deg)',
+                  }}
+                >
+                  <Link
+                    href={card.href || '/courses'}
+                    className="group relative flex flex-col justify-between overflow-hidden rounded-[22px] border border-black/10 bg-[#161B26] text-white shadow-[0_16px_36px_-10px_rgba(0,0,0,0.18)] transition-all duration-300 hover:shadow-[0_24px_48px_-12px_rgba(0,0,0,0.3)] hover:border-amber-400/50"
+                    style={{
+                      height: isMobile ? '320px' : '360px',
+                    }}
                   >
-                    {/* Left vertical accent line - rounded left pill */}
-                    <div
-                      className="absolute left-0 top-0 bottom-0 w-[4.5px] rounded-l-[22px] transition-all duration-300 group-hover:w-[5.5px]"
-                      style={{ backgroundColor: theme.bar }}
-                      aria-hidden="true"
-                    />
+                    {/* Background Visual Image */}
+                    <div className="absolute inset-0 z-0">
+                      {card.imageUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={card.imageUrl}
+                          alt={card.title}
+                          className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+                          loading={i < 6 ? 'eager' : 'lazy'}
+                        />
+                      ) : (
+                        <div className="h-full w-full bg-gradient-to-br from-[#1E293B] to-[#0F172A]" />
+                      )}
 
-                    {/* Content (Typography & Hierarchy Focused, NO ICONS) */}
-                    <div className="relative z-10 pr-2">
-                      <h3 className="font-serif text-[1.125rem] sm:text-[1.2rem] font-bold text-[#0F172A] tracking-tight leading-snug">
-                        {item.title}
-                      </h3>
-                      <p className="mt-2.5 text-xs sm:text-[13.5px] text-[#475569] font-normal leading-relaxed">
-                        {item.description}
-                      </p>
+                      {/* Film grain and dark readability gradient veil */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-[#0A0D14] via-[#0A0D14]/65 to-black/30" />
                     </div>
 
-                    {/* Subtle decorative curved wave shape in bottom-right corner matching reference */}
-                    <svg
-                      className="pointer-events-none absolute -bottom-0.5 -right-0.5 w-32 h-20 transition-transform duration-300 ease-out group-hover:scale-105"
-                      viewBox="0 0 140 90"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
-                      aria-hidden="true"
-                    >
-                      <path
-                        d="M140 18 C105 18 70 52 0 90 L140 90 Z"
-                        fill={`url(#${gradId})`}
+                    {/* Card Top: Accent pill & Serial badge */}
+                    <div className="relative z-10 flex items-center justify-between p-4 sm:p-5">
+                      <span
+                        className="inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider backdrop-blur-md shadow-xs"
+                        style={{
+                          backgroundColor: 'rgba(255, 255, 255, 0.12)',
+                          color: '#FFFFFF',
+                          border: '1px solid rgba(255, 255, 255, 0.22)',
+                        }}
+                      >
+                        {card.badge}
+                      </span>
+
+                      <span
+                        className="h-2.5 w-2.5 rounded-full shadow-xs"
+                        style={{ backgroundColor: card.accentColor }}
+                        aria-hidden="true"
                       />
-                      <defs>
-                        <linearGradient id={gradId} x1="0%" y1="100%" x2="100%" y2="0%">
-                          <stop offset="0%" stopColor={theme.waveStart} stopOpacity="0.04" />
-                          <stop offset="100%" stopColor={theme.waveEnd} stopOpacity="0.18" />
-                        </linearGradient>
-                      </defs>
-                    </svg>
-                  </div>
+                    </div>
+
+                    {/* Card Bottom: Title & Body description */}
+                    <div className="relative z-10 p-5 sm:p-6 mt-auto">
+                      <p className="text-[10.5px] font-semibold uppercase tracking-[0.16em] text-amber-300/90">
+                        {card.kicker}
+                      </p>
+
+                      <h3 className="mt-1 font-serif text-[1.25rem] sm:text-[1.35rem] font-bold leading-snug text-white tracking-tight">
+                        {card.title}
+                      </h3>
+
+                      <p className="mt-2 text-xs leading-relaxed text-stone-300 line-clamp-2">
+                        {card.description}
+                      </p>
+
+                      <div className="mt-4 flex items-center gap-1.5 text-xs font-semibold text-white/80 group-hover:text-amber-300 transition-colors">
+                        <span>Explore</span>
+                        <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
+                      </div>
+                    </div>
+                  </Link>
                 </div>
-              );
-            })}
-          </div>
-        ) : (
-          <div className="rounded-2xl border border-dashed border-[#D5CBBB] bg-white/60 p-10 text-center">
-            <p className="text-sm font-medium text-slate-500">
-              No learning stack items available.
-            </p>
-          </div>
-        )}
+              </div>
+            );
+          })}
+        </div>
       </div>
-    </section>
+
+      {/* Navigation Controls (Left / Right Arrows) */}
+      <div className="gc-container relative z-20 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 mt-2 flex items-center justify-end gap-2.5">
+        <button
+          type="button"
+          onClick={() => nudge(1)}
+          aria-label="Previous learning stack cards"
+          className="grid h-9 w-9 sm:h-10 sm:w-10 place-items-center rounded-full border border-stone-300 bg-white text-stone-700 shadow-xs transition hover:bg-stone-50 hover:text-black hover:border-stone-400 active:scale-95"
+        >
+          <ChevronLeft className="h-4 w-4 sm:h-5 sm:w-5" />
+        </button>
+        <button
+          type="button"
+          onClick={() => nudge(-1)}
+          aria-label="Next learning stack cards"
+          className="grid h-9 w-9 sm:h-10 sm:w-10 place-items-center rounded-full border border-stone-300 bg-white text-stone-700 shadow-xs transition hover:bg-stone-50 hover:text-black hover:border-stone-400 active:scale-95"
+        >
+          <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5" />
+        </button>
+      </div>
+    </div>
   );
 }

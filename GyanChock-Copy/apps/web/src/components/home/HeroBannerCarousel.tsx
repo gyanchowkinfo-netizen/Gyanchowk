@@ -11,14 +11,6 @@ import type { PublicBanner } from './BannerCarousel';
 const INTERVAL = 3000;
 const SLIDE_MS = 600;
 
-const TAG_LABEL: Record<string, string> = {
-  promo: 'Promotion',
-  course: 'Course',
-  exam: 'Exam',
-  announcement: 'Announcement',
-  general: 'Learning',
-};
-
 export function HeroBannerCarousel() {
   const query = useQuery({
     queryKey: ['banners-active', 'hero'],
@@ -49,9 +41,15 @@ function HeroBannerFallback() {
       <div className="absolute inset-0 bg-[image:var(--gradient-hero)]" />
       <div className="absolute inset-0 bg-gradient-to-r from-[color:var(--brand-navy)]/55 to-transparent" />
       <div className="relative z-10 flex h-full flex-col justify-end p-6 sm:p-8">
-        <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-white/70">Gyan Chowk</p>
-        <p className="mt-2 font-display text-2xl leading-tight text-white sm:text-3xl">Learn with purpose</p>
-        <p className="mt-2 max-w-sm text-sm text-white/80">Structured courses, focused practice, and measurable progress.</p>
+        <Link
+          href="/courses"
+          className="gc-btn w-fit bg-white text-[color:var(--brand-navy)] hover:bg-white/90 shadow-md"
+        >
+          Explore
+          <span className="gc-btn-arrow" aria-hidden>
+            →
+          </span>
+        </Link>
       </div>
     </div>
   );
@@ -136,8 +134,6 @@ function HeroCarouselCore({ items }: { items: PublicBanner[] }) {
           const offset = i - index;
           const nearby =
             Math.abs(offset) <= 1 || (index === 0 && i === items.length - 1) || (index === items.length - 1 && i === 0);
-          const tag = TAG_LABEL[banner.bannerType || 'promo'] || 'Promotion';
-          const titleId = `hero-banner-title-${banner.id}`;
           return (
             <article
               key={banner.id}
@@ -149,7 +145,7 @@ function HeroCarouselCore({ items }: { items: PublicBanner[] }) {
                 transitionTimingFunction: 'cubic-bezier(0.22, 1, 0.36, 1)',
               }}
               aria-hidden={i !== index}
-              aria-labelledby={i === index ? titleId : undefined}
+              aria-label={banner.title}
             >
               {src && nearby ? (
                 // eslint-disable-next-line @next/next/no-img-element
@@ -164,24 +160,15 @@ function HeroCarouselCore({ items }: { items: PublicBanner[] }) {
               )}
               <div className="absolute inset-0 bg-gradient-to-r from-[color:var(--brand-navy)]/80 via-[color:var(--brand-navy)]/40 to-transparent" />
               <div className="relative z-10 flex h-full max-w-md flex-col justify-end p-5 sm:p-7">
-                <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-white/70">{tag}</p>
-                <p id={titleId} className="mt-2 font-display text-2xl leading-tight text-white sm:text-3xl">
-                  {banner.title}
-                </p>
-                {banner.subtitle ? (
-                  <p className="mt-2 line-clamp-2 text-sm text-white/80">{banner.subtitle}</p>
-                ) : null}
-                {banner.ctaUrl ? (
-                  <Link
-                    href={banner.ctaUrl}
-                    className="gc-btn mt-4 w-fit bg-white text-[color:var(--brand-navy)] hover:bg-white/90"
-                  >
-                    {banner.ctaText || 'Learn more'}
-                    <span className="gc-btn-arrow" aria-hidden>
-                      →
-                    </span>
-                  </Link>
-                ) : null}
+                <Link
+                  href={banner.ctaUrl || '/courses'}
+                  className="gc-btn w-fit bg-white text-[color:var(--brand-navy)] hover:bg-white/90 shadow-md"
+                >
+                  {banner.ctaText || 'Explore'}
+                  <span className="gc-btn-arrow" aria-hidden>
+                    →
+                  </span>
+                </Link>
               </div>
             </article>
           );
