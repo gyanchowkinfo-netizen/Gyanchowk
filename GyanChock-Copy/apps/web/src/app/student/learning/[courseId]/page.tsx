@@ -6,7 +6,7 @@ import { api, downloadPdf } from '@/lib/api';
 import { VideoPlayer } from '@/components/player/VideoPlayer';
 import { LoadingState, EmptyState, ErrorState } from '@/components/ui/States';
 import { ProgressBar } from '@/components/ui/Badge';
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import {
   CheckCircle2,
@@ -85,7 +85,7 @@ type Material = {
   topic?: string;
 };
 
-export default function CourseClassroom() {
+function CourseClassroomContent() {
   const { courseId } = useParams<{ courseId: string }>();
   const searchParams = useSearchParams();
   const isPreview = searchParams.get('preview') === '1' || searchParams.get('preview') === 'true';
@@ -765,5 +765,13 @@ export default function CourseClassroom() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function CourseClassroom() {
+  return (
+    <Suspense fallback={<LoadingState label="Loading classroom..." />}>
+      <CourseClassroomContent />
+    </Suspense>
   );
 }

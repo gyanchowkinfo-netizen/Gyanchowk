@@ -1,6 +1,6 @@
 'use client';
 
-import { FormEvent, useState, useEffect } from 'react';
+import { FormEvent, useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
@@ -16,7 +16,7 @@ import { CourseCurriculumManager } from '@/components/teachers/CourseCurriculumM
 
 const STEPS = ['Basic info', 'Pricing', 'Create'];
 
-export default function TeacherCoursesPage() {
+function TeacherCoursesContent() {
   const searchParams = useSearchParams();
   const initialCourseId = searchParams.get('courseId');
 
@@ -393,5 +393,13 @@ export default function TeacherCoursesPage() {
         </Modal>
       )}
     </div>
+  );
+}
+
+export default function TeacherCoursesPage() {
+  return (
+    <Suspense fallback={<LoadingState label="Loading courses..." />}>
+      <TeacherCoursesContent />
+    </Suspense>
   );
 }
