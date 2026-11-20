@@ -21,7 +21,6 @@ function apiOrigin(): string {
  * OneDrive ENOENT rename-lock error on .pack.gz_ → .pack.gz atomic renames.
  */
 const nextConfig: NextConfig = {
-  ...(process.env.BUILD_DIR ? { distDir: process.env.BUILD_DIR } : {}),
   transpilePackages: ['@gyan-chowk/shared'],
   typescript: {
     ignoreBuildErrors: true,
