@@ -1,7 +1,5 @@
 'use client';
 
-import Link from 'next/link';
-import { Reveal } from '@/components/motion';
 import { EmptyState } from '@/components/ui/States';
 import type { HomeDiscoveryPath, HomeSectionCopy } from '@/lib/types';
 import { EXAM_LINKS } from './content';
@@ -22,7 +20,6 @@ const FALLBACK_IMAGES: Record<string, string> = {
 };
 
 export function CategoryExplorer({
-  counts,
   paths,
   copy,
 }: {
@@ -35,47 +32,44 @@ export function CategoryExplorer({
     : EXAM_LINKS.map((c) => ({ name: c.name, href: c.href, body: c.body, tone: c.tone }));
 
   return (
-    <section className="gc-container overflow-x-hidden py-7 md:py-10" aria-labelledby="paths">
-      <HomeCardSectionHeading
-        id="paths"
-        kicker={copy?.kicker || 'Discovery'}
-        title={copy?.title || 'Choose your path'}
-        subtitle={copy ? copy.subtitle : 'Focused learning for exams, academics, careers, and technology.'}
-        highlight="your path"
-      />
-      {items.length ? (
-        <HomeCardCarousel
-          count={items.length}
-          ariaLabel="Discovery paths"
-          renderSlide={(index, eager) => {
-            const c = items[index];
-            const countLabel = counts?.[c.name] ? `${counts[c.name]} courses →` : undefined;
-            return (
-              <HomePhotoCard
-                index={index}
-                eager={eager}
-                card={{
-                  title: c.name,
-                  body: c.body,
-                  imageUrl: c.imageUrl || FALLBACK_IMAGES[c.name],
-                  href: c.href,
-                  ctaText: c.ctaText || countLabel || 'Explore →',
-                  accent: c.accent,
-                }}
-              />
-            );
-          }}
+    <section className="w-full mx-0 px-0 overflow-x-hidden py-7 md:py-10" aria-labelledby="paths">
+      <div className="gc-container">
+        <HomeCardSectionHeading
+          id="paths"
+          kicker={copy?.kicker || 'Discovery'}
+          title={copy?.title || 'Choose your path'}
+          subtitle={copy ? copy.subtitle : 'Focused learning for exams, academics, careers, and technology.'}
+          highlight="your path"
         />
+      </div>
+      {items.length ? (
+        <div className="w-full mx-0 px-0 mt-2 sm:mt-4">
+          <HomeCardCarousel
+            count={items.length}
+            ariaLabel="Discovery paths"
+            renderSlide={(index, eager) => {
+              const c = items[index];
+              return (
+                <HomePhotoCard
+                  index={index}
+                  eager={eager}
+                  card={{
+                    title: c.name,
+                    body: c.body,
+                    imageUrl: c.imageUrl || FALLBACK_IMAGES[c.name],
+                    href: c.href,
+                    accent: c.accent,
+                  }}
+                />
+              );
+            }}
+          />
+        </div>
       ) : (
-        <EmptyState title="No content available yet." body="Discovery cards will appear here once they are published." />
+        <div className="gc-container">
+          <EmptyState title="No content available yet." body="Discovery cards will appear here once they are published." />
+        </div>
       )}
-      <Reveal>
-        <p className="mt-6 text-center">
-          <Link href="/courses" className="text-sm text-gc-mute hover:text-gc-black">
-            Browse the full catalogue →
-          </Link>
-        </p>
-      </Reveal>
     </section>
   );
 }

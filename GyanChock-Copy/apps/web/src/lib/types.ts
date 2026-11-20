@@ -553,9 +553,25 @@ export interface CoursesFeaturedPromoConfig {
   benefits: CoursesPromoBenefit[];
 }
 
+export interface CoursesPracticeBannerConfig {
+  badge: string;
+  title: string;
+  titleHighlight?: string;
+  subtitle: string;
+  ctaText: string;
+  ctaLink: string;
+  secondaryCtaText?: string;
+  secondaryCtaLink?: string;
+  imageUrl: string;
+  imageAlt?: string;
+  features: Array<{ _key: string; text: string; active: boolean }>;
+  active: boolean;
+}
+
 export interface CoursesPageConfig {
   hero: CoursesHeroConfig;
   featuredPromo: CoursesFeaturedPromoConfig;
+  practiceBanner?: CoursesPracticeBannerConfig;
 }
 
 export const DEFAULT_COURSES_PAGE_CONFIG: CoursesPageConfig = {
@@ -625,6 +641,25 @@ export const DEFAULT_COURSES_PAGE_CONFIG: CoursesPageConfig = {
         active: true,
       },
     ],
+  },
+  practiceBanner: {
+    badge: 'STUDENT PRACTICE WORKSPACE',
+    title: 'Practice with Purpose.',
+    titleHighlight: 'Test Your Readiness.',
+    subtitle:
+      'Timed mocks, chapter topic sets and ranked question papers. Start when you are ready, track weak areas, and climb the leaderboard.',
+    ctaText: 'Open Practice Tests',
+    ctaLink: '/student/tests',
+    secondaryCtaText: 'Explore Test Series',
+    secondaryCtaLink: '/student/tests',
+    imageUrl: '/practice-workspace.png',
+    imageAlt: 'Online practice and test workspace',
+    features: [
+      { _key: 'pf1', text: 'Real-time Server Ranking & Percentiles', active: true },
+      { _key: 'pf2', text: 'Negative Marking & Timed Exam Conditions', active: true },
+      { _key: 'pf3', text: 'Detailed Solutions & Concept Analytics', active: true },
+    ],
+    active: true,
   },
 };
 

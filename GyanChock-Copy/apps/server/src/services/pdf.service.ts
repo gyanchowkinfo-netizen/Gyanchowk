@@ -92,3 +92,32 @@ export async function resumePdf(input: {
   ].filter((line, i, arr) => !(line === '' && arr[i - 1] === ''));
   return brandedPdf(input.name || 'Resume', lines);
 }
+
+export async function studyMaterialPdf(input: {
+  title: string;
+  type?: string;
+  courseTitle?: string;
+  teacherName?: string;
+}) {
+  const typeLabel = (input.type || 'Study Notes').replace(/_/g, ' ').toUpperCase();
+  const lines = [
+    `Category: ${typeLabel}`,
+    `Course: ${input.courseTitle || 'Gyan Chowk Verified Learning'}`,
+    `Faculty: ${input.teacherName || 'Gyan Chowk Faculty'}`,
+    `Verified: ${new Date().toLocaleDateString('en-IN')}`,
+    '',
+    '--------------------------------------------------------------------------------',
+    'STUDY & REVISION NOTES',
+    '--------------------------------------------------------------------------------',
+    '',
+    `Official study and revision material for ${input.title}.`,
+    'Provided by Gyan Chowk for enrolled course students.',
+    '',
+    '• Key conceptual definitions and fundamental derivations',
+    '• Important formulas, shortcuts, and standard applications',
+    '• Essential problem-solving steps and revision hints',
+    '',
+    'Keep this document for offline revision alongside your recorded video lessons.',
+  ];
+  return brandedPdf(input.title.toUpperCase(), lines);
+}

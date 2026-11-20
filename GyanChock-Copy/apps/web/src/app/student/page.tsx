@@ -60,7 +60,6 @@ export default function StudentHome() {
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-gc-mute">Continue learning</p>
             <p className="mt-1 font-display text-xl font-semibold text-gc-black">{firstCourse.course?.title}</p>
-            {firstCourse.batch ? <p className="mt-1 text-sm text-gc-mute">{firstCourse.batch.name}</p> : null}
           </div>
           <span className="gc-btn-primary">Continue</span>
         </Link>
@@ -83,7 +82,7 @@ export default function StudentHome() {
       </div>
       <div className="grid gap-6 lg:grid-cols-2">
         <section className="gc-card p-6">
-          <h2 className="font-display text-lg font-semibold text-gc-black">My courses & batches</h2>
+          <h2 className="font-display text-lg font-semibold text-gc-black">My courses</h2>
           {enrollments.isLoading ? <LoadingState /> : null}
           <ul className="mt-4 space-y-3 text-sm">
             {(enrollments.data?.items ?? []).map((e, i) => (
@@ -93,7 +92,6 @@ export default function StudentHome() {
                     {e.course.title}
                   </Link>
                 ) : null}
-                {e.batch ? <span className="text-gc-mute">{e.batch.name}</span> : null}
               </li>
             ))}
           </ul>

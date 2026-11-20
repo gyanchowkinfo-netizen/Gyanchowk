@@ -12,7 +12,10 @@ function extractToken(req: Request): string | null {
   const header = req.headers.authorization;
   if (header?.startsWith('Bearer ')) return header.slice(7);
   const cookie = req.cookies?.gc_access as string | undefined;
-  return cookie ?? null;
+  if (cookie) return cookie;
+  const queryToken = req.query?.token as string | undefined;
+  if (queryToken) return queryToken;
+  return null;
 }
 
 export async function authenticate(req: AuthedRequest, _res: Response, next: NextFunction) {
@@ -25,13 +28,27 @@ export async function authenticate(req: AuthedRequest, _res: Response, next: Nex
     if (!user || user.status === 'suspended' || user.status === 'deactivated') {
       throw unauthorized('Account is not active');
     }
+
+    let currentTeacherStatus = user.teacherStatus ?? undefined;
+    if (user.role === 'teacher' && currentTeacherStatus !== 'approved' && (currentTeacherStatus as string) !== 'published') {
+      const { TeacherModel } = await import('../models/teacher.models.js');
+      const teacherProfile = await TeacherModel.findOne({
+        $or: [{ user: user._id }, { email: user.email.toLowerCase() }],
+        status: { $in: ['published', 'approved'] },
+      }).lean();
+      if (teacherProfile) {
+        await UserModel.findByIdAndUpdate(user._id, { teacherStatus: 'approved', status: 'active' });
+        currentTeacherStatus = 'approved';
+      }
+    }
+
     req.user = {
       id: String(user._id),
       role: user.role,
       email: user.email,
       name: user.name,
-      status: user.status,
-      teacherStatus: user.teacherStatus ?? undefined,
+      status: currentTeacherStatus === 'approved' ? 'active' : user.status,
+      teacherStatus: currentTeacherStatus,
       permissions: user.permissions,
       mustChangePassword: user.mustChangePassword,
     };
@@ -51,8 +68,11 @@ export function requireRoles(...roles: Role[]) {
   return (req: AuthedRequest, _res: Response, next: NextFunction) => {
     if (!req.user) throw unauthorized();
     if (!roles.includes(req.user.role)) throw forbidden();
-    if (req.user.role === 'teacher' && req.user.teacherStatus !== 'approved') {
-      throw forbidden('Teacher account is pending admin approval');
+    if (req.user.role === 'teacher') {
+      const isApproved = req.user.teacherStatus === 'approved' || (req.user.teacherStatus as string) === 'published';
+      if (!isApproved) {
+        throw forbidden('Teacher account is pending admin approval');
+      }
     }
     next();
   };
@@ -76,6 +96,9 @@ export function requirePermissions(...perms: Permission[]) {
 export function teacherOrAdmin(req: AuthedRequest, _res: Response, next: NextFunction) {
   if (!req.user) throw unauthorized();
   if (req.user.role === 'admin') return next();
-  if (req.user.role === 'teacher' && req.user.teacherStatus === 'approved') return next();
+  if (req.user.role === 'teacher') {
+    const isApproved = req.user.teacherStatus === 'approved' || (req.user.teacherStatus as string) === 'published';
+    if (isApproved) return next();
+  }
   throw forbidden();
 }

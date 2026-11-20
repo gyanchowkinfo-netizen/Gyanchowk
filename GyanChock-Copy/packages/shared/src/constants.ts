@@ -4,7 +4,7 @@ export type Role = (typeof ROLES)[number];
 export const USER_STATUSES = ['active', 'suspended', 'deactivated', 'pending_verification'] as const;
 export type UserStatus = (typeof USER_STATUSES)[number];
 
-export const TEACHER_STATUSES = ['pending', 'approved', 'rejected', 'suspended'] as const;
+export const TEACHER_STATUSES = ['pending', 'approved', 'published', 'rejected', 'suspended'] as const;
 export type TeacherStatus = (typeof TEACHER_STATUSES)[number];
 
 export const COURSE_STATUSES = ['draft', 'pending_review', 'published', 'archived'] as const;

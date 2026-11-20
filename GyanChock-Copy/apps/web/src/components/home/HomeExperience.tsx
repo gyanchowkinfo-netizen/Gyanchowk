@@ -145,7 +145,6 @@ export function HomeExperience() {
         />
       </SectionError>
       <FeatureGrid features={cms.data?.platform} copy={cms.data?.sections?.platform} />
-      <PracticeSection tests={tests.data?.items ?? []} loading={Boolean(user) && tests.isLoading} />
       <TestSubscriptionSection data={testPrimeData} settled={testPrimeSettled} />
       <DoubtMentorSection copy={cms.data?.sections?.mentorship} />
       <SectionError label="Faculty could not load.">

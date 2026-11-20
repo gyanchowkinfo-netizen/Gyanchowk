@@ -63,6 +63,9 @@ export function canAccessPanel(
 ) {
   if (loading || !user) return false;
   if (user.role !== role) return false;
-  if (role === 'teacher' && user.teacherStatus !== 'approved') return false;
+  if (role === 'teacher') {
+    const isApproved = user.teacherStatus === 'approved' || user.teacherStatus === 'published';
+    if (!isApproved) return false;
+  }
   return true;
 }

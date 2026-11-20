@@ -13,6 +13,113 @@ function slugify(text: string): string {
     .replace(/--+/g, '-');
 }
 
+export async function syncTeacherWithUser(teacher: ITeacher | any) {
+  if (!teacher) return;
+  try {
+    let user = null;
+    if (teacher.user) {
+      user = await UserModel.findById(teacher.user);
+    }
+    if (!user && teacher.email) {
+      user = await UserModel.findOne({ email: teacher.email.toLowerCase().trim() });
+      if (user && !teacher.user) {
+        teacher.user = user._id;
+        await TeacherModel.findByIdAndUpdate(teacher._id, { user: user._id });
+      }
+    }
+
+    if (user) {
+      let changed = false;
+      if (user.role !== 'teacher' && user.role !== 'admin') {
+        user.role = 'teacher';
+        changed = true;
+      }
+
+      if (teacher.status === 'published' || teacher.status === 'approved') {
+        if (user.teacherStatus !== 'approved') {
+          user.teacherStatus = 'approved';
+          changed = true;
+        }
+        if (user.status !== 'active') {
+          user.status = 'active';
+          changed = true;
+        }
+      } else if (teacher.status === 'suspended' || teacher.status === 'archived') {
+        if (user.teacherStatus !== 'suspended') {
+          user.teacherStatus = 'suspended';
+          changed = true;
+        }
+      } else if (teacher.status === 'draft' || teacher.status === 'pending') {
+        if (user.teacherStatus === 'approved' || (user.teacherStatus as string) === 'published') {
+          user.teacherStatus = 'pending';
+          changed = true;
+        }
+      }
+
+      if (changed) {
+        await user.save();
+      }
+    }
+  } catch (err) {
+    console.error('Failed to sync teacher with user:', err);
+  }
+}
+
+export async function syncUserWithTeacher(user: any) {
+  if (!user || user.role !== 'teacher') return;
+  try {
+    let teacher = await TeacherModel.findOne({
+      $or: [{ user: user._id }, { email: user.email.toLowerCase().trim() }],
+    });
+
+    if (teacher) {
+      if (!teacher.user) teacher.user = user._id;
+      if (user.teacherStatus === 'approved' || user.teacherStatus === 'published') {
+        teacher.status = 'published';
+      } else if (user.teacherStatus === 'rejected' || user.teacherStatus === 'suspended') {
+        teacher.status = 'archived';
+      } else if (user.teacherStatus === 'pending') {
+        teacher.status = 'pending';
+      }
+      await teacher.save();
+    } else if (user.teacherStatus === 'approved' || user.teacherStatus === 'published') {
+      const slug = slugify(user.name) || `teacher-${Date.now()}`;
+      let uniqueSlug = slug;
+      let counter = 1;
+      while (await TeacherModel.findOne({ slug: uniqueSlug })) {
+        uniqueSlug = `${slug}-${counter++}`;
+      }
+      await TeacherModel.create({
+        user: user._id,
+        name: user.name,
+        slug: uniqueSlug,
+        email: user.email,
+        phone: user.phone,
+        profileImage: user.avatar ? { url: user.avatar.url, publicId: user.avatar.publicId } : undefined,
+        designation: user.headline || 'Faculty & Mentor',
+        subject: (user.expertise && user.expertise[0]) || 'General Studies',
+        subjects: user.expertise?.length ? user.expertise : ['General Studies'],
+        bio: user.bio || '',
+        experience: '5+ Years',
+        education: 'Educator',
+        location: user.city ? `${user.city}${user.state ? ', ' + user.state : ''}` : 'Online',
+        languages: user.language ? [user.language] : ['English', 'Hindi'],
+        stats: {
+          courseCount: 0,
+          enrollmentCount: 0,
+          reviewCount: 0,
+          rating: 5.0,
+        },
+        featured: false,
+        status: 'published',
+        displayOrder: 99,
+      });
+    }
+  } catch (err) {
+    console.error('Failed to sync user with teacher:', err);
+  }
+}
+
 export async function ensureDefaultTeachers() {
   const count = await TeacherModel.countDocuments();
   if (count === 0) {
@@ -20,12 +127,12 @@ export async function ensureDefaultTeachers() {
     await seedTeacherRiju();
   }
 
-  // Also sync any UserModel teachers that don't exist in TeacherModel
-  const userTeachers = await UserModel.find({ role: 'teacher' }).lean();
+  // Sync any UserModel teachers that don't exist in TeacherModel or have pending statuses
+  const userTeachers = await UserModel.find({ role: 'teacher' });
   for (const u of userTeachers) {
     const slug = slugify(u.name) || String(u._id);
     const exists = await TeacherModel.findOne({
-      $or: [{ user: u._id }, { slug }],
+      $or: [{ user: u._id }, { email: u.email.toLowerCase() }, { slug }],
     });
     if (!exists) {
       await TeacherModel.create({
@@ -50,9 +157,67 @@ export async function ensureDefaultTeachers() {
           rating: 5.0,
         },
         featured: false,
-        status: u.teacherStatus === 'approved' ? 'published' : 'pending',
+        status: (u.teacherStatus === 'approved' || (u.teacherStatus as string) === 'published') ? 'published' : 'pending',
         displayOrder: 99,
       });
+    } else {
+      let teacherNeedsSave = false;
+      if (!exists.user) {
+        exists.user = u._id as any;
+        teacherNeedsSave = true;
+      }
+      if (!exists.email && u.email) {
+        exists.email = u.email;
+        teacherNeedsSave = true;
+      }
+      if (teacherNeedsSave) {
+        await exists.save();
+      }
+
+      // If TeacherModel is published or approved, user MUST be approved and active
+      if (exists.status === 'published' || exists.status === 'approved') {
+        if (u.teacherStatus !== 'approved' || u.status !== 'active') {
+          u.teacherStatus = 'approved';
+          u.status = 'active';
+          await u.save();
+        }
+      }
+    }
+  }
+
+  // Also reconcile any TeacherModel records marked published/approved with their UserModel
+  const publishedTeachers = await TeacherModel.find({
+    status: { $in: ['published', 'approved'] },
+  });
+  for (const t of publishedTeachers) {
+    let u = null;
+    if (t.user) {
+      u = await UserModel.findById(t.user);
+    }
+    if (!u && t.email) {
+      u = await UserModel.findOne({ email: t.email.toLowerCase().trim() });
+    }
+    if (u) {
+      let userChanged = false;
+      if (u.role !== 'teacher' && u.role !== 'admin') {
+        u.role = 'teacher';
+        userChanged = true;
+      }
+      if (u.teacherStatus !== 'approved') {
+        u.teacherStatus = 'approved';
+        userChanged = true;
+      }
+      if (u.status !== 'active') {
+        u.status = 'active';
+        userChanged = true;
+      }
+      if (userChanged) {
+        await u.save();
+      }
+      if (!t.user) {
+        t.user = u._id as any;
+        await t.save();
+      }
     }
   }
 }
@@ -279,6 +444,7 @@ export async function createTeacher(data: Partial<ITeacher>) {
   });
 
   await teacher.save();
+  await syncTeacherWithUser(teacher);
   return teacher;
 }
 
@@ -299,6 +465,7 @@ export async function updateTeacher(id: string, data: Partial<ITeacher>) {
 
   Object.assign(teacher, data);
   await teacher.save();
+  await syncTeacherWithUser(teacher);
   return teacher;
 }
 

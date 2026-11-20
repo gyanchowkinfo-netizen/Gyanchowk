@@ -17,6 +17,7 @@ import { ScrollProgress } from '@/components/motion';
 
 import { CoursesHero } from './CoursesHero';
 import { FeaturedPromoBanner } from './FeaturedPromoBanner';
+import { CoursesPracticeBanner } from './CoursesPracticeBanner';
 import { CoursesPageContentEditor } from '@/components/admin/CoursesPageContentEditor';
 import { CourseEditModal } from '@/components/admin/CourseEditModal';
 import {
@@ -332,7 +333,15 @@ function CoursesExperience() {
             ) : null}
           </div>
         </div>
+      </PageContainer>
 
+      {/* Practice Section Banner (Full width, margin & border-radius 0) */}
+      <CoursesPracticeBanner
+        config={cmsData.data?.coursesPage?.practiceBanner}
+        onEdit={isAdmin ? () => setAdminModalOpen(true) : undefined}
+      />
+
+      <PageContainer className="pb-16 pt-10">
         {/* Trust & Benefits Strip */}
         <TrustBenefitsStrip />
 

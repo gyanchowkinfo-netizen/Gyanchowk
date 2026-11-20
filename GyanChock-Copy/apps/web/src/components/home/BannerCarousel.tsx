@@ -32,8 +32,8 @@ export function BannerCarousel() {
 
   if (query.isLoading) {
     return (
-      <section className="gc-container pb-3 pt-4 sm:pb-4 sm:pt-5" aria-label="Promotions loading">
-        <div className="h-[22.5rem] animate-pulse rounded-[1.55rem] border border-gc-line bg-[color:var(--gyan-primary-soft)] sm:h-[24rem]" />
+      <section className="w-full mx-0 px-0 pb-2 pt-2 sm:pb-4 sm:pt-5" aria-label="Promotions loading">
+        <div className="w-full aspect-[1024/261] animate-pulse border-y border-gc-line bg-[color:var(--gyan-primary-soft)]" />
       </section>
     );
   }
@@ -100,10 +100,10 @@ function Carousel({ items }: { items: PublicBanner[] }) {
   }
 
   return (
-    <section className="gc-container pb-3 pt-4 sm:pb-5 sm:pt-5" aria-roledescription="carousel" aria-label="Gyan Chowk promotions">
+    <section className="w-full mx-0 px-0 pb-2 pt-2 sm:pb-5 sm:pt-5" aria-roledescription="carousel" aria-label="Gyan Chowk promotions">
       <div
         ref={region}
-        className="relative overflow-hidden rounded-[1.55rem] border border-gc-line bg-[color:var(--brand-navy)] shadow-[var(--shadow-md)]"
+        className="relative w-full overflow-hidden border-y border-x-0 border-gc-line bg-[color:var(--brand-navy)] shadow-[var(--shadow-md)]"
         tabIndex={0}
         onKeyDown={onKey}
         onMouseEnter={() => setPaused(true)}
@@ -124,9 +124,9 @@ function Carousel({ items }: { items: PublicBanner[] }) {
           go(dx < 0 ? 1 : -1);
         }}
       >
-        <div className="relative h-[22.5rem] sm:h-[24rem]">
+        <div className="relative w-full aspect-[1024/261]">
           {items.map((banner, i) => {
-            const src = isMobile ? banner.mobileImageUrl || banner.imageUrl : banner.imageUrl || banner.mobileImageUrl;
+            const src = banner.imageUrl || banner.mobileImageUrl;
             const offset = i - index;
             const nearby = Math.abs(offset) <= 1 || (index === 0 && i === items.length - 1) || (index === items.length - 1 && i === 0);
             return (
@@ -151,10 +151,10 @@ function Carousel({ items }: { items: PublicBanner[] }) {
                   <div className="absolute inset-0 bg-[image:var(--gradient-hero)]" />
                 )}
                 <div className="absolute inset-0 bg-gradient-to-r from-[color:var(--brand-navy)]/80 via-[color:var(--brand-navy)]/35 to-transparent" />
-                <div className="relative z-10 flex h-full max-w-xl flex-col justify-end p-4 sm:p-6 lg:p-7">
+                <div className="gc-container relative z-10 flex h-full flex-col justify-end pb-2 sm:pb-5 lg:pb-7">
                   <Link
                     href={banner.ctaUrl || '/courses'}
-                    className="gc-btn w-fit bg-white text-[color:var(--brand-navy)] hover:bg-white/90 shadow-md"
+                    className="gc-btn w-fit bg-white text-[color:var(--brand-navy)] hover:bg-white/90 shadow-md !min-h-0 !h-auto !py-1 !px-2.5 sm:!py-2 sm:!px-4 lg:!px-6 !text-[9px] min-[380px]:!text-[10px] sm:!text-xs md:!text-sm rounded-full sm:rounded-xl"
                   >
                     {banner.ctaText || 'Learn more'}
                   </Link>
@@ -167,21 +167,21 @@ function Carousel({ items }: { items: PublicBanner[] }) {
           <>
             <button
               type="button"
-              className="absolute left-3 top-1/2 z-20 grid h-11 w-11 -translate-y-1/2 place-items-center rounded-full bg-white/90 text-[color:var(--brand-navy)] shadow-sm hover:bg-white"
+              className="absolute left-1.5 sm:left-4 md:left-6 top-1/2 z-20 grid h-6 w-6 sm:h-9 sm:w-9 md:h-11 md:w-11 -translate-y-1/2 place-items-center rounded-full bg-white/90 text-[color:var(--brand-navy)] shadow-sm hover:bg-white transition-transform active:scale-95"
               aria-label="Previous banner"
               onClick={() => go(-1)}
             >
-              <ChevronLeft size={18} />
+              <ChevronLeft className="h-3 w-3 sm:h-4 sm:w-4 md:h-5 md:w-5" />
             </button>
             <button
               type="button"
-              className="absolute right-3 top-1/2 z-20 grid h-11 w-11 -translate-y-1/2 place-items-center rounded-full bg-white/90 text-[color:var(--brand-navy)] shadow-sm hover:bg-white"
+              className="absolute right-1.5 sm:right-4 md:right-6 top-1/2 z-20 grid h-6 w-6 sm:h-9 sm:w-9 md:h-11 md:w-11 -translate-y-1/2 place-items-center rounded-full bg-white/90 text-[color:var(--brand-navy)] shadow-sm hover:bg-white transition-transform active:scale-95"
               aria-label="Next banner"
               onClick={() => go(1)}
             >
-              <ChevronRight size={18} />
+              <ChevronRight className="h-3 w-3 sm:h-4 sm:w-4 md:h-5 md:w-5" />
             </button>
-            <div className="absolute bottom-3 left-0 right-0 z-20 flex justify-center gap-2" role="tablist" aria-label="Banner slides">
+            <div className="absolute bottom-1 sm:bottom-3 left-0 right-0 z-20 flex justify-center gap-1 sm:gap-2" role="tablist" aria-label="Banner slides">
               {items.map((b, i) => (
                 <button
                   key={b.id}
@@ -189,7 +189,7 @@ function Carousel({ items }: { items: PublicBanner[] }) {
                   role="tab"
                   aria-selected={i === index}
                   aria-label={`Show banner ${i + 1}`}
-                  className={cn('h-2.5 rounded-full transition-all', i === index ? 'w-7 bg-white' : 'w-2.5 bg-white/50')}
+                  className={cn('h-1 sm:h-2.5 rounded-full transition-all', i === index ? 'w-3.5 sm:w-7 bg-white' : 'w-1 sm:w-2.5 bg-white/50')}
                   onClick={() => setIndex(i)}
                 />
               ))}

@@ -16,8 +16,20 @@ const enrollmentSchema = new Schema(
   { timestamps: true },
 );
 
-enrollmentSchema.index({ user: 1, course: 1 }, { unique: true, sparse: true });
-enrollmentSchema.index({ user: 1, batch: 1 }, { unique: true, sparse: true });
+enrollmentSchema.index(
+  { user: 1, course: 1 },
+  {
+    unique: true,
+    partialFilterExpression: { course: { $exists: true, $type: 'objectId' } },
+  },
+);
+enrollmentSchema.index(
+  { user: 1, batch: 1 },
+  {
+    unique: true,
+    partialFilterExpression: { batch: { $exists: true, $type: 'objectId' } },
+  },
+);
 enrollmentSchema.index({ user: 1, status: 1, expiresAt: 1 });
 
 const progressSchema = new Schema(
@@ -60,7 +72,9 @@ const studyMaterialSchema = new Schema(
     batch: { type: Schema.Types.ObjectId, ref: 'Batch', index: true },
     subject: { type: Schema.Types.ObjectId, ref: 'Subject' },
     chapter: { type: Schema.Types.ObjectId, ref: 'Chapter' },
+    topic: { type: Schema.Types.ObjectId, ref: 'Topic' },
     teacher: { type: Schema.Types.ObjectId, ref: 'User', index: true },
+    uploadedBy: { type: Schema.Types.ObjectId, ref: 'User', index: true },
     publicId: { type: String, required: true },
     url: String,
     bytes: Number,

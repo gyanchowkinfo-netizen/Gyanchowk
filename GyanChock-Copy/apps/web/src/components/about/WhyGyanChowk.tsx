@@ -1,12 +1,15 @@
 'use client';
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
-import { PageContainer } from '@/components/layout/Page';
-import { Reveal } from '@/components/motion';
-import type { AboutWhyConfig, AboutWhyItem } from '@/lib/types';
+import type { AboutWhyConfig } from '@/lib/types';
 import { DEFAULT_ABOUT_PAGE_CONFIG } from '@/lib/types';
+import {
+  ArchedCardsCarousel,
+  DEFAULT_STACK_CARDS,
+  type LearningStackCardItem,
+} from '@/components/home/WhyGyanChowk';
 
 export interface AccentTheme {
   bar: string;
@@ -120,151 +123,73 @@ export function WhyGyanChowk({ config }: { config?: AboutWhyConfig }) {
 
   const { data } = useQuery({
     queryKey: ['learning-stack-cards-public'],
-    queryFn: () =>
-      api<{
-        cards: Array<{
-          _id: string;
-          title: string;
-          description: string;
-          accentColor: string;
-          displayOrder: number;
-          isActive: boolean;
-        }>;
-      }>('/api/learning-stack/cards'),
+    queryFn: () => api<{ cards: LearningStackCardItem[] }>('/api/learning-stack/cards'),
+    initialData: { cards: DEFAULT_STACK_CARDS },
     staleTime: 60_000,
   });
 
-  const rawItems: AboutWhyItem[] =
-    data?.cards && data.cards.length > 0
-      ? data.cards.map((c) => ({
-          _key: c._id,
-          title: c.title,
-          body: c.description,
-          accent: c.accentColor as any,
-          order: c.displayOrder,
-          active: c.isActive,
-        }))
-      : why.items || DEFAULT_ABOUT_PAGE_CONFIG.whyGyanChowk.items;
+  const cards = useMemo(() => {
+    const raw: LearningStackCardItem[] = data?.cards && data.cards.length > 0 ? data.cards : DEFAULT_STACK_CARDS;
+    return raw.map((item: LearningStackCardItem, idx: number) => {
+      const fallback = DEFAULT_STACK_CARDS[idx % DEFAULT_STACK_CARDS.length];
+      return {
+        ...fallback,
+        ...item,
+        imageUrl: item.imageUrl || fallback.imageUrl,
+        badge: item.badge || fallback.badge,
+        kicker: item.kicker || fallback.kicker,
+        href: item.href || fallback.href,
+      };
+    });
+  }, [data?.cards]);
 
-  // Filter active and sort by display order if present
-  const items: AboutWhyItem[] = [...rawItems]
-    .filter((i) => i.active !== false)
-    .sort((a, b) => (a.order ?? 999) - (b.order ?? 999));
+  const eyebrow = why.eyebrow || 'WHY GYAN CHOWK';
+  const heading = why.heading || 'A complete recorded learning stack';
+  const headingHighlight = why.headingHighlight || 'recorded learning stack';
+  const description =
+    why.description ||
+    'Everything is built from the ground up for serious learners who value clarity and proof of progress.';
 
   return (
     <section
       id="why"
+      aria-labelledby="why-gyan-chowk-heading"
       className="relative overflow-hidden bg-[#FAF7F2] py-14 sm:py-20 border-b border-[#ECE6DE]"
     >
-      {/* Subtle ambient depth - minimal and warm */}
+      {/* Subtle depth */}
       <div
         className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,rgba(247,242,233,0.7),transparent_65%)]"
         aria-hidden="true"
       />
 
-      <PageContainer className="relative !py-0">
-        {/* SECTION HEADER - strictly matching reference image */}
-        <div className="max-w-3xl mb-10 sm:mb-12">
-          {/* Badge with horizontal line accents */}
-          <Reveal>
-            <div className="inline-flex items-center gap-2.5 mb-3.5">
-              <span className="w-5 h-px bg-[#C4A05A]/45" aria-hidden="true" />
-              <span className="inline-block rounded-full bg-[#FAF0E4] border border-[#E8DCC8] px-3.5 py-0.5 text-[11px] font-bold tracking-[0.2em] uppercase text-[#8C6228]">
-                {why.eyebrow || 'WHY GYAN CHOWK'}
-              </span>
-              <span className="w-5 h-px bg-[#C4A05A]/45" aria-hidden="true" />
-            </div>
-          </Reveal>
+      <div className="gc-container relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        {/* SECTION HEADER - Matching Reference Image */}
+        <div className="max-w-3xl mb-8 sm:mb-10">
+          <div className="inline-flex items-center gap-2.5 mb-3.5">
+            <span className="w-5 h-px bg-[#D6CBBB]" aria-hidden="true" />
+            <span className="inline-block rounded-full bg-[#FAF0E4] border border-[#E8DCC8] px-3.5 py-0.5 text-[11px] font-bold tracking-[0.18em] uppercase text-[#8C6228]">
+              {eyebrow}
+            </span>
+            <span className="w-5 h-px bg-[#D6CBBB]" aria-hidden="true" />
+          </div>
 
-          {/* Main Heading: "A complete recorded learning stack" */}
-          <Reveal delay={0.04}>
-            <h2 className="font-serif text-3xl sm:text-4xl lg:text-[2.85rem] font-bold tracking-tight text-[#0F172A] leading-[1.14]">
-              {renderHighlightedHeading(
-                why.heading || 'A complete recorded learning stack',
-                why.headingHighlight || 'recorded learning stack',
-              )}
-            </h2>
-          </Reveal>
+          <h2
+            id="why-gyan-chowk-heading"
+            className="font-serif text-3xl sm:text-4xl lg:text-[2.85rem] font-bold tracking-tight text-[#0F172A] leading-[1.14]"
+          >
+            {renderHighlightedHeading(heading, headingHighlight)}
+          </h2>
 
-          {/* Supporting Text */}
-          {why.description && (
-            <Reveal delay={0.08}>
-              <p className="mt-3.5 text-xs sm:text-[14px] text-slate-500 font-normal leading-relaxed max-w-2xl">
-                {why.description}
-              </p>
-            </Reveal>
+          {description && (
+            <p className="mt-3.5 text-xs sm:text-[14px] text-slate-500 font-normal leading-relaxed max-w-2xl">
+              {description}
+            </p>
           )}
         </div>
+      </div>
 
-        {/* FEATURE CARDS GRID */}
-        {items.length > 0 ? (
-          <div className="grid grid-cols-12 auto-rows-fr gap-5 sm:gap-6">
-            {items.map((item, idx) => {
-              const theme = getAccentTheme(item.accent);
-              const gradId = `wave-grad-${item._key || idx}`;
-              const is11Items = items.length === 11;
-              const isBottomRow = is11Items && idx >= 8;
-              const colSpanClass = isBottomRow
-                ? 'col-span-12 sm:col-span-6 lg:col-span-4'
-                : 'col-span-12 sm:col-span-6 lg:col-span-3';
-
-              return (
-                <div key={item._key || `${item.title}-${idx}`} className={`${colSpanClass} flex flex-col`}>
-                  <Reveal delay={idx * 0.025} className="h-full w-full flex flex-col flex-1">
-                    <div
-                      tabIndex={0}
-                      className="group relative h-full w-full rounded-[22px] border border-slate-200/70 bg-white p-6 sm:p-7 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.04)] transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-[0_12px_30px_-6px_rgba(0,0,0,0.08)] hover:border-slate-300/80 overflow-hidden flex flex-col justify-between flex-1 min-h-[175px] sm:min-h-[185px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/30"
-                    >
-                      {/* Left vertical accent line - rounded left pill */}
-                      <div
-                        className="absolute left-0 top-0 bottom-0 w-[4.5px] rounded-l-[22px] transition-all duration-300 group-hover:w-[5.5px]"
-                        style={{ backgroundColor: theme.bar }}
-                        aria-hidden="true"
-                      />
-
-                      {/* Content (Typography & Hierarchy Focused, NO ICONS) */}
-                      <div className="relative z-10 pr-2 flex flex-col flex-1">
-                        <h3 className="font-serif text-[1.125rem] sm:text-[1.2rem] font-bold text-[#0F172A] tracking-tight leading-snug">
-                          {item.title}
-                        </h3>
-                        <p className="mt-2.5 text-xs sm:text-[13.5px] text-[#475569] font-normal leading-relaxed line-clamp-4 sm:line-clamp-5 flex-1">
-                          {item.body}
-                        </p>
-                      </div>
-
-                      {/* Subtle decorative curved wave shape in bottom-right corner matching reference */}
-                      <svg
-                        className="pointer-events-none absolute -bottom-0.5 -right-0.5 w-32 h-20 transition-transform duration-300 ease-out group-hover:scale-105"
-                        viewBox="0 0 140 90"
-                        fill="none"
-                        xmlns="http://www.w3.org/2000/svg"
-                        aria-hidden="true"
-                      >
-                        <path
-                          d="M140 18 C105 18 70 52 0 90 L140 90 Z"
-                          fill={`url(#${gradId})`}
-                        />
-                        <defs>
-                          <linearGradient id={gradId} x1="0%" y1="100%" x2="100%" y2="0%">
-                            <stop offset="0%" stopColor={theme.waveStart} stopOpacity="0.04" />
-                            <stop offset="100%" stopColor={theme.waveEnd} stopOpacity="0.18" />
-                          </linearGradient>
-                        </defs>
-                      </svg>
-                    </div>
-                  </Reveal>
-                </div>
-              );
-            })}
-          </div>
-        ) : (
-          <div className="rounded-2xl border border-dashed border-[#D5CBBB] bg-white/60 p-10 text-center">
-            <p className="text-sm font-medium text-slate-500">
-              No learning stack items available.
-            </p>
-          </div>
-        )}
-      </PageContainer>
+      {/* ARCHED RECOMMENDATION CARDS CAROUSEL */}
+      <ArchedCardsCarousel items={cards} />
     </section>
   );
 }

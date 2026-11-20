@@ -130,7 +130,7 @@ function HeroCarouselCore({ items }: { items: PublicBanner[] }) {
     >
       <div className="absolute inset-0">
         {items.map((banner, i) => {
-          const src = isMobile ? banner.mobileImageUrl || banner.imageUrl : banner.imageUrl || banner.mobileImageUrl;
+          const src = banner.imageUrl || banner.mobileImageUrl;
           const offset = i - index;
           const nearby =
             Math.abs(offset) <= 1 || (index === 0 && i === items.length - 1) || (index === items.length - 1 && i === 0);
@@ -159,13 +159,13 @@ function HeroCarouselCore({ items }: { items: PublicBanner[] }) {
                 <div className="absolute inset-0 bg-[image:var(--gradient-hero)]" aria-hidden />
               )}
               <div className="absolute inset-0 bg-gradient-to-r from-[color:var(--brand-navy)]/80 via-[color:var(--brand-navy)]/40 to-transparent" />
-              <div className="relative z-10 flex h-full max-w-md flex-col justify-end p-5 sm:p-7">
+              <div className="relative z-10 flex h-full max-w-md flex-col justify-end p-3 sm:p-5 lg:p-7">
                 <Link
                   href={banner.ctaUrl || '/courses'}
-                  className="gc-btn w-fit bg-white text-[color:var(--brand-navy)] hover:bg-white/90 shadow-md"
+                  className="gc-btn w-fit bg-white text-[color:var(--brand-navy)] hover:bg-white/90 shadow-md !min-h-0 !h-auto !py-1.5 !px-3 sm:!py-2 sm:!px-4 !text-xs sm:!text-sm rounded-full sm:rounded-xl"
                 >
                   {banner.ctaText || 'Explore'}
-                  <span className="gc-btn-arrow" aria-hidden>
+                  <span className="gc-btn-arrow ml-1" aria-hidden>
                     →
                   </span>
                 </Link>
@@ -178,21 +178,21 @@ function HeroCarouselCore({ items }: { items: PublicBanner[] }) {
         <>
           <button
             type="button"
-            className="absolute left-3 top-1/2 z-20 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-full bg-white/90 text-[color:var(--brand-navy)] shadow-sm hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80"
+            className="absolute left-2 sm:left-3 top-1/2 z-20 grid h-7 w-7 sm:h-10 sm:w-10 -translate-y-1/2 place-items-center rounded-full bg-white/90 text-[color:var(--brand-navy)] shadow-sm hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80"
             aria-label="Previous banner"
             onClick={() => go(-1)}
           >
-            <ChevronLeft size={18} />
+            <ChevronLeft className="h-3.5 w-3.5 sm:h-4.5 sm:w-4.5" />
           </button>
           <button
             type="button"
-            className="absolute right-3 top-1/2 z-20 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-full bg-white/90 text-[color:var(--brand-navy)] shadow-sm hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80"
+            className="absolute right-2 sm:right-3 top-1/2 z-20 grid h-7 w-7 sm:h-10 sm:w-10 -translate-y-1/2 place-items-center rounded-full bg-white/90 text-[color:var(--brand-navy)] shadow-sm hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80"
             aria-label="Next banner"
             onClick={() => go(1)}
           >
-            <ChevronRight size={18} />
+            <ChevronRight className="h-3.5 w-3.5 sm:h-4.5 sm:w-4.5" />
           </button>
-          <div className="absolute bottom-3 left-0 right-0 z-20 flex justify-center gap-2" role="tablist" aria-label="Banner slides">
+          <div className="absolute bottom-2 sm:bottom-3 left-0 right-0 z-20 flex justify-center gap-1.5 sm:gap-2" role="tablist" aria-label="Banner slides">
             {items.map((b, i) => (
               <button
                 key={b.id}
@@ -201,8 +201,8 @@ function HeroCarouselCore({ items }: { items: PublicBanner[] }) {
                 aria-selected={i === index}
                 aria-label={`Show banner ${i + 1}: ${b.title}`}
                 className={cn(
-                  'h-2.5 rounded-full transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80',
-                  i === index ? 'w-7 bg-white' : 'w-2.5 bg-white/50',
+                  'h-1.5 sm:h-2.5 rounded-full transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80',
+                  i === index ? 'w-4 sm:w-7 bg-white' : 'w-1.5 sm:w-2.5 bg-white/50',
                 )}
                 onClick={() => setIndex(i)}
               />

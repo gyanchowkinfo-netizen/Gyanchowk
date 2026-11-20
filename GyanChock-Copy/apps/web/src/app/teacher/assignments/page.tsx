@@ -10,6 +10,19 @@ import { toast } from '@/lib/toast';
 import { EmptyState } from '@/components/ui/States';
 
 export default function TeacherAssignmentsPage() {
+  const coursesQuery = useQuery({
+    queryKey: ['teacher-assignments-courses'],
+    queryFn: () => api<{ items: Array<{ _id: string; title: string }> }>('/api/courses?mine=1&limit=100'),
+  });
+
+  const courseOptions = [
+    { value: '', label: 'Select a course…' },
+    ...(coursesQuery.data?.items ?? []).map((c) => ({
+      value: c._id,
+      label: `${c.title} (ID: ${c._id})`,
+    })),
+  ];
+
   const list = useQuery({
     queryKey: ['t-assign'],
     queryFn: () => api<{ items: Array<{ _id: string; title: string }> }>('/api/learning/assignments'),
@@ -28,11 +41,28 @@ export default function TeacherAssignmentsPage() {
     <div className="space-y-8">
       <ResourceManager
         title="Assignments"
+        subtitle="Create, manage, and evaluate assignments across your courses."
         path="/api/learning/assignments"
         empty="No assignments yet"
         emptyCta="Create assignment"
         columns={[
           { key: 'title', label: 'Title' },
+          {
+            key: 'course',
+            label: 'Course',
+            render: (row) => {
+              const course = row.course as { _id?: string; title?: string } | undefined;
+              if (course && typeof course === 'object' && course.title) {
+                return (
+                  <div>
+                    <div className="font-semibold text-gc-ink">{course.title}</div>
+                    <div className="text-[10px] text-gc-mute font-mono">ID: {course._id}</div>
+                  </div>
+                );
+              }
+              return String(row.course ?? '—');
+            },
+          },
           { key: 'status', label: 'Status', kind: 'status' },
           { key: 'deadline', label: 'Deadline', kind: 'date' },
         ]}
@@ -41,7 +71,7 @@ export default function TeacherAssignmentsPage() {
           path: '/api/learning/assignments',
           fields: [
             { name: 'title', label: 'Title', required: true },
-            { name: 'course', label: 'Course id' },
+            { name: 'course', label: 'Select Course', type: 'select', options: courseOptions, required: true },
             { name: 'instructions', label: 'Instructions', type: 'textarea' },
             { name: 'deadline', label: 'Deadline', type: 'datetime' },
           ],
@@ -58,40 +88,52 @@ export default function TeacherAssignmentsPage() {
         <h2 className="font-display text-xl">Grade submissions</h2>
         <div className="mt-3 flex flex-wrap gap-2">
           {(list.data?.items ?? []).map((a) => (
-            <Button key={a._id} variant={open === a._id ? 'primary' : 'ghost'} type="button" onClick={() => setOpen(a._id)}>
+            <Button
+              key={a._id}
+              variant={open === a._id ? 'primary' : 'outline'}
+              type="button"
+              onClick={() => setOpen(open === a._id ? null : a._id)}
+            >
               {a.title}
             </Button>
           ))}
         </div>
-        <ul className="mt-4 space-y-3">
-          {(submissions.data?.submissions ?? []).map((s) => (
-            <li key={s._id} className="gc-card p-4">
-              <p>{s.user?.name} · {s.status}</p>
+        {open ? (
+          <div className="mt-4 space-y-3">
+            {(submissions.data?.submissions ?? []).map((s) => (
               <form
-                className="mt-2 flex flex-wrap gap-2"
+                key={s._id}
+                className="gc-card flex flex-wrap items-center justify-between gap-3 p-4"
                 onSubmit={async (e) => {
                   e.preventDefault();
-                  const f = new FormData(e.currentTarget);
-                  try {
-                    await api(`/api/learning/assignments/${open}/evaluate/${s._id}`, {
-                      method: 'POST',
-                      body: JSON.stringify({ score: Number(f.get('score')), feedback: f.get('feedback') }),
-                    });
-                    toast.success('Graded');
-                    await submissions.refetch();
-                  } catch (err) {
-                    toast.error(err instanceof Error ? err.message : 'Failed');
-                  }
+                  const form = new FormData(e.currentTarget);
+                  await api(`/api/learning/assignments/${open}/evaluate/${s._id}`, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                      score: Number(form.get('score')),
+                      feedback: form.get('feedback'),
+                    }),
+                  });
+                  toast.success('Graded');
+                  await submissions.refetch();
                 }}
               >
-                <Input name="score" type="number" label="Score" defaultValue={String(s.score ?? '')} />
-                <Textarea name="feedback" label="Feedback" />
-                <Button type="submit">Save grade</Button>
+                <div>
+                  <p className="font-semibold">{s.user?.name ?? 'Student'}</p>
+                  <p className="text-xs text-gc-mute">Status: {s.status}</p>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <Input name="score" label="Score" defaultValue={s.score ?? 0} type="number" />
+                  <Input name="feedback" label="Feedback" placeholder="Well done…" />
+                  <Button type="submit">Save score</Button>
+                </div>
               </form>
-            </li>
-          ))}
-        </ul>
-        {open && !(submissions.data?.submissions?.length) ? <EmptyState title="No submissions yet" /> : null}
+            ))}
+            {!submissions.isLoading && !(submissions.data?.submissions.length) ? (
+              <EmptyState title="No submissions yet" />
+            ) : null}
+          </div>
+        ) : null}
       </section>
     </div>
   );

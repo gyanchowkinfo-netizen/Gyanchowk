@@ -9,8 +9,7 @@ import { PageTransition } from '@/components/motion';
 import './globals.css';
 
 export const viewport: Viewport = {
-  width: 'device-width',
-  initialScale: 1,
+  width: 1200,
   viewportFit: 'cover',
   themeColor: '#f6f4ee',
 };
@@ -48,7 +47,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600;700&display=swap"
         />
       </head>
-      <body className="overflow-x-hidden font-sans antialiased" suppressHydrationWarning>
+      <body className="overflow-x-hidden font-sans antialiased min-w-[1200px]" suppressHydrationWarning>
         <Providers>
           <AnnouncementBar />
           <Navbar />

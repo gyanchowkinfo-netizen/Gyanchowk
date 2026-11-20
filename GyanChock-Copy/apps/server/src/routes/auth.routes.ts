@@ -98,7 +98,26 @@ authRouter.get(
   '/me',
   authenticate,
   asyncHandler(async (req: AuthedRequest, res) => {
-    const user = await UserModel.findById(req.user!.id).select('-passwordHash').lean();
+    let user = await UserModel.findById(req.user!.id).select('-passwordHash');
+    if (!user) throw notFound('User not found');
+
+    if (user.role === 'teacher' && user.teacherStatus !== 'approved') {
+      const { TeacherModel } = await import('../models/teacher.models.js');
+      const teacher = await TeacherModel.findOne({
+        $or: [{ user: user._id }, { email: user.email.toLowerCase() }],
+        status: { $in: ['published', 'approved'] },
+      });
+      if (teacher) {
+        user.teacherStatus = 'approved';
+        user.status = 'active';
+        if (!teacher.user) {
+          teacher.user = user._id as any;
+          await teacher.save();
+        }
+        await user.save();
+      }
+    }
+
     res.json({ user });
   }),
 );

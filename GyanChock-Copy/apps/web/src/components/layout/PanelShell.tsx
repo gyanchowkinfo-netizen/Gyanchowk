@@ -44,7 +44,6 @@ const studentNav: NavGroup[] = [
       { href: '/', label: 'Home Page', icon: Home },
       { href: '/student', label: 'Dashboard', icon: LayoutDashboard },
       { href: '/student/courses', label: 'My courses', icon: BookOpen },
-      { href: '/student/batches', label: 'My batches', icon: GraduationCap },
       { href: '/student/learning', label: 'Learning', icon: PlayCircle },
       { href: '/student/materials', label: 'Materials', icon: FileText },
     ],
@@ -87,24 +86,34 @@ const studentNav: NavGroup[] = [
 
 const teacherNav: NavGroup[] = [
   {
-    label: 'Teaching',
+    label: 'Overview',
     items: [
       { href: '/', label: 'Home Page', icon: Home },
       { href: '/teacher', label: 'Dashboard', icon: LayoutDashboard },
-      { href: '/teacher/courses', label: 'Courses', icon: BookOpen },
-      { href: '/teacher/batches', label: 'Batches', icon: GraduationCap },
+      { href: '/teacher/analytics', label: 'Analytics', icon: BarChart3 },
+    ],
+  },
+  {
+    label: 'Course & Content',
+    items: [
+      { href: '/teacher/courses', label: 'My Courses', icon: BookOpen },
       { href: '/teacher/videos', label: 'Videos', icon: PlayCircle },
       { href: '/teacher/materials', label: 'Materials', icon: FileText },
+    ],
+  },
+  {
+    label: 'Student Management',
+    items: [
       { href: '/teacher/students', label: 'Students', icon: Users },
+      { href: '/teacher/attendance', label: 'Attendance', icon: Users },
     ],
   },
   {
     label: 'Assessment',
     items: [
-      { href: '/teacher/assignments', label: 'Assignments', icon: ClipboardList },
+      { href: '/teacher/questions', label: 'Question Bank', icon: HelpCircle },
       { href: '/teacher/tests', label: 'Tests', icon: ClipboardList },
-      { href: '/teacher/questions', label: 'Question bank', icon: HelpCircle },
-      { href: '/teacher/attendance', label: 'Attendance', icon: Users },
+      { href: '/teacher/assignments', label: 'Assignments', icon: ClipboardList },
     ],
   },
   {
@@ -116,9 +125,8 @@ const teacherNav: NavGroup[] = [
     ],
   },
   {
-    label: 'Business',
+    label: 'Earnings & Settings',
     items: [
-      { href: '/teacher/analytics', label: 'Analytics', icon: BarChart3 },
       { href: '/teacher/earnings', label: 'Earnings', icon: IndianRupee },
       { href: '/teacher/payouts', label: 'Payouts', icon: Wallet },
       { href: '/teacher/settings', label: 'Settings', icon: Settings },
@@ -137,7 +145,28 @@ const adminNav: NavGroup[] = [
     ],
   },
   {
-    label: 'People',
+    label: 'Content & CMS',
+    items: [
+      { href: '/admin/cms', label: 'CMS', icon: FileText },
+      { href: '/admin/about-page', label: 'About Page', icon: Info },
+      { href: '/admin/teachers-page', label: 'Teachers Page', icon: GraduationCap },
+      { href: '/admin/homepage-cards', label: 'Homepage Cards', icon: LayoutDashboard },
+      { href: '/admin/learning-stack', label: 'Why Gyan Chowk', icon: Layers },
+      { href: '/admin/banners', label: 'Banners', icon: Images },
+      { href: '/admin/career', label: 'Career', icon: GraduationCap },
+    ],
+  },
+  {
+    label: 'Course Management',
+    items: [
+      { href: '/admin/catalogue-courses', label: 'Catalogue Courses', icon: LayoutDashboard },
+      { href: '/admin/courses', label: 'Courses', icon: BookOpen },
+      { href: '/admin/videos', label: 'Videos', icon: PlayCircle },
+      { href: '/admin/materials', label: 'Materials', icon: FileText },
+    ],
+  },
+  {
+    label: 'People Management',
     items: [
       { href: '/admin/students', label: 'Students', icon: Users },
       { href: '/admin/teachers', label: 'Teachers', icon: GraduationCap },
@@ -146,17 +175,7 @@ const adminNav: NavGroup[] = [
     ],
   },
   {
-    label: 'Catalogue',
-    items: [
-      { href: '/admin/catalogue-courses', label: 'Catalogue Courses', icon: LayoutDashboard },
-      { href: '/admin/courses', label: 'Courses', icon: BookOpen },
-      { href: '/admin/batches', label: 'Batches', icon: GraduationCap },
-      { href: '/admin/videos', label: 'Videos', icon: PlayCircle },
-      { href: '/admin/materials', label: 'Materials', icon: FileText },
-    ],
-  },
-  {
-    label: 'Learning',
+    label: 'Learning & Assessment',
     items: [
       { href: '/admin/assignments', label: 'Assignments', icon: ClipboardList },
       { href: '/admin/tests', label: 'Tests', icon: ClipboardList },
@@ -164,10 +183,11 @@ const adminNav: NavGroup[] = [
       { href: '/admin/doubts', label: 'Doubts', icon: HelpCircle },
       { href: '/admin/mentorship', label: 'Mentorship', icon: Users },
       { href: '/admin/attendance', label: 'Attendance', icon: Users },
+      { href: '/admin/reviews', label: 'Reviews', icon: FileText },
     ],
   },
   {
-    label: 'Finance',
+    label: 'Finance & Payments',
     items: [
       { href: '/admin/payments', label: 'Payments', icon: IndianRupee },
       { href: '/admin/refunds', label: 'Refunds', icon: IndianRupee },
@@ -179,16 +199,8 @@ const adminNav: NavGroup[] = [
     ],
   },
   {
-    label: 'Ops',
+    label: 'System & Settings',
     items: [
-      { href: '/admin/reviews', label: 'Reviews', icon: FileText },
-      { href: '/admin/cms', label: 'CMS', icon: FileText },
-      { href: '/admin/about-page', label: 'About Page', icon: Info },
-      { href: '/admin/teachers-page', label: 'Teachers Page', icon: GraduationCap },
-      { href: '/admin/learning-stack', label: 'Why Gyan Chowk', icon: Layers },
-      { href: '/admin/homepage-cards', label: 'Homepage Cards', icon: LayoutDashboard },
-      { href: '/admin/banners', label: 'Banners', icon: Images },
-      { href: '/admin/career', label: 'Career', icon: GraduationCap },
       { href: '/admin/notifications', label: 'Notifications', icon: Bell },
       { href: '/admin/settings', label: 'Settings', icon: Settings },
       { href: '/admin/security', label: 'Security', icon: Shield },

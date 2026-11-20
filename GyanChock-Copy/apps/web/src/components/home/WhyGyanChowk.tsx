@@ -30,7 +30,7 @@ export type LearningStackCardItem = {
   href?: string;
 };
 
-const DEFAULT_STACK_CARDS: LearningStackCardItem[] = [
+export const DEFAULT_STACK_CARDS: LearningStackCardItem[] = [
   {
     _id: 'card-video',
     kicker: '01 / Video Lectures',
@@ -216,7 +216,7 @@ export function WhyGyanChowk({ cards: initialCards }: { cards?: unknown }) {
   );
 }
 
-function ArchedCardsCarousel({ items }: { items: LearningStackCardItem[] }) {
+export function ArchedCardsCarousel({ items }: { items: LearningStackCardItem[] }) {
   const count = items.length;
   const viewportRef = useRef<HTMLDivElement>(null);
   const trackRef = useRef<HTMLDivElement>(null);
@@ -383,7 +383,7 @@ function ArchedCardsCarousel({ items }: { items: LearningStackCardItem[] }) {
           draggingRef.current = false;
           pausedRef.current = false;
         }}
-        className="w-full overflow-hidden cursor-grab active:cursor-grabbing [mask-image:linear-gradient(90deg,transparent_0%,#000_5%,#000_95%,transparent_100%)] [-webkit-mask-image:linear-gradient(90deg,transparent_0%,#000_5%,#000_95%,transparent_100%)]"
+        className="w-full overflow-hidden cursor-grab active:cursor-grabbing"
         style={{ minHeight: isMobile ? '350px' : '410px' }}
       >
         <div

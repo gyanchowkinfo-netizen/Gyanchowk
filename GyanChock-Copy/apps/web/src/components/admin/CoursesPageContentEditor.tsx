@@ -51,11 +51,12 @@ export function CoursesPageContentEditor({
     queryFn: () => api<{ coursesPage?: CoursesPageConfig | null }>('/api/cms/courses-page'),
   });
 
-  const [activeTab, setActiveTab] = useState<'hero' | 'promo'>('hero');
+  const [activeTab, setActiveTab] = useState<'hero' | 'promo' | 'practice'>('hero');
   const [config, setConfig] = useState<CoursesPageConfig>(DEFAULT_COURSES_PAGE_CONFIG);
   const [busy, setBusy] = useState(false);
   const [uploadingHeroImg, setUploadingHeroImg] = useState(false);
   const [uploadingPromoImg, setUploadingPromoImg] = useState(false);
+  const [uploadingPracticeImg, setUploadingPracticeImg] = useState(false);
 
   useEffect(() => {
     if (cms.data?.coursesPage) {
@@ -76,6 +77,13 @@ export function CoursesPageContentEditor({
           benefits: cms.data.coursesPage.featuredPromo?.benefits?.length
             ? cms.data.coursesPage.featuredPromo.benefits
             : DEFAULT_COURSES_PAGE_CONFIG.featuredPromo.benefits,
+        },
+        practiceBanner: {
+          ...DEFAULT_COURSES_PAGE_CONFIG.practiceBanner!,
+          ...cms.data.coursesPage.practiceBanner,
+          features: cms.data.coursesPage.practiceBanner?.features?.length
+            ? cms.data.coursesPage.practiceBanner.features
+            : DEFAULT_COURSES_PAGE_CONFIG.practiceBanner?.features ?? [],
         },
       });
     }
@@ -240,6 +248,60 @@ export function CoursesPageContentEditor({
     }
   }
 
+  // Helpers for Practice Banner
+  const updatePractice = (patch: Partial<NonNullable<CoursesPageConfig['practiceBanner']>>) => {
+    setConfig((prev) => ({
+      ...prev,
+      practiceBanner: {
+        ...(prev.practiceBanner || DEFAULT_COURSES_PAGE_CONFIG.practiceBanner!),
+        ...patch,
+      },
+    }));
+  };
+
+  const updatePracticeFeature = (index: number, patch: Partial<{ text: string; active: boolean }>) => {
+    setConfig((prev) => {
+      const current = prev.practiceBanner || DEFAULT_COURSES_PAGE_CONFIG.practiceBanner!;
+      const feats = [...(current.features || [])];
+      feats[index] = { ...feats[index], ...patch };
+      return { ...prev, practiceBanner: { ...current, features: feats } };
+    });
+  };
+
+  const addPracticeFeature = () => {
+    setConfig((prev) => {
+      const current = prev.practiceBanner || DEFAULT_COURSES_PAGE_CONFIG.practiceBanner!;
+      const feats = [
+        ...(current.features || []),
+        { _key: newKey('pf'), text: 'Real-time Analytics', active: true },
+      ];
+      return { ...prev, practiceBanner: { ...current, features: feats } };
+    });
+  };
+
+  const removePracticeFeature = (index: number) => {
+    setConfig((prev) => {
+      const current = prev.practiceBanner || DEFAULT_COURSES_PAGE_CONFIG.practiceBanner!;
+      const feats = (current.features || []).filter((_, i) => i !== index);
+      return { ...prev, practiceBanner: { ...current, features: feats } };
+    });
+  };
+
+  async function handlePracticeImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingPracticeImg(true);
+    try {
+      const { url } = await uploadCloudinaryImage(file, 'cms');
+      updatePractice({ imageUrl: url });
+      toast.success('Practice banner image uploaded successfully!');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Practice image upload failed.');
+    } finally {
+      setUploadingPracticeImg(false);
+    }
+  }
+
   // Save changes
   async function saveChanges(e?: FormEvent) {
     if (e) e.preventDefault();
@@ -355,6 +417,19 @@ export function CoursesPageContentEditor({
         >
           <Sparkles size={16} />
           <span>Section 2: Featured Promo Banner ("FEATURED")</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab('practice')}
+          className={`flex items-center gap-2 border-b-2 px-4 py-2.5 text-sm font-semibold transition ${
+            activeTab === 'practice'
+              ? 'border-slate-900 text-slate-900'
+              : 'border-transparent text-slate-500 hover:text-slate-800'
+          }`}
+        >
+          <Award size={16} />
+          <span>Section 3: Practice Banner ("PRACTICE WORKSPACE")</span>
         </button>
       </div>
 
@@ -868,6 +943,201 @@ export function CoursesPageContentEditor({
                       <option value="sparkles">Sparkles</option>
                     </select>
                   </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Tab 3: Practice Banner */}
+      {activeTab === 'practice' && (
+        <div className="space-y-6">
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div>
+                <h3 className="font-semibold text-slate-900 text-sm">Practice Banner Visibility & Content</h3>
+                <p className="text-xs text-slate-500">Configure the full-width Practice & Test banner below Popular Courses</p>
+              </div>
+              <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-slate-700">
+                <input
+                  type="checkbox"
+                  checked={config.practiceBanner?.active !== false}
+                  onChange={(e) => updatePractice({ active: e.target.checked })}
+                  className="rounded border-slate-300 text-slate-900 accent-amber-500 h-4 w-4"
+                />
+                <span>Show Practice Banner on /courses</span>
+              </label>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="text-xs font-semibold text-slate-700">Badge Text</label>
+                <Input
+                  value={config.practiceBanner?.badge || ''}
+                  onChange={(e) => updatePractice({ badge: e.target.value })}
+                  placeholder="e.g. STUDENT PRACTICE WORKSPACE"
+                  className="mt-1 text-xs"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-slate-700">Title Main Text</label>
+                <Input
+                  value={config.practiceBanner?.title || ''}
+                  onChange={(e) => updatePractice({ title: e.target.value })}
+                  placeholder="e.g. Practice with Purpose."
+                  className="mt-1 text-xs"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="text-xs font-semibold text-slate-700">Title Highlight (Gold Gradient)</label>
+                <Input
+                  value={config.practiceBanner?.titleHighlight || ''}
+                  onChange={(e) => updatePractice({ titleHighlight: e.target.value })}
+                  placeholder="e.g. Test Your Readiness."
+                  className="mt-1 text-xs"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-slate-700">Primary CTA Text</label>
+                <Input
+                  value={config.practiceBanner?.ctaText || ''}
+                  onChange={(e) => updatePractice({ ctaText: e.target.value })}
+                  placeholder="e.g. Open Practice Tests"
+                  className="mt-1 text-xs"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="text-xs font-semibold text-slate-700">Primary CTA Link</label>
+                <Input
+                  value={config.practiceBanner?.ctaLink || ''}
+                  onChange={(e) => updatePractice({ ctaLink: e.target.value })}
+                  placeholder="e.g. /student/tests"
+                  className="mt-1 text-xs"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-slate-700">Secondary CTA Text (Optional)</label>
+                <Input
+                  value={config.practiceBanner?.secondaryCtaText || ''}
+                  onChange={(e) => updatePractice({ secondaryCtaText: e.target.value })}
+                  placeholder="e.g. Explore Test Series"
+                  className="mt-1 text-xs"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="text-xs font-semibold text-slate-700">Secondary CTA Link</label>
+              <Input
+                value={config.practiceBanner?.secondaryCtaLink || ''}
+                onChange={(e) => updatePractice({ secondaryCtaLink: e.target.value })}
+                placeholder="e.g. /student/tests"
+                className="mt-1 text-xs"
+              />
+            </div>
+
+            <div>
+              <label className="text-xs font-semibold text-slate-700">Detailed Subtitle / Description</label>
+              <Textarea
+                value={config.practiceBanner?.subtitle || ''}
+                onChange={(e) => updatePractice({ subtitle: e.target.value })}
+                placeholder="Detailed description of the practice workspace..."
+                rows={3}
+                className="mt-1 text-xs"
+              />
+            </div>
+
+            {/* Background Image Upload & URL */}
+            <div className="space-y-2 border-t border-slate-100 pt-3">
+              <label className="text-xs font-semibold text-slate-700">Banner Background Image</label>
+              <div className="flex flex-wrap items-center gap-3">
+                <Input
+                  value={config.practiceBanner?.imageUrl || ''}
+                  onChange={(e) => updatePractice({ imageUrl: e.target.value })}
+                  placeholder="e.g. /practice-workspace.png or Cloudinary URL"
+                  className="flex-1 text-xs"
+                />
+                <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2 text-xs font-semibold text-slate-700 shadow-sm hover:bg-slate-100">
+                  <ImagePlus size={14} />
+                  <span>{uploadingPracticeImg ? 'Uploading…' : 'Upload Image'}</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => void handlePracticeImageUpload(e)}
+                    className="hidden"
+                    disabled={uploadingPracticeImg}
+                  />
+                </label>
+              </div>
+              {config.practiceBanner?.imageUrl && (
+                <div className="relative mt-2 h-28 w-full max-w-md overflow-hidden rounded-xl border border-slate-200 bg-slate-900">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={config.practiceBanner.imageUrl}
+                    alt="Preview"
+                    className="h-full w-full object-cover opacity-60"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-r from-slate-950/80 to-transparent flex items-center p-3 text-xs text-white">
+                    <span>Background Image Preview</span>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Feature Highlights */}
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div>
+                <h3 className="font-semibold text-slate-900 text-sm">Banner Feature Badges</h3>
+                <p className="text-xs text-slate-500">Highlight bullet points with checkmark icons</p>
+              </div>
+              <Button type="button" variant="outline" onClick={addPracticeFeature} className="text-xs">
+                <Plus size={13} className="mr-1" /> Add Feature
+              </Button>
+            </div>
+
+            <div className="space-y-3">
+              {(config.practiceBanner?.features || []).map((feat, index) => (
+                <div
+                  key={feat._key}
+                  className="flex items-center gap-3 rounded-xl border border-slate-100 bg-slate-50/70 p-3"
+                >
+                  <label className="flex items-center gap-1.5 text-xs text-slate-600 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={feat.active}
+                      onChange={(e) => updatePracticeFeature(index, { active: e.target.checked })}
+                      className="rounded border-slate-300 text-slate-900 accent-amber-500 h-4 w-4"
+                    />
+                    <span>Active</span>
+                  </label>
+
+                  <Input
+                    value={feat.text}
+                    onChange={(e) => updatePracticeFeature(index, { text: e.target.value })}
+                    placeholder="e.g. Real-time Server Ranking & Percentiles"
+                    className="flex-1 text-xs py-1.5 bg-white"
+                  />
+
+                  <button
+                    type="button"
+                    onClick={() => removePracticeFeature(index)}
+                    className="rounded-lg p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-500 transition"
+                    title="Remove feature"
+                  >
+                    <Trash2 size={14} />
+                  </button>
                 </div>
               ))}
             </div>

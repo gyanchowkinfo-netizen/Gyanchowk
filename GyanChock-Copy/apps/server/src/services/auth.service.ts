@@ -67,14 +67,20 @@ export async function registerUser(
   const emailToken = randomToken();
   const referralCode = nanoid(8).toUpperCase();
 
+  const { TeacherModel } = await import('../models/teacher.models.js');
+  const existingTeacher = data.role === 'teacher'
+    ? await TeacherModel.findOne({ email: data.email.toLowerCase().trim() })
+    : null;
+  const isPreApproved = Boolean(existingTeacher && (existingTeacher.status === 'published' || existingTeacher.status === 'approved'));
+
   const user = await UserModel.create({
     name: data.name,
     email: data.email,
     phone: data.phone,
     passwordHash,
     role: data.role,
-    status: 'pending_verification',
-    teacherStatus: data.role === 'teacher' ? 'pending' : undefined,
+    status: isPreApproved ? 'active' : 'pending_verification',
+    teacherStatus: data.role === 'teacher' ? (isPreApproved ? 'approved' : 'pending') : undefined,
     state: data.state,
     headline: data.headline,
     bio: data.bio,
@@ -83,6 +89,11 @@ export async function registerUser(
     referralCode,
     referredBy: undefined,
   });
+
+  if (existingTeacher) {
+    existingTeacher.user = user._id as any;
+    await existingTeacher.save();
+  }
 
   await WalletModel.create({ user: user._id });
 

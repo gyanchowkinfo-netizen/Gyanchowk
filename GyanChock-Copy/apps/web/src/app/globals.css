@@ -112,6 +112,8 @@ html {
 html,
 body {
   min-height: 100%;
+  min-width: 1200px;
+  overflow-x: hidden;
   background: var(--gyan-background);
   color: var(--gyan-text-secondary);
 }
@@ -120,7 +122,16 @@ body {
   font-size: 16px;
   line-height: 1.7;
   letter-spacing: -0.014em;
-  padding-bottom: var(--bottom-nav);
+  padding-bottom: 0;
+  overflow-x: hidden;
+}
+
+/* Completely remove bottom horizontal scrollbar */
+html::-webkit-scrollbar:horizontal,
+body::-webkit-scrollbar:horizontal {
+  display: none !important;
+  height: 0 !important;
+  width: 0 !important;
 }
 
 @media (min-width: 1024px) {
@@ -2146,6 +2157,11 @@ textarea.gc-input,
   box-shadow:
     0 22px 44px color-mix(in srgb, #1a1410 18%, transparent),
     0 2px 8px color-mix(in srgb, #26352d 8%, transparent);
+}
+
+.gc-practice-gate.rounded-none,
+.gc-practice-gate.\!rounded-none {
+  border-radius: 0 !important;
 }
 
 .gc-practice-gate-media {

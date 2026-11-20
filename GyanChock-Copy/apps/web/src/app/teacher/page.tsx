@@ -15,13 +15,14 @@ import { CountUp } from '@/components/motion';
 
 export default function TeacherHome() {
   const user = useAuth((s) => s.user);
-  const pending = user?.teacherStatus && user.teacherStatus !== 'approved';
+  const isApproved = user?.teacherStatus === 'approved' || user?.teacherStatus === 'published';
+  const pending = Boolean(user?.teacherStatus && !isApproved);
   const doubts = useQuery({
     queryKey: ['tdoubts'],
     queryFn: () => api<{ total?: number; items?: unknown[] }>('/api/doubts'),
   });
   const earnings = useQuery({
-    enabled: user?.teacherStatus === 'approved',
+    enabled: isApproved,
     queryKey: ['tearn'],
     queryFn: () => api<{ summary: Array<{ _id: string; total: number }>; commissionPercent: number }>('/api/payouts/earnings'),
   });
@@ -71,9 +72,9 @@ export default function TeacherHome() {
   return (
     <div className="space-y-8">
       <div>
-        <p className="text-sm text-gc-mute">{user?.teacherStatus === 'approved' ? 'Teaching workspace' : 'Welcome'}</p>
+        <p className="text-sm text-gc-mute">{isApproved ? 'Teaching workspace' : 'Welcome'}</p>
         <h1 className="font-display text-3xl font-semibold tracking-tight text-gc-black">{user?.name ?? 'Teacher'}</h1>
-        {user?.teacherStatus ? <div className="mt-2"><StatusBadge status={user.teacherStatus} /></div> : null}
+        {user?.teacherStatus ? <div className="mt-2"><StatusBadge status={isApproved ? 'approved' : user.teacherStatus} /></div> : null}
       </div>
       {pending ? (
         <Alert kind="info">

@@ -4,7 +4,7 @@ import { batchFilterSchema, courseFilterSchema } from '@gyan-chowk/shared';
 import { authenticate, optionalAuth, requireRoles, teacherOrAdmin, type AuthedRequest } from '../middleware/auth.js';
 import { asyncHandler } from '../middleware/error.js';
 import { validate } from '../middleware/validate.js';
-import { audit } from '../middleware/audit.js';
+import { audit, writeAudit } from '../middleware/audit.js';
 import {
   AssignmentModel,
   AttendanceSessionModel,
@@ -23,7 +23,7 @@ import {
   VideoModel,
 } from '../models/index.js';
 import { paginate, paginatedResult, slugify } from '../utils/helpers.js';
-import { notFound } from '../utils/errors.js';
+import { badRequest, notFound } from '../utils/errors.js';
 import { facultyCardToProfile, resolveHomeFaculty } from '../services/homeFaculty.service.js';
 import { assertTeacherOwnsCourse } from '../services/learning.service.js';
 import { destroyMedia } from '../services/banner.service.js';
@@ -128,11 +128,30 @@ courseRouter.get(
 courseRouter.get(
   '/:slug',
   optionalAuth,
-  asyncHandler(async (req, res) => {
-    const course = await CourseModel.findOne({ slug: req.params.slug, status: { $in: ['published', 'draft'] } })
+  asyncHandler(async (req: AuthedRequest, res) => {
+    const course = await CourseModel.findOne({ slug: req.params.slug })
       .populate('teachers', 'name headline avatar bio')
       .lean();
     if (!course) throw notFound('Course not found');
+
+    // Security: Check unpublished visibility
+    if (course.status !== 'published') {
+      const user = req.user;
+      let allowed = false;
+      if (user?.role === 'admin') {
+        allowed = true;
+      } else if (user?.role === 'teacher') {
+        const ids = new Set([...(course.teachers ?? []), course.createdBy].map((x) => String(x && typeof x === 'object' && '_id' in x ? x._id : x)));
+        if (ids.has(user.id)) allowed = true;
+      }
+      if (!allowed && user) {
+        const enrolled = await EnrollmentModel.findOne({ user: user.id, course: course._id, status: 'active' }).lean();
+        if (enrolled) allowed = true;
+      }
+      if (!allowed) {
+        throw notFound('Course not found');
+      }
+    }
     const [subjects, reviews] = await Promise.all([
       SubjectModel.find({ course: course._id }).sort({ order: 1 }).lean(),
       ReviewModel.find({ course: course._id, hidden: false })
@@ -143,7 +162,30 @@ courseRouter.get(
     ]);
     const chapters = await ChapterModel.find({ course: course._id }).sort({ order: 1 }).lean();
     const topics = await TopicModel.find({ course: course._id }).sort({ order: 1 }).lean();
-    const lessons = await LessonModel.find({ course: course._id }).sort({ order: 1 }).select('-__v').lean();
+    const [lessons, courseVideos] = await Promise.all([
+      LessonModel.find({ course: course._id }).sort({ order: 1 }).select('-__v').lean(),
+      VideoModel.find({ course: course._id }).select('_id title lesson topic subject isDemo duration publicId').lean(),
+    ]);
+    const chapterMap = new Map(chapters.map((c) => [String(c._id), String(c.subject)]));
+    for (const t of topics as any[]) {
+      if (t.chapter && chapterMap.has(String(t.chapter))) {
+        t.subject = chapterMap.get(String(t.chapter));
+      }
+    }
+    const videoByLessonId = new Map(courseVideos.filter((v) => v.lesson).map((v) => [String(v.lesson), v]));
+    for (const l of lessons as any[]) {
+      if (!l.video && videoByLessonId.has(String(l._id))) {
+        l.video = videoByLessonId.get(String(l._id))!._id as any;
+      }
+      if (l.chapter && chapterMap.has(String(l.chapter))) {
+        l.subject = chapterMap.get(String(l.chapter));
+      } else if (l.topic) {
+        const parentTopic = topics.find((t) => String(t._id) === String(l.topic));
+        if (parentTopic && (parentTopic as any).subject) {
+          l.subject = (parentTopic as any).subject;
+        }
+      }
+    }
     const related = await CourseModel.find({
       status: 'published',
       _id: { $ne: course._id },
@@ -168,7 +210,7 @@ courseRouter.get(
       }
     }
 
-    res.json({ course, subjects, chapters, topics, lessons, reviews, related });
+    res.json({ course, subjects, chapters, topics, lessons, videos: courseVideos, reviews, related });
   }),
 );
 
@@ -183,6 +225,8 @@ const courseBody = z.object({
   targetExam: z.string().optional(),
   careerTrack: z.string().optional(),
   language: z.string().optional(),
+  level: z.string().optional(),
+  duration: z.string().optional(),
   foundation: z.string().max(80).optional(),
   teacherName: z.string().optional(),
   startsOn: z.union([z.coerce.date(), z.null()]).optional(),
@@ -340,6 +384,185 @@ courseRouter.patch(
     await course.save();
     const lean = course.toObject();
     res.json({ course: withPublicThumbnail(lean) });
+  }),
+);
+
+courseRouter.post(
+  '/:id/submit-review',
+  authenticate,
+  teacherOrAdmin,
+  asyncHandler(async (req: AuthedRequest, res) => {
+    const course = await CourseModel.findById(req.params.id);
+    if (!course) throw notFound('Course not found');
+    assertTeacherOwnsCourse(req.user!.role, req.user!.id, course);
+
+    const [subjCount, lessonCount] = await Promise.all([
+      SubjectModel.countDocuments({ course: course._id }),
+      LessonModel.countDocuments({ course: course._id }),
+    ]);
+
+    if (!course.title || course.title.trim().length < 3) {
+      throw badRequest('Course must have a valid title of at least 3 characters');
+    }
+    if (subjCount === 0) {
+      throw badRequest('Course must have at least one subject in curriculum before submitting');
+    }
+    if (lessonCount === 0) {
+      throw badRequest('Course must have at least one lesson before submitting');
+    }
+
+    course.status = 'pending_review';
+    await course.save();
+
+    await writeAudit({
+      actor: req.user!.id,
+      role: req.user!.role,
+      action: 'course.submit_review',
+      entity: 'course',
+      entityId: String(course._id),
+      after: { status: 'pending_review' },
+    });
+
+    res.json({ course: withPublicThumbnail(course.toObject()), message: 'Course submitted for admin review successfully' });
+  }),
+);
+
+courseRouter.post(
+  '/:id/approve',
+  authenticate,
+  requireRoles('admin'),
+  asyncHandler(async (req: AuthedRequest, res) => {
+    const course = await CourseModel.findById(req.params.id);
+    if (!course) throw notFound('Course not found');
+
+    // One-time approval guard: Idempotently return success if already published
+    if (course.status === 'published') {
+      return res.json({ course: withPublicThumbnail(course.toObject()), message: 'Course is already approved and published' });
+    }
+
+    course.status = 'published';
+    course.publishedAt = new Date();
+    course.approvedBy = req.user!.id as any;
+    course.approvedAt = new Date();
+    course.approvalNotes = undefined;
+    await course.save();
+
+    await writeAudit({
+      actor: req.user!.id,
+      role: 'admin',
+      action: 'course.approve',
+      entity: 'course',
+      entityId: String(course._id),
+      after: { status: 'published', approvedBy: req.user!.id },
+    });
+
+    try {
+      const { notify } = await import('../services/notification.service.js');
+      const teacherIds = Array.isArray(course.teachers) && course.teachers.length > 0
+        ? course.teachers.map(String)
+        : course.createdBy ? [String(course.createdBy)] : [];
+      for (const tId of teacherIds) {
+        await notify({
+          userId: tId,
+          title: `Course Approved: ${course.title}`,
+          body: 'Your course has been approved by admin and is now published live on the store.',
+          type: 'course',
+          channels: ['inApp'],
+        });
+      }
+    } catch (e) {
+      console.warn('Failed to send course approval notification:', e);
+    }
+
+    res.json({ course: withPublicThumbnail(course.toObject()), message: 'Course approved and published successfully' });
+  }),
+);
+
+courseRouter.post(
+  '/:id/reject',
+  authenticate,
+  requireRoles('admin'),
+  asyncHandler(async (req: AuthedRequest, res) => {
+    const course = await CourseModel.findById(req.params.id);
+    if (!course) throw notFound('Course not found');
+
+    const reason = req.body?.reason ? String(req.body.reason) : 'Course rejected by administrator';
+    course.status = 'draft';
+    course.approvalNotes = reason;
+    await course.save();
+
+    await writeAudit({
+      actor: req.user!.id,
+      role: 'admin',
+      action: 'course.reject',
+      entity: 'course',
+      entityId: String(course._id),
+      after: { status: 'draft', reason },
+    });
+
+    try {
+      const { notify } = await import('../services/notification.service.js');
+      const teacherIds = Array.isArray(course.teachers) && course.teachers.length > 0
+        ? course.teachers.map(String)
+        : course.createdBy ? [String(course.createdBy)] : [];
+      for (const tId of teacherIds) {
+        await notify({
+          userId: tId,
+          title: `Course Rejected: ${course.title}`,
+          body: `Admin feedback: ${reason}`,
+          type: 'course',
+          channels: ['inApp'],
+        });
+      }
+    } catch (e) {
+      console.warn('Failed to send rejection notification:', e);
+    }
+
+    res.json({ course: withPublicThumbnail(course.toObject()), message: 'Course rejected back to draft' });
+  }),
+);
+
+courseRouter.post(
+  '/:id/request-changes',
+  authenticate,
+  requireRoles('admin'),
+  asyncHandler(async (req: AuthedRequest, res) => {
+    const course = await CourseModel.findById(req.params.id);
+    if (!course) throw notFound('Course not found');
+
+    const feedback = req.body?.feedback || req.body?.reason || 'Changes requested by administrator';
+    course.status = 'draft';
+    course.approvalNotes = String(feedback);
+    await course.save();
+
+    await writeAudit({
+      actor: req.user!.id,
+      role: 'admin',
+      action: 'course.request_changes',
+      entity: 'course',
+      entityId: String(course._id),
+      after: { status: 'draft', feedback },
+    });
+
+    try {
+      const { notify } = await import('../services/notification.service.js');
+      const teacherIds = Array.isArray(course.teachers) && course.teachers.length > 0
+        ? course.teachers.map(String)
+        : course.createdBy ? [String(course.createdBy)] : [];
+      for (const tId of teacherIds) {
+        await notify({
+          userId: tId,
+          title: `Changes Requested: ${course.title}`,
+          body: `Feedback from review: ${feedback}`,
+          type: 'course',
+          channels: ['inApp'],
+        });
+      }
+    } catch (e) {
+      console.warn('Failed to send changes requested notification:', e);
+    }
+
+    res.json({ course: withPublicThumbnail(course.toObject()), message: 'Changes requested. Course returned to draft.' });
   }),
 );
 
@@ -647,6 +870,18 @@ batchRouter.post(
   }),
 );
 
+catalogRouter.get(
+  '/subjects',
+  authenticate,
+  teacherOrAdmin,
+  asyncHandler(async (req: AuthedRequest, res) => {
+    const filter: Record<string, unknown> = {};
+    if (req.query.course) filter.course = req.query.course;
+    const subjects = await SubjectModel.find(filter).sort({ order: 1, name: 1 }).lean();
+    res.json({ subjects, items: subjects });
+  }),
+);
+
 catalogRouter.post(
   '/subjects',
   authenticate,
@@ -669,6 +904,23 @@ catalogRouter.post(
   }),
 );
 
+catalogRouter.get(
+  '/topics',
+  authenticate,
+  teacherOrAdmin,
+  asyncHandler(async (req: AuthedRequest, res) => {
+    const filter: Record<string, unknown> = {};
+    if (req.query.course) filter.course = req.query.course;
+    if (req.query.chapter) filter.chapter = req.query.chapter;
+    if (req.query.subject) {
+      const chapters = await ChapterModel.find({ subject: req.query.subject }).distinct('_id');
+      filter.$or = [{ subject: req.query.subject }, { chapter: { $in: chapters } }];
+    }
+    const topics = await TopicModel.find(filter).sort({ order: 1, name: 1 }).lean();
+    res.json({ topics, items: topics });
+  }),
+);
+
 catalogRouter.post(
   '/topics',
   authenticate,
@@ -677,6 +929,20 @@ catalogRouter.post(
   asyncHandler(async (req, res) => {
     const topic = await TopicModel.create({ ...req.body, slug: slugify(req.body.name) });
     res.status(201).json({ topic });
+  }),
+);
+
+catalogRouter.get(
+  '/lessons',
+  authenticate,
+  teacherOrAdmin,
+  asyncHandler(async (req: AuthedRequest, res) => {
+    const filter: Record<string, unknown> = {};
+    if (req.query.course) filter.course = req.query.course;
+    if (req.query.topic) filter.topic = req.query.topic;
+    if (req.query.chapter) filter.chapter = req.query.chapter;
+    const lessons = await LessonModel.find(filter).populate('video').sort({ order: 1, title: 1 }).lean();
+    res.json({ lessons, items: lessons });
   }),
 );
 
@@ -700,6 +966,212 @@ catalogRouter.post(
     const lesson = await LessonModel.create({ ...req.body, slug: slugify(req.body.title) });
     if (req.body.video) await VideoModel.updateOne({ _id: req.body.video }, { lesson: lesson._id });
     res.status(201).json({ lesson });
+  }),
+);
+
+catalogRouter.get(
+  '/curriculum/:courseId',
+  authenticate,
+  teacherOrAdmin,
+  asyncHandler(async (req: AuthedRequest, res) => {
+    const course = await CourseModel.findById(req.params.courseId).lean();
+    if (!course) throw notFound('Course not found');
+    assertTeacherOwnsCourse(req.user!.role, req.user!.id, course);
+
+    const [subjects, chapters, topics, lessons, materials, tests, assignments, availableVideos] =
+      await Promise.all([
+        SubjectModel.find({ course: course._id }).sort({ order: 1 }).lean(),
+        ChapterModel.find({ course: course._id }).sort({ order: 1 }).lean(),
+        TopicModel.find({ course: course._id }).sort({ order: 1 }).lean(),
+        LessonModel.find({ course: course._id }).populate('video').sort({ order: 1 }).lean(),
+        StudyMaterialModel.find({ course: course._id }).sort({ createdAt: -1 }).lean(),
+        TestModel.find({ course: course._id }).select('title status durationMin totalMarks category').lean(),
+        AssignmentModel.find({ course: course._id }).select('title status totalMarks deadline').lean(),
+        req.user!.role === 'admin'
+          ? VideoModel.find({ course: course._id }).lean()
+          : VideoModel.find({ $or: [{ course: course._id }, { teacher: req.user!.id }] }).lean(),
+      ]);
+
+    res.json({
+      course: withPublicThumbnail(course),
+      subjects,
+      chapters,
+      topics,
+      lessons,
+      materials,
+      tests,
+      assignments,
+      availableVideos,
+    });
+  }),
+);
+
+catalogRouter.patch(
+  '/subjects/:id',
+  authenticate,
+  teacherOrAdmin,
+  asyncHandler(async (req: AuthedRequest, res) => {
+    const subject = await SubjectModel.findById(req.params.id);
+    if (!subject) throw notFound('Subject not found');
+    const course = await CourseModel.findById(subject.course);
+    if (course) assertTeacherOwnsCourse(req.user!.role, req.user!.id, course);
+
+    if (req.body.name) {
+      subject.name = req.body.name;
+      subject.slug = slugify(req.body.name);
+    }
+    if (req.body.description !== undefined) subject.description = req.body.description;
+    if (req.body.order !== undefined) subject.order = Number(req.body.order);
+    await subject.save();
+    res.json({ subject });
+  }),
+);
+
+catalogRouter.delete(
+  '/subjects/:id',
+  authenticate,
+  teacherOrAdmin,
+  asyncHandler(async (req: AuthedRequest, res) => {
+    const subject = await SubjectModel.findById(req.params.id);
+    if (!subject) throw notFound('Subject not found');
+    const course = await CourseModel.findById(subject.course);
+    if (course) assertTeacherOwnsCourse(req.user!.role, req.user!.id, course);
+
+    const chapters = await ChapterModel.find({ subject: subject._id }).distinct('_id');
+    await Promise.all([
+      SubjectModel.findByIdAndDelete(subject._id),
+      ChapterModel.deleteMany({ subject: subject._id }),
+      TopicModel.deleteMany({ chapter: { $in: chapters } }),
+      LessonModel.deleteMany({ chapter: { $in: chapters } }),
+    ]);
+    res.json({ success: true });
+  }),
+);
+
+catalogRouter.patch(
+  '/chapters/:id',
+  authenticate,
+  teacherOrAdmin,
+  asyncHandler(async (req: AuthedRequest, res) => {
+    const chapter = await ChapterModel.findById(req.params.id);
+    if (!chapter) throw notFound('Chapter not found');
+    const course = await CourseModel.findById(chapter.course);
+    if (course) assertTeacherOwnsCourse(req.user!.role, req.user!.id, course);
+
+    if (req.body.name) {
+      chapter.name = req.body.name;
+      chapter.slug = slugify(req.body.name);
+    }
+    if (req.body.description !== undefined) chapter.description = req.body.description;
+    if (req.body.order !== undefined) chapter.order = Number(req.body.order);
+    await chapter.save();
+    res.json({ chapter });
+  }),
+);
+
+catalogRouter.delete(
+  '/chapters/:id',
+  authenticate,
+  teacherOrAdmin,
+  asyncHandler(async (req: AuthedRequest, res) => {
+    const chapter = await ChapterModel.findById(req.params.id);
+    if (!chapter) throw notFound('Chapter not found');
+    const course = await CourseModel.findById(chapter.course);
+    if (course) assertTeacherOwnsCourse(req.user!.role, req.user!.id, course);
+
+    await Promise.all([
+      ChapterModel.findByIdAndDelete(chapter._id),
+      TopicModel.deleteMany({ chapter: chapter._id }),
+      LessonModel.deleteMany({ chapter: chapter._id }),
+    ]);
+    res.json({ success: true });
+  }),
+);
+
+catalogRouter.patch(
+  '/topics/:id',
+  authenticate,
+  teacherOrAdmin,
+  asyncHandler(async (req: AuthedRequest, res) => {
+    const topic = await TopicModel.findById(req.params.id);
+    if (!topic) throw notFound('Topic not found');
+    const course = await CourseModel.findById(topic.course);
+    if (course) assertTeacherOwnsCourse(req.user!.role, req.user!.id, course);
+
+    if (req.body.name) {
+      topic.name = req.body.name;
+      topic.slug = slugify(req.body.name);
+    }
+    if (req.body.description !== undefined) topic.description = req.body.description;
+    if (req.body.order !== undefined) topic.order = Number(req.body.order);
+    await topic.save();
+    res.json({ topic });
+  }),
+);
+
+catalogRouter.delete(
+  '/topics/:id',
+  authenticate,
+  teacherOrAdmin,
+  asyncHandler(async (req: AuthedRequest, res) => {
+    const topic = await TopicModel.findById(req.params.id);
+    if (!topic) throw notFound('Topic not found');
+    const course = await CourseModel.findById(topic.course);
+    if (course) assertTeacherOwnsCourse(req.user!.role, req.user!.id, course);
+
+    await Promise.all([
+      TopicModel.findByIdAndDelete(topic._id),
+      LessonModel.deleteMany({ topic: topic._id }),
+    ]);
+    res.json({ success: true });
+  }),
+);
+
+catalogRouter.patch(
+  '/lessons/:id',
+  authenticate,
+  teacherOrAdmin,
+  asyncHandler(async (req: AuthedRequest, res) => {
+    const lesson = await LessonModel.findById(req.params.id);
+    if (!lesson) throw notFound('Lesson not found');
+    const course = await CourseModel.findById(lesson.course);
+    if (course) assertTeacherOwnsCourse(req.user!.role, req.user!.id, course);
+
+    if (req.body.title) {
+      lesson.title = req.body.title;
+      lesson.slug = slugify(req.body.title);
+    }
+    if (req.body.description !== undefined) lesson.description = req.body.description;
+    if (req.body.isDemo !== undefined) lesson.isDemo = Boolean(req.body.isDemo);
+    if (req.body.durationSec !== undefined) lesson.durationSec = Number(req.body.durationSec);
+    if (req.body.order !== undefined) lesson.order = Number(req.body.order);
+    if (req.body.video !== undefined) {
+      lesson.video = req.body.video ? (req.body.video as any) : undefined;
+      if (req.body.video) {
+        await VideoModel.updateOne({ _id: req.body.video }, { lesson: lesson._id });
+      }
+    }
+    await lesson.save();
+    const updated = await LessonModel.findById(lesson._id).populate('video').lean();
+    res.json({ lesson: updated });
+  }),
+);
+
+catalogRouter.delete(
+  '/lessons/:id',
+  authenticate,
+  teacherOrAdmin,
+  asyncHandler(async (req: AuthedRequest, res) => {
+    const lesson = await LessonModel.findById(req.params.id);
+    if (!lesson) throw notFound('Lesson not found');
+    const course = await CourseModel.findById(lesson.course);
+    if (course) assertTeacherOwnsCourse(req.user!.role, req.user!.id, course);
+
+    if (lesson.video) {
+      await VideoModel.updateOne({ _id: lesson.video }, { $unset: { lesson: 1 } });
+    }
+    await LessonModel.findByIdAndDelete(lesson._id);
+    res.json({ success: true });
   }),
 );
 

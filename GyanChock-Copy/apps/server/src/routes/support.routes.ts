@@ -283,12 +283,21 @@ attendanceRouter.post(
   '/sessions',
   authenticate,
   teacherOrAdmin,
-  validate(z.object({ batch: z.string(), title: z.string(), scheduledAt: z.coerce.date(), notes: z.string().optional() })),
+  validate(
+    z.object({
+      course: z.string().optional(),
+      batch: z.string().optional(),
+      title: z.string(),
+      scheduledAt: z.coerce.date(),
+      notes: z.string().optional(),
+    }),
+  ),
   asyncHandler(async (req: AuthedRequest, res) => {
     const session = await AttendanceSessionModel.create({ ...req.body, teacher: req.user!.id });
     await CalendarEventModel.create({
       title: session.title,
       type: 'attendance',
+      course: session.course,
       batch: session.batch,
       startsAt: session.scheduledAt,
       refId: session._id,
@@ -314,7 +323,7 @@ attendanceRouter.post(
       updateOne: {
         filter: { session: session._id, student: m.studentId },
         update: {
-          $set: { mark: m.mark, batch: session.batch, markedBy: req.user!.id },
+          $set: { mark: m.mark, course: session.course, batch: session.batch, markedBy: req.user!.id },
         },
         upsert: true,
       },
@@ -328,10 +337,17 @@ attendanceRouter.get(
   '/sessions',
   authenticate,
   teacherOrAdmin,
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (req: AuthedRequest, res) => {
     const filter: Record<string, unknown> = {};
+    if (req.user!.role === 'teacher') filter.teacher = req.user!.id;
+    if (req.query.course) filter.course = req.query.course;
     if (req.query.batch) filter.batch = req.query.batch;
-    const items = await AttendanceSessionModel.find(filter).sort({ scheduledAt: -1 }).limit(50).lean();
+    const items = await AttendanceSessionModel.find(filter)
+      .populate('course', 'title slug')
+      .populate('teacher', 'name email')
+      .sort({ scheduledAt: -1 })
+      .limit(50)
+      .lean();
     res.json({ items });
   }),
 );

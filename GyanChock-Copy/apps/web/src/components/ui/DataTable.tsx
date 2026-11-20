@@ -48,10 +48,10 @@ export function DataTable<T extends Record<string, unknown>>({
           return (
             <li key={String(row._id ?? row.id ?? i)} className="gc-card p-4 text-sm">
               {rest.map((c) => (
-                <p key={c.key} className="flex justify-between gap-3 py-1">
-                  <span className="text-gc-mute">{c.label}</span>
-                  <span className="text-right">{c.render ? c.render(row) : String(row[c.key] ?? '—')}</span>
-                </p>
+                <div key={c.key} className="flex justify-between items-start gap-3 py-1">
+                  <span className="text-gc-mute shrink-0">{c.label}</span>
+                  <div className="text-right">{c.render ? c.render(row) : String(row[c.key] ?? '—')}</div>
+                </div>
               ))}
               {actions.map((c) => (
                 <div key={c.key} className="mt-3 border-t border-gc-line pt-3">

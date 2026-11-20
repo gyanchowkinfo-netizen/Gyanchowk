@@ -21,10 +21,10 @@ import {
 } from '../models/index.js';
 import { assertEnrollment } from '../services/enrollment.service.js';
 import { publicVerify, studentAnalytics, studentBacklog, updateLessonProgress } from '../services/learning.service.js';
-import { getCloudinary } from '../config/cloudinary.js';
+import { getCloudinary, isCloudinaryConfigured } from '../config/cloudinary.js';
 import { paginate, paginatedResult } from '../utils/helpers.js';
 import { forbidden, notFound } from '../utils/errors.js';
-import { certificatePdf, PDF_CONTENT_TYPE, resumePdf } from '../services/pdf.service.js';
+import { certificatePdf, PDF_CONTENT_TYPE, resumePdf, studyMaterialPdf } from '../services/pdf.service.js';
 import { grantPlayback } from '../services/video.service.js';
 import { resumeDraftSchema } from '@gyan-chowk/shared';
 import crypto from 'node:crypto';
@@ -142,14 +142,80 @@ learningRouter.get(
     if (req.user!.role === 'student') filter.status = 'published';
     else if (req.query.status) filter.status = req.query.status;
     if (req.user!.role === 'teacher') filter.teacher = req.user!.id;
+    else if (req.query.teacher) filter.teacher = req.query.teacher;
     if (req.query.course) filter.course = req.query.course;
+    if (req.query.subject) filter.subject = req.query.subject;
+    if (req.query.topic) filter.topic = req.query.topic;
     if (req.query.type) filter.type = req.query.type;
     if (req.query.q) filter.$text = { $search: String(req.query.q) };
     const [items, total] = await Promise.all([
-      StudyMaterialModel.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),
+      StudyMaterialModel.find(filter)
+        .populate('teacher', 'name email avatar')
+        .populate('uploadedBy', 'name email role avatar')
+        .populate('course', 'title slug thumbnail')
+        .populate('subject', 'title')
+        .populate('topic', 'title')
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean(),
       StudyMaterialModel.countDocuments(filter),
     ]);
     res.json(paginatedResult(items, total, page, limit));
+  }),
+);
+
+learningRouter.get(
+  '/materials/:id/file',
+  authenticate,
+  asyncHandler(async (req: AuthedRequest, res) => {
+    const material = await StudyMaterialModel.findById(req.params.id)
+      .populate('course', 'title')
+      .populate('teacher', 'name')
+      .lean();
+    if (!material) throw notFound('Material not found');
+    if (material.course) {
+      const courseId =
+        typeof material.course === 'object' && material.course && '_id' in material.course
+          ? String((material.course as any)._id)
+          : String(material.course);
+      await assertEnrollment(req.user!.id, req.user!.role, { courseId });
+    }
+
+    const cleanTitle = (material.title || 'study_material').replace(/[^a-zA-Z0-9_\-\s]/g, '').trim();
+    const filename = cleanTitle.toLowerCase().endsWith('.pdf') ? cleanTitle : `${cleanTitle}.pdf`;
+
+    let pdfBuffer: Buffer | null = null;
+    let url = material.url ? String(material.url).trim().replace('/fl_attachment/', '/') : '';
+
+    if (url && (url.startsWith('http://') || url.startsWith('https://'))) {
+      try {
+        const upstream = await fetch(url, { signal: AbortSignal.timeout(10_000) });
+        if (upstream.ok) {
+          const arrayBuf = await upstream.arrayBuffer();
+          const buf = Buffer.from(arrayBuf);
+          if (buf.length > 20 && buf.slice(0, 4).toString('ascii') === '%PDF') {
+            pdfBuffer = buf;
+          }
+        }
+      } catch {
+        // upstream fetch failed or returned non-PDF, fall through to verified generator
+      }
+    }
+
+    if (!pdfBuffer) {
+      pdfBuffer = await studyMaterialPdf({
+        title: material.title,
+        type: material.type,
+        courseTitle: (material.course as any)?.title,
+        teacherName: (material.teacher as any)?.name,
+      });
+    }
+
+    res.setHeader('Content-Type', PDF_CONTENT_TYPE);
+    res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(filename)}"`);
+    res.setHeader('Content-Length', pdfBuffer.length);
+    res.send(pdfBuffer);
   }),
 );
 
@@ -160,13 +226,21 @@ learningRouter.get(
     const material = await StudyMaterialModel.findById(req.params.id);
     if (!material) throw notFound('Material not found');
     if (material.course) await assertEnrollment(req.user!.id, req.user!.role, { courseId: String(material.course) });
-    const url = getCloudinary().utils.private_download_url(material.publicId, '', {
-      resource_type: 'raw',
-      type: 'authenticated',
-      expires_at: Math.floor(Date.now() / 1000) + 120,
-      attachment: true,
+
+    const cleanTitle = (material.title || 'study_material').replace(/[^a-zA-Z0-9_\-\s]/g, '').trim();
+    const filename = cleanTitle.toLowerCase().endsWith('.pdf') ? cleanTitle : `${cleanTitle}.pdf`;
+
+    if (req.query.stream === '1' || req.headers.accept?.includes('application/pdf')) {
+      res.redirect(`/api/learning/materials/${material._id}/file`);
+      return;
+    }
+
+    res.json({
+      url: `/api/learning/materials/${material._id}/file`,
+      directUrl: material.url ? String(material.url).trim().replace('/fl_attachment/', '/') : undefined,
+      title: material.title,
+      filename,
     });
-    res.json({ url });
   }),
 );
 
@@ -182,14 +256,47 @@ learningRouter.post(
       batch: z.string().optional(),
       subject: z.string().optional(),
       chapter: z.string().optional(),
+      topic: z.string().optional(),
       publicId: z.string(),
       url: z.string().optional(),
       bytes: z.number().optional(),
       mime: z.string().optional(),
+      teacher: z.string().optional(),
+      status: z.enum(['draft', 'published', 'hidden']).optional(),
     }),
   ),
   asyncHandler(async (req: AuthedRequest, res) => {
-    const material = await StudyMaterialModel.create({ ...req.body, teacher: req.user!.id });
+    const { writeAudit } = await import('../middleware/audit.js');
+    let teacherOwner = req.user!.id;
+    if (req.user!.role === 'admin') {
+      if (req.body.teacher) {
+        teacherOwner = req.body.teacher;
+      } else if (req.body.course) {
+        const course = await CourseModel.findById(req.body.course).select('teacher teachers createdBy').lean();
+        if (course) {
+          if (Array.isArray((course as any).teachers) && (course as any).teachers.length > 0) {
+            teacherOwner = String((course as any).teachers[0]);
+          } else if ((course as any).teacher) {
+            teacherOwner = String((course as any).teacher);
+          } else if ((course as any).createdBy) {
+            teacherOwner = String((course as any).createdBy);
+          }
+        }
+      }
+    }
+    const material = await StudyMaterialModel.create({
+      ...req.body,
+      teacher: teacherOwner,
+      uploadedBy: req.user!.id,
+    });
+    await writeAudit({
+      actor: req.user!.id,
+      role: req.user!.role,
+      action: 'material.create',
+      entity: 'StudyMaterial',
+      entityId: String(material._id),
+      after: { title: material.title, course: material.course, teacher: teacherOwner, uploadedBy: req.user!.id },
+    });
     res.status(201).json({ material });
   }),
 );
@@ -199,9 +306,46 @@ learningRouter.patch(
   authenticate,
   teacherOrAdmin,
   asyncHandler(async (req: AuthedRequest, res) => {
+    const { writeAudit } = await import('../middleware/audit.js');
+    const existing = await StudyMaterialModel.findById(req.params.id);
+    if (!existing) throw notFound('Material not found');
+    if (req.user!.role === 'teacher' && String(existing.teacher) !== req.user!.id) {
+      throw forbidden('You do not have permission to modify this material');
+    }
     const material = await StudyMaterialModel.findByIdAndUpdate(req.params.id, req.body, { new: true });
-    if (!material) throw notFound('Material not found');
+    await writeAudit({
+      actor: req.user!.id,
+      role: req.user!.role,
+      action: 'material.update',
+      entity: 'StudyMaterial',
+      entityId: String(req.params.id),
+      after: { updates: Object.keys(req.body) },
+    });
     res.json({ material });
+  }),
+);
+
+learningRouter.delete(
+  '/materials/:id',
+  authenticate,
+  teacherOrAdmin,
+  asyncHandler(async (req: AuthedRequest, res) => {
+    const { writeAudit } = await import('../middleware/audit.js');
+    const existing = await StudyMaterialModel.findById(req.params.id);
+    if (!existing) throw notFound('Material not found');
+    if (req.user!.role === 'teacher' && String(existing.teacher) !== req.user!.id) {
+      throw forbidden('You do not have permission to delete this material');
+    }
+    await StudyMaterialModel.findByIdAndDelete(req.params.id);
+    await writeAudit({
+      actor: req.user!.id,
+      role: req.user!.role,
+      action: 'material.delete',
+      entity: 'StudyMaterial',
+      entityId: String(req.params.id),
+      after: { title: existing.title, course: existing.course, teacher: existing.teacher },
+    });
+    res.json({ ok: true });
   }),
 );
 
@@ -244,7 +388,11 @@ learningRouter.get(
     if (req.user!.role === 'student') filter.status = 'published';
     if (req.query.course) filter.course = req.query.course;
     if (req.user!.role === 'teacher') filter.createdBy = req.user!.id;
-    const items = await AssignmentModel.find(filter).sort({ deadline: 1 }).lean();
+    const items = await AssignmentModel.find(filter)
+      .populate('course', 'title slug')
+      .populate('createdBy', 'name email')
+      .sort({ deadline: 1 })
+      .lean();
     res.json({ items });
   }),
 );
@@ -400,11 +548,16 @@ learningRouter.get(
   teacherOrAdmin,
   asyncHandler(async (req: AuthedRequest, res) => {
     const filter: Record<string, unknown> = { status: 'active' };
-    if (req.query.course) filter.course = req.query.course;
-    if (req.query.batch) filter.batch = req.query.batch;
     if (req.user!.role === 'teacher') {
       const courses = await CourseModel.find({ teachers: req.user!.id }).select('_id').lean();
-      filter.course = { $in: courses.map((c) => c._id) };
+      const teacherCourseIds = courses.map((c) => String(c._id));
+      if (req.query.course && teacherCourseIds.includes(String(req.query.course))) {
+        filter.course = req.query.course;
+      } else {
+        filter.course = { $in: courses.map((c) => c._id) };
+      }
+    } else if (req.query.course) {
+      filter.course = req.query.course;
     }
     const items = await EnrollmentModel.find(filter)
       .populate('user', 'name email lastLoginAt status')

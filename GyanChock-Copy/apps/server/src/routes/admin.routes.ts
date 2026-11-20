@@ -209,6 +209,10 @@ adminRouter.post(
     user.teacherStatus = req.body.teacherStatus;
     if (req.body.teacherStatus === 'approved') user.status = 'active';
     await user.save();
+
+    const { syncUserWithTeacher } = await import('../services/teacher.service.js');
+    await syncUserWithTeacher(user);
+
     await writeAudit({
       actor: req.user!.id,
       role: 'admin',
@@ -1033,12 +1037,55 @@ adminCms.patch(
     res.json({ banner });
   }),
 );
+adminCms.get(
+  '/faqs',
+  asyncHandler(async (_req, res) => {
+    const faqs = await FAQModel.find().sort({ order: 1, createdAt: -1 }).lean();
+    res.json({ faqs });
+  }),
+);
+
 adminCms.post(
   '/faqs',
   asyncHandler(async (req, res) => {
     res.status(201).json({ faq: await FAQModel.create(req.body) });
   }),
 );
+
+adminCms.patch(
+  '/faqs/:id',
+  asyncHandler(async (req, res) => {
+    const faq = await FAQModel.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    if (!faq) throw notFound('FAQ not found');
+    res.json({ faq });
+  }),
+);
+
+adminCms.delete(
+  '/faqs/:id',
+  asyncHandler(async (req, res) => {
+    const faq = await FAQModel.findByIdAndDelete(req.params.id);
+    if (!faq) throw notFound('FAQ not found');
+    res.json({ success: true });
+  }),
+);
+
+adminCms.get(
+  '/pages',
+  asyncHandler(async (_req, res) => {
+    const pages = await CMSPageModel.find().lean();
+    res.json({ pages });
+  }),
+);
+
+adminCms.get(
+  '/pages/:key',
+  asyncHandler(async (req, res) => {
+    const page = await CMSPageModel.findOne({ key: req.params.key }).lean();
+    res.json({ page: page ?? null });
+  }),
+);
+
 adminCms.post(
   '/pages',
   asyncHandler(async (req, res) => {
@@ -1046,11 +1093,66 @@ adminCms.post(
     res.json({ page });
   }),
 );
+
+adminCms.delete(
+  '/pages/:key',
+  asyncHandler(async (req, res) => {
+    const deleted = await CMSPageModel.findOneAndDelete({ key: req.params.key });
+    res.json({ success: true, deleted: Boolean(deleted) });
+  }),
+);
+
+adminCms.get(
+  '/blogs',
+  asyncHandler(async (req, res) => {
+    const page = Math.max(1, Number(req.query.page ?? 1));
+    const limit = Math.max(1, Math.min(100, Number(req.query.limit ?? 20)));
+    const skip = (page - 1) * limit;
+    const filter: Record<string, unknown> = {};
+    if (req.query.published === 'true') filter.published = true;
+    else if (req.query.published === 'false') filter.published = false;
+    if (req.query.q) filter.$text = { $search: String(req.query.q) };
+
+    const [items, total] = await Promise.all([
+      BlogModel.find(filter)
+        .populate('author', 'name email avatar')
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+      BlogModel.countDocuments(filter),
+    ]);
+    res.json(paginatedResult(items, total, page, limit));
+  }),
+);
+
 adminCms.post(
   '/blogs',
   asyncHandler(async (req: AuthedRequest, res) => {
     const post = await BlogModel.create({ ...req.body, author: req.user!.id, publishedAt: req.body.published ? new Date() : undefined });
     res.status(201).json({ post });
+  }),
+);
+
+adminCms.patch(
+  '/blogs/:id',
+  asyncHandler(async (req, res) => {
+    const existing = await BlogModel.findById(req.params.id);
+    if (!existing) throw notFound('Blog not found');
+    if (req.body.published && !existing.published && !existing.publishedAt) {
+      req.body.publishedAt = new Date();
+    }
+    const post = await BlogModel.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    res.json({ post });
+  }),
+);
+
+adminCms.delete(
+  '/blogs/:id',
+  asyncHandler(async (req, res) => {
+    const deleted = await BlogModel.findByIdAndDelete(req.params.id);
+    if (!deleted) throw notFound('Blog not found');
+    res.json({ success: true });
   }),
 );
 

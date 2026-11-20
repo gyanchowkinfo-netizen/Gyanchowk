@@ -125,6 +125,9 @@ const courseSchema = new Schema(
     },
     sectionOrder: [{ type: String }],
     publishedAt: Date,
+    approvedBy: { type: Schema.Types.ObjectId, ref: 'User' },
+    approvedAt: Date,
+    approvalNotes: String,
     createdBy: { type: Schema.Types.ObjectId, ref: 'User' },
   },
   { timestamps: true },
@@ -250,8 +253,11 @@ const videoSchema = new Schema(
   {
     title: { type: String, required: true },
     course: { type: Schema.Types.ObjectId, ref: 'Course', required: true, index: true },
+    subject: { type: Schema.Types.ObjectId, ref: 'Subject', index: true },
+    topic: { type: Schema.Types.ObjectId, ref: 'Topic', index: true },
     lesson: { type: Schema.Types.ObjectId, ref: 'Lesson', index: true },
     teacher: { type: Schema.Types.ObjectId, ref: 'User', index: true },
+    uploadedBy: { type: Schema.Types.ObjectId, ref: 'User', index: true },
     publicId: { type: String, required: true, index: true },
     resourceType: { type: String, default: 'video' },
     duration: Number,
@@ -267,6 +273,7 @@ const videoSchema = new Schema(
 );
 
 videoSchema.index({ course: 1, status: 1 });
+videoSchema.index({ course: 1, subject: 1, topic: 1 });
 
 export const CourseModel = mongoose.model('Course', courseSchema);
 export const BatchModel = mongoose.model('Batch', batchSchema);

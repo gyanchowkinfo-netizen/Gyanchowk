@@ -205,17 +205,17 @@ export function HomeCardCarousel({
             </div>
           ))}
         </div>
-        <div className={styles.marqueeFadeLeft} aria-hidden />
-        <div className={styles.marqueeFadeRight} aria-hidden />
       </div>
       {count > 1 ? (
-        <div className={cn(styles.nav, 'mt-5 justify-center sm:justify-end')}>
-          <button type="button" className={styles.navBtn} aria-label="Previous cards" onClick={() => nudge(1)}>
-            <ChevronLeft size={16} />
-          </button>
-          <button type="button" className={styles.navBtn} aria-label="Next cards" onClick={() => nudge(-1)}>
-            <ChevronRight size={16} />
-          </button>
+        <div className="gc-container">
+          <div className={cn(styles.nav, 'mt-5 justify-center sm:justify-end')}>
+            <button type="button" className={styles.navBtn} aria-label="Previous cards" onClick={() => nudge(1)}>
+              <ChevronLeft size={16} />
+            </button>
+            <button type="button" className={styles.navBtn} aria-label="Next cards" onClick={() => nudge(-1)}>
+              <ChevronRight size={16} />
+            </button>
+          </div>
         </div>
       ) : null}
     </div>

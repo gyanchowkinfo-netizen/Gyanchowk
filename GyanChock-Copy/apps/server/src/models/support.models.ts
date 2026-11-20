@@ -73,7 +73,8 @@ mentorshipSchema.index({ mentor: 1, student: 1 }, { unique: true });
 
 const attendanceSessionSchema = new Schema(
   {
-    batch: { type: Schema.Types.ObjectId, ref: 'Batch', required: true, index: true },
+    course: { type: Schema.Types.ObjectId, ref: 'Course', index: true },
+    batch: { type: Schema.Types.ObjectId, ref: 'Batch', index: true },
     teacher: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     title: { type: String, required: true },
     scheduledAt: { type: Date, required: true, index: true },
@@ -86,7 +87,8 @@ const attendanceSchema = new Schema(
   {
     session: { type: Schema.Types.ObjectId, ref: 'AttendanceSession', required: true, index: true },
     student: { type: Schema.Types.ObjectId, ref: 'User', required: true, index: true },
-    batch: { type: Schema.Types.ObjectId, ref: 'Batch', required: true, index: true },
+    course: { type: Schema.Types.ObjectId, ref: 'Course', index: true },
+    batch: { type: Schema.Types.ObjectId, ref: 'Batch', index: true },
     mark: { type: String, enum: ATTENDANCE_MARKS, required: true },
     markedBy: { type: Schema.Types.ObjectId, ref: 'User' },
   },

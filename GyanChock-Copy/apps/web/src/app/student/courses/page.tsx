@@ -29,7 +29,6 @@ export default function StudentCoursesPage() {
           <li key={e._id}>
             <Link href={`/student/learning/${e.course!._id}`} className="gc-card block p-5 hover:border-gc-blue">
               <p className="font-display text-lg">{e.course!.title}</p>
-              {e.batch ? <p className="text-sm text-gc-mute">{e.batch.name}</p> : null}
             </Link>
           </li>
         ))}

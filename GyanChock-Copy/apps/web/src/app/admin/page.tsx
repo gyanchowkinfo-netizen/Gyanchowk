@@ -44,7 +44,6 @@ export default function AdminHome() {
     ['Students', data?.students, '/admin/students'],
     ['Teachers', data?.teachers, '/admin/teachers'],
     ['Courses', data?.courses, '/admin/courses'],
-    ['Batches', data?.batches, '/admin/batches'],
     ['Enrollments', data?.enrollments, '/admin/payments'],
     ['Pending teachers', data?.pendingTeachers, '/admin/teachers'],
     ['Open doubts', data?.openDoubts, '/admin/doubts'],

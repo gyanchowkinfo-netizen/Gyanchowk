@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { api } from '@/lib/api';
+import { api, downloadPdf } from '@/lib/api';
 import { useDebounce } from '@/lib/hooks';
 import { Input, Select } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
@@ -38,10 +38,16 @@ export default function MaterialsPage() {
 
   async function download(id: string) {
     try {
-      const res = await api<{ url: string }>(`/api/learning/materials/${id}/download`);
-      window.open(res.url, '_blank', 'noopener,noreferrer');
+      const res = await api<{ url?: string; title?: string; filename?: string }>(
+        `/api/learning/materials/${id}/download`,
+      );
+      const downloadPath = res.url || `/api/learning/materials/${id}/file`;
+      const cleanTitle = (res.title || 'study-material').replace(/[^a-zA-Z0-9_\-\s]/g, '').trim();
+      const filename = cleanTitle.toLowerCase().endsWith('.pdf') ? cleanTitle : `${cleanTitle}.pdf`;
+      await downloadPdf(downloadPath, filename);
+      toast.success('Download started');
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Download unavailable. Cloudinary must be configured.');
+      toast.error(err instanceof Error ? err.message : 'Download failed');
     }
   }
 
