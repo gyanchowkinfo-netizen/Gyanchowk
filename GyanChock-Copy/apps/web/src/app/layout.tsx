@@ -4,6 +4,7 @@ import { Footer } from '@/components/layout/Footer';
 import { AnnouncementBar } from '@/components/layout/AnnouncementBar';
 import { MobileBottomNavigation } from '@/components/layout/MobileBottomNavigation';
 import { DoubtToggleWidget } from '@/components/layout/DoubtToggleWidget';
+import { ViewportScaleManager } from '@/components/layout/ViewportScaleManager';
 import { Providers } from '@/components/providers';
 import { PageTransition } from '@/components/motion';
 import './globals.css';
@@ -46,9 +47,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           rel="stylesheet"
           href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600;700&display=swap"
         />
+        <script
+          id="viewport-fit-desktop"
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=1200,w=window.screen.width,h=window.screen.height;if(!w||w<=0)return;var l=(window.orientation===90||window.orientation===-90)||(window.innerWidth>0&&window.innerHeight>0&&window.innerWidth>window.innerHeight)||(window.matchMedia&&window.matchMedia('(orientation: landscape)').matches);var sw=l?Math.max(w,h):Math.min(w,h);if(sw<t){var s=Number((sw/t).toFixed(4));var c='width='+t+', initial-scale='+s+', minimum-scale='+s+', maximum-scale=5.0, user-scalable=yes, viewport-fit=cover';var m=document.querySelector('meta[name="viewport"]');if(m){m.setAttribute('content',c);}else{m=document.createElement('meta');m.name='viewport';m.content=c;document.head.appendChild(m);}}}catch(e){}})();`,
+          }}
+        />
       </head>
       <body className="overflow-x-hidden font-sans antialiased min-w-[1200px]" suppressHydrationWarning>
         <Providers>
+          <ViewportScaleManager />
           <AnnouncementBar />
           <Navbar />
           <PageTransition>{children}</PageTransition>
