@@ -1,7 +1,8 @@
 'use client';
 
-import React, { FormEvent } from 'react';
+import React, { FormEvent, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import {
   Search,
   GraduationCap,
@@ -23,6 +24,7 @@ import type {
   TeachersHeroFloatingCard,
 } from '@/lib/types';
 import { DEFAULT_TEACHERS_PAGE_CONFIG } from '@/lib/types';
+import { SearchSuggestionsDropdown } from '@/components/search/SearchSuggestionsDropdown';
 
 interface TeachersHeroProps {
   heroConfig?: TeachersHeroConfig;
@@ -135,6 +137,8 @@ export function TeachersHero({
   onQuery,
   onSearch,
 }: TeachersHeroProps) {
+  const router = useRouter();
+  const [focused, setFocused] = useState(false);
   const hero: TeachersHeroConfig = {
     ...DEFAULT_TEACHERS_PAGE_CONFIG.hero,
     ...(heroConfig || {}),
@@ -152,13 +156,13 @@ export function TeachersHero({
   // Derive floating cards (use hero.floatingCards if provided, or map from hero.badges)
   const fallbackFloatingCards: TeachersHeroFloatingCard[] = hero.badges?.length
     ? hero.badges.map((b, i) => ({
-        _key: b._key,
-        title: b.text,
-        subtitle: i === 0 ? 'Admin-approved' : 'Verified educator',
-        icon: b.icon === 'verified' ? 'check' : b.icon === 'award' ? 'award' : 'play',
-        position: i === 0 ? 'top-right' : 'bottom-left',
-        active: b.active,
-      }))
+      _key: b._key,
+      title: b.text,
+      subtitle: i === 0 ? 'Admin-approved' : 'Verified educator',
+      icon: b.icon === 'verified' ? 'check' : b.icon === 'award' ? 'award' : 'play',
+      position: i === 0 ? 'top-right' : 'bottom-left',
+      active: b.active,
+    }))
     : DEFAULT_TEACHERS_PAGE_CONFIG.hero.floatingCards!;
 
   const activeFloatingCards: TeachersHeroFloatingCard[] = (
@@ -168,21 +172,17 @@ export function TeachersHero({
   const imageUrl = hero.imageUrl || '/teachers-hero-faculty.png';
 
   return (
-    <section className="relative overflow-hidden bg-gradient-to-b from-[#fbf9f4] via-[#f7f5ed] to-[#f4f1e6] border-b border-gc-line/60 pt-6 pb-12 sm:pt-10 sm:pb-16 lg:py-16">
+    <section className="relative z-20 bg-gradient-to-b from-[#fbf9f4] via-[#f7f5ed] to-[#f4f1e6] border-b border-gc-line/60 pt-6 pb-12 sm:pt-10 sm:pb-16 lg:py-16">
       {/* Decorative ambient backdrop glows matching Courses Hero */}
-      <div
-        className="pointer-events-none absolute -top-24 right-1/4 h-96 w-96 rounded-full bg-amber-200/25 blur-3xl"
-        aria-hidden
-      />
-      <div
-        className="pointer-events-none absolute top-1/2 left-10 h-72 w-72 rounded-full bg-blue-200/20 blur-3xl"
-        aria-hidden
-      />
+      <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
+        <div className="absolute -top-24 right-1/4 h-96 w-96 rounded-full bg-amber-200/25 blur-3xl" />
+        <div className="absolute top-1/2 left-10 h-72 w-72 rounded-full bg-blue-200/20 blur-3xl" />
+      </div>
 
-      <PageContainer className="relative">
+      <PageContainer className="relative z-20">
         <div className="grid items-center gap-10 lg:grid-cols-[1.1fr_0.9fr] lg:gap-14">
           {/* Left Column: Editorial intro & Search & Stats */}
-          <div className="text-left">
+          <div className="text-left relative z-30">
             <Reveal>
               <div className="flex flex-wrap items-center gap-3">
                 <div className="inline-flex items-center gap-2 rounded-full bg-amber-100/90 border border-amber-200/70 px-3.5 py-1 text-xs font-semibold tracking-wider text-amber-900 uppercase">
@@ -205,31 +205,47 @@ export function TeachersHero({
             </Reveal>
 
             {/* Primary Search Bar matching Courses Hero UI */}
-            <Reveal delay={0.12}>
-              <form
-                onSubmit={onSearch}
-                className="mt-7 flex w-full max-w-xl items-center rounded-full border border-slate-200/80 bg-white p-1.5 shadow-md shadow-slate-200/50 transition-all focus-within:border-slate-400 focus-within:ring-2 focus-within:ring-slate-900/10"
-              >
-                <div className="flex flex-1 items-center pl-3 sm:pl-4">
-                  <Search className="text-slate-400 shrink-0" size={19} aria-hidden />
-                  <input
-                    suppressHydrationWarning
-                    className="w-full border-none bg-transparent px-3 py-2 text-sm sm:text-base text-slate-900 placeholder:text-slate-400 focus:outline-none"
-                    value={query}
-                    onChange={(e) => onQuery(e.target.value)}
-                    placeholder={hero.searchPlaceholder || 'Search by name, headline or subject'}
-                    aria-label="Search teachers"
-                  />
-                </div>
-                <button
-                  suppressHydrationWarning
-                  className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-full bg-slate-900 px-5 sm:px-6 py-2.5 text-xs sm:text-sm font-medium text-white shadow-sm transition hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900"
-                  type="submit"
+            <Reveal delay={0.12} className="relative z-30">
+              <div className="relative z-30 mt-7 w-full max-w-xl">
+                <form
+                  onSubmit={onSearch}
+                  className="flex w-full items-center rounded-full border border-slate-200/80 bg-white p-1.5 shadow-md shadow-slate-200/50 transition-all focus-within:border-slate-400 focus-within:ring-2 focus-within:ring-slate-900/10"
                 >
-                  <span>{hero.searchButtonText || 'Search'}</span>
-                  <ArrowRight size={15} />
-                </button>
-              </form>
+                  <div className="flex flex-1 items-center pl-3 sm:pl-4">
+                    <Search className="text-slate-400 shrink-0" size={19} aria-hidden />
+                    <input
+                      suppressHydrationWarning
+                      className="w-full border-none bg-transparent px-3 py-2 text-sm sm:text-base text-slate-900 placeholder:text-slate-400 focus:outline-none"
+                      value={query}
+                      onChange={(e) => onQuery(e.target.value)}
+                      onFocus={() => setFocused(true)}
+                      onBlur={() => setTimeout(() => setFocused(false), 200)}
+                      placeholder={hero.searchPlaceholder || 'Search by name, headline or subject'}
+                      aria-label="Search teachers"
+                      autoComplete="off"
+                    />
+                  </div>
+                  <button
+                    suppressHydrationWarning
+                    className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-full bg-slate-900 px-5 sm:px-6 py-2.5 text-xs sm:text-sm font-medium text-white shadow-sm transition hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900"
+                    type="submit"
+                  >
+                    <span>{hero.searchButtonText || 'Search'}</span>
+                    <ArrowRight size={15} />
+                  </button>
+                </form>
+                <SearchSuggestionsDropdown
+                  query={query}
+                  open={focused && query.trim().length >= 1}
+                  filterType="teachers"
+                  onSelect={(href, title) => {
+                    setFocused(false);
+                    if (title) onQuery(title);
+                    router.push(href);
+                  }}
+                  onClose={() => setFocused(false)}
+                />
+              </div>
             </Reveal>
 
             {/* Secondary Links Row */}
@@ -319,11 +335,10 @@ export function TeachersHero({
                       className={`absolute ${posClass} flex items-center gap-3 rounded-2xl border border-white/80 bg-white/95 px-4 py-3 shadow-xl backdrop-blur-md transition hover:scale-105`}
                     >
                       <div
-                        className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${
-                          card.icon === 'check'
-                            ? 'bg-amber-100 text-amber-800'
-                            : 'bg-amber-400 text-slate-900 shadow-sm'
-                        }`}
+                        className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${card.icon === 'check'
+                          ? 'bg-amber-100 text-amber-800'
+                          : 'bg-amber-400 text-slate-900 shadow-sm'
+                          }`}
                       >
                         {renderFloatingIcon(card.icon)}
                       </div>

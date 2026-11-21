@@ -1,10 +1,12 @@
 'use client';
 
+import { useState } from 'react';
 import { Filter, Search } from 'lucide-react';
 import { Drawer } from '@/components/ui/Overlay';
 import { Button } from '@/components/ui/Button';
 import { Select } from '@/components/ui/Input';
 import type { BatchFacet } from '@/lib/types';
+import { SearchSuggestionsDropdown } from '@/components/search/SearchSuggestionsDropdown';
 
 export interface BatchFiltersState {
   q: string;
@@ -41,6 +43,7 @@ export function BatchSearch({
   onChange: (patch: Partial<BatchFiltersState>) => void;
   onClear: () => void;
 }) {
+  const [focused, setFocused] = useState(false);
   const chips = [
     filters.category && { key: 'category', label: filters.category },
     filters.exam && { key: 'exam', label: filters.exam },
@@ -112,17 +115,32 @@ export function BatchSearch({
     <section id="batch-search" className="mx-auto max-w-7xl px-4">
       <div className="gc-card p-4 md:p-5">
         <div className="flex flex-col gap-3 md:flex-row md:items-center">
-          <label className="relative flex-1">
-            <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gc-mute" size={16} aria-hidden />
-            <input
-              className="gc-input pl-10 transition-[border-color,box-shadow,transform] duration-300 focus:-translate-y-0.5 focus:shadow-[0_12px_40px_rgba(30,111,255,0.12)]"
-              value={filters.q}
-              onChange={(e) => onChange({ q: e.target.value })}
-              placeholder="Search by name, course, exam or teacher"
-              aria-label="Filter batches"
-              suppressHydrationWarning
+          <div className="relative flex-1">
+            <label className="relative block w-full">
+              <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gc-mute" size={16} aria-hidden />
+              <input
+                className="gc-input pl-10 transition-[border-color,box-shadow,transform] duration-300 focus:-translate-y-0.5 focus:shadow-[0_12px_40px_rgba(30,111,255,0.12)]"
+                value={filters.q}
+                onChange={(e) => onChange({ q: e.target.value })}
+                onFocus={() => setFocused(true)}
+                onBlur={() => setTimeout(() => setFocused(false), 200)}
+                placeholder="Search by name, course, exam or teacher"
+                aria-label="Filter batches"
+                autoComplete="off"
+                suppressHydrationWarning
+              />
+            </label>
+            <SearchSuggestionsDropdown
+              query={filters.q}
+              open={focused && filters.q.trim().length >= 1}
+              filterType="batches"
+              onSelect={(href, title) => {
+                setFocused(false);
+                onChange({ q: title || '' });
+              }}
+              onClose={() => setFocused(false)}
             />
-          </label>
+          </div>
           <Select value={filters.sort} onChange={(e) => onChange({ sort: e.target.value })} className="md:w-52" id="batch-sort">
             <option value="popular">Sort: Popular</option>
             <option value="newest">Sort: Newest</option>

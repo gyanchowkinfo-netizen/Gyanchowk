@@ -1,12 +1,14 @@
 'use client';
 
 import Link from 'next/link';
-import { FormEvent } from 'react';
+import { useRouter } from 'next/navigation';
+import { FormEvent, useState } from 'react';
 import { Search } from 'lucide-react';
 import { PageContainer } from '@/components/layout/Page';
 import { FloatingElement, Parallax, Reveal, ScaleIn, SoftBg, TextReveal } from '@/components/motion';
 import { BatchesHeroVisual } from '@/components/3d/HeroVisual';
 import type { BatchCardData, BatchCatalogStats } from '@/lib/types';
+import { SearchSuggestionsDropdown } from '@/components/search/SearchSuggestionsDropdown';
 
 export function BatchesHero({
   stats,
@@ -21,13 +23,17 @@ export function BatchesHero({
   onQuery: (v: string) => void;
   onSearch: (e: FormEvent) => void;
 }) {
+  const router = useRouter();
+  const [focused, setFocused] = useState(false);
   const first = featured[0];
   const second = featured[1];
   return (
-    <section className="relative overflow-hidden">
+    <section className="relative z-20">
       <SoftBg />
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(30,111,255,0.12),transparent_42%)]" />
-      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.025)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.025)_1px,transparent_1px)] bg-[size:72px_72px] opacity-40" />
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(30,111,255,0.12),transparent_42%)]" />
+        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.025)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.025)_1px,transparent_1px)] bg-[size:72px_72px] opacity-40" />
+      </div>
       <PageContainer>
         <div className="relative grid items-center gap-10 lg:grid-cols-2">
           <Parallax speed={0.08}>
@@ -46,23 +52,39 @@ export function BatchesHero({
                 no live-class noise.
               </p>
             </Reveal>
-            <ScaleIn className="mt-8">
-              <form onSubmit={onSearch} className="flex w-full max-w-xl flex-col gap-2 sm:flex-row">
-                <label className="relative flex-1">
-                  <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gc-mute" size={16} aria-hidden />
-                  <input
-                    className="gc-input pl-10 transition-[border-color,box-shadow,transform] duration-300 focus:-translate-y-0.5 focus:shadow-[0_12px_40px_rgba(30,111,255,0.12)]"
-                    value={query}
-                    onChange={(e) => onQuery(e.target.value)}
-                    placeholder="Search batches, exams or courses"
-                    aria-label="Search batches"
-                    suppressHydrationWarning
-                  />
-                </label>
-                <button className="gc-btn-primary w-full shrink-0 sm:w-auto" type="submit" suppressHydrationWarning>
-                  Search
-                </button>
-              </form>
+            <ScaleIn className="mt-8 relative z-30">
+              <div className="relative z-30 w-full max-w-xl">
+                <form onSubmit={onSearch} className="flex w-full flex-col gap-2 sm:flex-row">
+                  <label className="relative flex-1">
+                    <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gc-mute" size={16} aria-hidden />
+                    <input
+                      className="gc-input pl-10 transition-[border-color,box-shadow,transform] duration-300 focus:-translate-y-0.5 focus:shadow-[0_12px_40px_rgba(30,111,255,0.12)]"
+                      value={query}
+                      onChange={(e) => onQuery(e.target.value)}
+                      onFocus={() => setFocused(true)}
+                      onBlur={() => setTimeout(() => setFocused(false), 200)}
+                      placeholder="Search batches, exams or courses"
+                      aria-label="Search batches"
+                      autoComplete="off"
+                      suppressHydrationWarning
+                    />
+                  </label>
+                  <button className="gc-btn-primary w-full shrink-0 sm:w-auto" type="submit" suppressHydrationWarning>
+                    Search
+                  </button>
+                </form>
+                <SearchSuggestionsDropdown
+                  query={query}
+                  open={focused && query.trim().length >= 1}
+                  filterType="batches"
+                  onSelect={(href, title) => {
+                    setFocused(false);
+                    if (title) onQuery(title);
+                    router.push(href);
+                  }}
+                  onClose={() => setFocused(false)}
+                />
+              </div>
             </ScaleIn>
             <Reveal delay={0.12}>
               <div className="mt-6 flex w-full flex-col gap-3 sm:flex-row sm:flex-wrap">

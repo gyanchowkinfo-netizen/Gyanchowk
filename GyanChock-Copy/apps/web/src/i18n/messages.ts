@@ -2,6 +2,7 @@ export const messages = {
   en: {
     tagline: 'Learn. Code. Grow.',
     nav: {
+      home: 'Home',
       courses: 'Courses',
       batches: 'Batches',
       teachers: 'Teachers',
@@ -25,6 +26,7 @@ export const messages = {
   hi: {
     tagline: 'सीखो. कोड करो. बढ़ो.',
     nav: {
+      home: 'होम',
       courses: 'कोर्स',
       batches: 'बैच',
       teachers: 'शिक्षक',
@@ -48,6 +50,7 @@ export const messages = {
   hinglish: {
     tagline: 'Learn. Code. Grow.',
     nav: {
+      home: 'Home',
       courses: 'Courses',
       batches: 'Batches',
       teachers: 'Teachers',

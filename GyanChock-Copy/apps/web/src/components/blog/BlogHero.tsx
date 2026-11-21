@@ -1,11 +1,12 @@
 'use client';
 
 import Link from 'next/link';
-import { FormEvent } from 'react';
+import { FormEvent, useState } from 'react';
 import { Search } from 'lucide-react';
 import { PageContainer } from '@/components/layout/Page';
 import { FloatingElement, MagneticButton, Parallax, Reveal, ScaleIn, SoftBg, TextReveal } from '@/components/motion';
 import { BlogHeroVisual } from '@/components/3d/HeroVisual';
+import { SearchSuggestionsDropdown } from '@/components/search/SearchSuggestionsDropdown';
 
 export function BlogHero({
   query,
@@ -16,6 +17,7 @@ export function BlogHero({
   onQuery: (v: string) => void;
   onSearch: (e: FormEvent) => void;
 }) {
+  const [focused, setFocused] = useState(false);
   return (
     <section className="relative overflow-hidden">
       <SoftBg />
@@ -37,22 +39,36 @@ export function BlogHero({
               </p>
             </Reveal>
             <ScaleIn className="mt-8">
-              <form onSubmit={onSearch} className="flex w-full max-w-xl flex-col gap-2 sm:flex-row">
-                <label className="relative flex-1">
-                  <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gc-mute" size={16} aria-hidden />
-                  <input
-                    className="gc-input pl-10 shadow-sm transition-[border-color,box-shadow] duration-300 focus:border-gc-gold/60 focus:shadow-[0_12px_40px_rgba(30,111,255,0.12)]"
-                    value={query}
-                    onChange={(e) => onQuery(e.target.value)}
-                    placeholder="Search articles, tags or topics"
-                    aria-label="Search articles"
-                    suppressHydrationWarning
-                  />
-                </label>
-                <button className="gc-btn-primary w-full shrink-0 sm:w-auto" type="submit" suppressHydrationWarning>
-                  Search
-                </button>
-              </form>
+              <div className="relative w-full max-w-xl">
+                <form onSubmit={onSearch} className="flex w-full flex-col gap-2 sm:flex-row">
+                  <label className="relative flex-1">
+                    <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gc-mute" size={16} aria-hidden />
+                    <input
+                      className="gc-input pl-10 shadow-sm transition-[border-color,box-shadow] duration-300 focus:border-gc-gold/60 focus:shadow-[0_12px_40px_rgba(30,111,255,0.12)]"
+                      value={query}
+                      onChange={(e) => onQuery(e.target.value)}
+                      onFocus={() => setFocused(true)}
+                      onBlur={() => setTimeout(() => setFocused(false), 200)}
+                      placeholder="Search articles, tags or topics"
+                      aria-label="Search articles"
+                      autoComplete="off"
+                      suppressHydrationWarning
+                    />
+                  </label>
+                  <button className="gc-btn-primary w-full shrink-0 sm:w-auto" type="submit" suppressHydrationWarning>
+                    Search
+                  </button>
+                </form>
+                <SearchSuggestionsDropdown
+                  query={query}
+                  open={focused && query.trim().length >= 1}
+                  onSelect={(href, title) => {
+                    setFocused(false);
+                    if (title) onQuery(title);
+                  }}
+                  onClose={() => setFocused(false)}
+                />
+              </div>
             </ScaleIn>
             <div className="mt-6 flex w-full flex-col gap-3 sm:flex-row sm:flex-wrap">
               <MagneticButton href="#articles">Explore Articles</MagneticButton>

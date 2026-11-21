@@ -35,7 +35,7 @@ export function TrustStrip({ highlights }: { highlights?: HomeHighlight[] }) {
   if (!items.length) return null;
 
   return (
-    <section className="relative overflow-hidden" aria-label="Platform highlights">
+    <section className="relative z-0 overflow-hidden" aria-label="Platform highlights">
       <div className="pointer-events-none absolute inset-0" aria-hidden>
         <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[color:var(--brand-blue)]/18 to-transparent" />
       </div>

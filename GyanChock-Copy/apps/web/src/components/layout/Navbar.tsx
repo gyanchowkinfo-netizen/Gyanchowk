@@ -8,7 +8,7 @@ import { Menu, Search, X } from 'lucide-react';
 import { BrandLogo } from '@/components/brand/BrandLogo';
 import { useI18n } from '@/i18n/provider';
 import { useAuth } from '@/lib/auth';
-import { SearchCommand, SearchTrigger } from './SearchCommand';
+import { NavbarSearch } from './NavbarSearch';
 import { CoursesNavMenu } from './CoursesNavMenu';
 import { UserMenu, itemsForUser } from './UserMenu';
 import { cn } from '@/lib/format';
@@ -20,7 +20,7 @@ export function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
   const [open, setOpen] = useState(false);
-  const [searchOpen, setSearchOpen] = useState(false);
+  const [mobileSearchVisible, setMobileSearchVisible] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [visible, setVisible] = useState(true);
   const [mounted, setMounted] = useState(false);
@@ -31,8 +31,8 @@ export function Navbar() {
   const lastScrollYRef = useRef(0);
   const openRef = useRef(open);
   openRef.current = open;
-  const searchOpenRef = useRef(searchOpen);
-  searchOpenRef.current = searchOpen;
+  const mobileSearchRef = useRef(mobileSearchVisible);
+  mobileSearchRef.current = mobileSearchVisible;
   const isInteractingRef = useRef(false);
 
   const clearTimer = () => {
@@ -48,14 +48,14 @@ export function Navbar() {
     if (
       window.scrollY > 10 &&
       !openRef.current &&
-      !searchOpenRef.current &&
+      !mobileSearchRef.current &&
       !isInteractingRef.current
     ) {
       hideTimerRef.current = setTimeout(() => {
         if (
           window.scrollY > 10 &&
           !openRef.current &&
-          !searchOpenRef.current &&
+          !mobileSearchRef.current &&
           !isInteractingRef.current
         ) {
           setVisible(false);
@@ -98,15 +98,15 @@ export function Navbar() {
     }
   }, [open]);
 
-  // Search dialog open/close edge case
+  // Mobile search visibility edge case
   useEffect(() => {
-    if (searchOpen) {
+    if (mobileSearchVisible) {
       clearTimer();
       setVisible(true);
     } else if (window.scrollY > 10) {
       startHideTimer();
     }
-  }, [searchOpen]);
+  }, [mobileSearchVisible]);
 
   // Scroll listener: hides on scroll down, reveals on scroll up for 5 seconds
   useEffect(() => {
@@ -124,8 +124,8 @@ export function Navbar() {
         return;
       }
 
-      // If mobile drawer, search modal, or hover interaction is active, keep visible
-      if (openRef.current || searchOpenRef.current || isInteractingRef.current) {
+      // If mobile drawer, mobile search, or hover interaction is active, keep visible
+      if (openRef.current || mobileSearchRef.current || isInteractingRef.current) {
         clearTimer();
         setVisible(true);
         lastScrollYRef.current = currentScrollY;
@@ -185,7 +185,7 @@ export function Navbar() {
 
   const handleMouseLeave = () => {
     isInteractingRef.current = false;
-    if (window.scrollY > 10 && !openRef.current && !searchOpenRef.current) {
+    if (window.scrollY > 10 && !openRef.current && !mobileSearchRef.current) {
       startHideTimer();
     }
   };
@@ -199,7 +199,7 @@ export function Navbar() {
   const handleBlur = (e: React.FocusEvent) => {
     if (headerRef.current && !headerRef.current.contains(e.relatedTarget as Node)) {
       isInteractingRef.current = false;
-      if (window.scrollY > 10 && !openRef.current && !searchOpenRef.current) {
+      if (window.scrollY > 10 && !openRef.current && !mobileSearchRef.current) {
         startHideTimer();
       }
     }
@@ -210,7 +210,7 @@ export function Navbar() {
   }
 
   const navLink = (href: string, label: string) => {
-    const active = pathname === href || pathname.startsWith(`${href}/`);
+    const active = href === '/' ? pathname === '/' : pathname === href || pathname.startsWith(`${href}/`);
     return (
       <Link href={href} className={cn('gc-nav-link', active && 'is-active')}>
         {label}
@@ -251,22 +251,23 @@ export function Navbar() {
         <div className="gc-navbar-inner gc-container flex items-center gap-5 overflow-visible sm:gap-6 lg:gap-8">
           <BrandLogo size={36} imageClassName="gc-navbar-logo" />
           <nav className="hidden flex-1 items-center justify-center gap-6 overflow-visible text-[15px] xl:gap-9 lg:flex" aria-label="Primary">
+            {navLink('/', t.nav.home || 'Home')}
             <CoursesNavMenu label={t.nav.courses} />
             {navLink('/teachers', t.nav.teachers)}
             {navLink('/career', t.nav.career)}
             {navLink('/about', t.nav.about)}
           </nav>
           <div className="ml-auto flex items-center gap-2 sm:gap-3">
-            <div className="hidden w-[min(100%,18rem)] md:block lg:w-[min(100%,20rem)]">
-              <SearchTrigger className="h-10 w-full" onClick={() => setSearchOpen(true)} />
+            <div className="hidden w-[min(100%,18rem)] md:block lg:w-[min(100%,22rem)]">
+              <NavbarSearch className="w-full" />
             </div>
             <button
               className="gc-navbar-icon-btn grid h-10 w-10 place-items-center rounded-full md:hidden"
               aria-label="Search"
               suppressHydrationWarning
-              onClick={() => setSearchOpen(true)}
+              onClick={() => setMobileSearchVisible((v) => !v)}
             >
-              <Search size={18} />
+              {mobileSearchVisible ? <X size={18} /> : <Search size={18} />}
             </button>
             {user ? (
               <UserMenu
@@ -298,6 +299,16 @@ export function Navbar() {
             </div>
           </div>
         </div>
+        {mobileSearchVisible && (
+          <div className="border-t border-gc-line/60 bg-white/95 px-4 py-2.5 backdrop-blur-md md:hidden">
+            <NavbarSearch
+              variant="mobile"
+              autoFocus
+              className="w-full"
+              onNavigate={() => setMobileSearchVisible(false)}
+            />
+          </div>
+        )}
         {open && mounted
           ? createPortal(
             <div
@@ -305,14 +316,19 @@ export function Navbar() {
               style={{ top: navHeight }}
             >
               <nav className="flex min-h-full flex-col pb-24" aria-label="Mobile">
-                <SearchTrigger
-                  className="mb-6 h-12 w-full"
-                  onClick={() => {
-                    setOpen(false);
-                    setSearchOpen(true);
-                  }}
+                <NavbarSearch
+                  variant="mobile"
+                  className="mb-6 w-full"
+                  onNavigate={() => setOpen(false)}
                 />
                 <div className="space-y-1">
+                  <Link
+                    href="/"
+                    className="block min-h-11 py-3 font-display text-3xl text-[#26352d] transition-colors hover:text-amber-800"
+                    onClick={() => setOpen(false)}
+                  >
+                    {t.nav.home || 'Home'}
+                  </Link>
                   <CoursesNavMenu label={t.nav.courses} variant="mobile" onNavigate={() => setOpen(false)} />
                   <Link
                     href="/teachers"
@@ -387,12 +403,6 @@ export function Navbar() {
                 </div>
               </nav>
             </div>,
-            document.body,
-          )
-          : null}
-        {mounted
-          ? createPortal(
-            <SearchCommand open={searchOpen} onOpenChange={setSearchOpen} />,
             document.body,
           )
           : null}
