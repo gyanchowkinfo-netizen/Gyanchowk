@@ -143,7 +143,7 @@ export function HomeCardCarousel({
   }
 
   return (
-    <div className={styles.marqueeWrap}>
+    <div className={cn(styles.marqueeWrap, 'relative')}>
       <div
         ref={viewport}
         className={cn(styles.viewport, styles.marqueeViewport)}
@@ -207,16 +207,24 @@ export function HomeCardCarousel({
         </div>
       </div>
       {count > 1 ? (
-        <div className="gc-container">
-          <div className={cn(styles.nav, 'mt-5 justify-center sm:justify-end')}>
-            <button type="button" className={styles.navBtn} aria-label="Previous cards" onClick={() => nudge(1)}>
-              <ChevronLeft size={16} />
-            </button>
-            <button type="button" className={styles.navBtn} aria-label="Next cards" onClick={() => nudge(-1)}>
-              <ChevronRight size={16} />
-            </button>
-          </div>
-        </div>
+        <>
+          <button
+            type="button"
+            className="absolute left-2 sm:left-4 md:left-6 top-1/2 z-20 grid h-8 w-8 sm:h-10 sm:w-10 md:h-11 md:w-11 -translate-y-1/2 place-items-center rounded-full bg-white/95 text-[color:var(--brand-navy)] shadow-[0_4px_16px_rgba(0,0,0,0.15)] hover:bg-white hover:scale-105 active:scale-95 transition-all border border-slate-200/80 cursor-pointer"
+            aria-label="Previous cards"
+            onClick={() => nudge(1)}
+          >
+            <ChevronLeft className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6" />
+          </button>
+          <button
+            type="button"
+            className="absolute right-2 sm:right-4 md:right-6 top-1/2 z-20 grid h-8 w-8 sm:h-10 sm:w-10 md:h-11 md:w-11 -translate-y-1/2 place-items-center rounded-full bg-white/95 text-[color:var(--brand-navy)] shadow-[0_4px_16px_rgba(0,0,0,0.15)] hover:bg-white hover:scale-105 active:scale-95 transition-all border border-slate-200/80 cursor-pointer"
+            aria-label="Next cards"
+            onClick={() => nudge(-1)}
+          >
+            <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6" />
+          </button>
+        </>
       ) : null}
     </div>
   );

@@ -109,7 +109,7 @@ export function FacultyCarousel({ items }: { items: FacultyCarouselItem[] }) {
         go(dx < 0 ? 1 : -1);
       }}
     >
-      <div className="gc-faculty-stage">
+      <div className="gc-faculty-stage relative">
         {slides.map(({ item, offset, i }) => {
           const abs = Math.abs(offset);
           const hidden = abs > 2;
@@ -134,17 +134,27 @@ export function FacultyCarousel({ items }: { items: FacultyCarouselItem[] }) {
             </div>
           );
         })}
+        {looping ? (
+          <>
+            <button
+              type="button"
+              className="absolute left-2 sm:left-4 md:left-6 top-1/2 z-50 grid h-8 w-8 sm:h-10 sm:w-10 md:h-11 md:w-11 -translate-y-1/2 place-items-center rounded-full bg-white/95 text-[color:var(--brand-navy)] shadow-[0_4px_16px_rgba(0,0,0,0.15)] hover:bg-white hover:scale-105 active:scale-95 transition-all border border-slate-200/80 cursor-pointer"
+              aria-label="Previous teachers"
+              onClick={() => go(-1)}
+            >
+              <ChevronLeft className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6" />
+            </button>
+            <button
+              type="button"
+              className="absolute right-2 sm:right-4 md:right-6 top-1/2 z-50 grid h-8 w-8 sm:h-10 sm:w-10 md:h-11 md:w-11 -translate-y-1/2 place-items-center rounded-full bg-white/95 text-[color:var(--brand-navy)] shadow-[0_4px_16px_rgba(0,0,0,0.15)] hover:bg-white hover:scale-105 active:scale-95 transition-all border border-slate-200/80 cursor-pointer"
+              aria-label="Next teachers"
+              onClick={() => go(1)}
+            >
+              <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6" />
+            </button>
+          </>
+        ) : null}
       </div>
-      {looping ? (
-        <div className="mt-6 flex justify-center gap-3">
-          <button type="button" className="gc-faculty-nav" aria-label="Previous teachers" onClick={() => go(-1)}>
-            <ChevronLeft size={18} />
-          </button>
-          <button type="button" className="gc-faculty-nav" aria-label="Next teachers" onClick={() => go(1)}>
-            <ChevronRight size={18} />
-          </button>
-        </div>
-      ) : null}
     </div>
   );
 }

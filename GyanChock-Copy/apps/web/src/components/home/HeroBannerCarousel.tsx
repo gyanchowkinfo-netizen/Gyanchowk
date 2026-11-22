@@ -37,21 +37,9 @@ export function HeroBannerCarousel() {
 
 function HeroBannerFallback() {
   return (
-    <div className="gc-hero-banner" aria-label="Gyan Chowk">
+    <Link href="/courses" className="gc-hero-banner block" aria-label="Gyan Chowk">
       <div className="absolute inset-0 bg-[image:var(--gradient-hero)]" />
-      <div className="absolute inset-0 bg-gradient-to-r from-[color:var(--brand-navy)]/55 to-transparent" />
-      <div className="relative z-10 flex h-full flex-col justify-end p-6 sm:p-8">
-        <Link
-          href="/courses"
-          className="gc-btn w-fit bg-white text-[color:var(--brand-navy)] hover:bg-white/90 shadow-md"
-        >
-          Explore
-          <span className="gc-btn-arrow" aria-hidden>
-            →
-          </span>
-        </Link>
-      </div>
-    </div>
+    </Link>
   );
 }
 
@@ -158,18 +146,13 @@ function HeroCarouselCore({ items }: { items: PublicBanner[] }) {
               ) : (
                 <div className="absolute inset-0 bg-[image:var(--gradient-hero)]" aria-hidden />
               )}
-              <div className="absolute inset-0 bg-gradient-to-r from-[color:var(--brand-navy)]/80 via-[color:var(--brand-navy)]/40 to-transparent" />
-              <div className="relative z-10 flex h-full max-w-md flex-col justify-end p-3 sm:p-5 lg:p-7">
+              {banner.ctaUrl ? (
                 <Link
-                  href={banner.ctaUrl || '/courses'}
-                  className="gc-btn w-fit bg-white text-[color:var(--brand-navy)] hover:bg-white/90 shadow-md !min-h-0 !h-auto !py-1.5 !px-3 sm:!py-2 sm:!px-4 !text-xs sm:!text-sm rounded-full sm:rounded-xl"
-                >
-                  {banner.ctaText || 'Explore'}
-                  <span className="gc-btn-arrow ml-1" aria-hidden>
-                    →
-                  </span>
-                </Link>
-              </div>
+                  href={banner.ctaUrl}
+                  className="absolute inset-0 z-10"
+                  aria-label={banner.title || 'Explore'}
+                />
+              ) : null}
             </article>
           );
         })}

@@ -150,15 +150,13 @@ function Carousel({ items }: { items: PublicBanner[] }) {
                 ) : (
                   <div className="absolute inset-0 bg-[image:var(--gradient-hero)]" />
                 )}
-                <div className="absolute inset-0 bg-gradient-to-r from-[color:var(--brand-navy)]/80 via-[color:var(--brand-navy)]/35 to-transparent" />
-                <div className="gc-container relative z-10 flex h-full flex-col justify-end pb-2 sm:pb-5 lg:pb-7">
+                {banner.ctaUrl ? (
                   <Link
-                    href={banner.ctaUrl || '/courses'}
-                    className="gc-btn w-fit bg-white text-[color:var(--brand-navy)] hover:bg-white/90 shadow-md !min-h-0 !h-auto !py-1 !px-2.5 sm:!py-2 sm:!px-4 lg:!px-6 !text-[9px] min-[380px]:!text-[10px] sm:!text-xs md:!text-sm rounded-full sm:rounded-xl"
-                  >
-                    {banner.ctaText || 'Learn more'}
-                  </Link>
-                </div>
+                    href={banner.ctaUrl}
+                    className="absolute inset-0 z-10"
+                    aria-label={banner.ctaText || 'Learn more'}
+                  />
+                ) : null}
               </article>
             );
           })}

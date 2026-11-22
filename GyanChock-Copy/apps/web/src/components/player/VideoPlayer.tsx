@@ -3,14 +3,12 @@
 import { FormEvent, useEffect, useRef, useState } from 'react';
 import Hls from 'hls.js';
 import {
-  Bookmark,
+  ChevronDown,
   Clock,
   Download,
   FileText,
   Gauge,
   Maximize2,
-  RotateCcw,
-  RotateCw,
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { Button } from '@/components/ui/Button';
@@ -30,9 +28,7 @@ export function VideoPlayer({ videoId, title, teacherName }: Props) {
   const lastSent = useRef(0);
   const [error, setError] = useState('');
   const [rate, setRate] = useState(1);
-  const [skipFeedback, setSkipFeedback] = useState<'left' | 'right' | null>(null);
   const [notes, setNotes] = useState<Array<{ _id: string; timestampSec: number; body: string }>>([]);
-  const [bookmarks, setBookmarks] = useState<Array<{ _id: string; timestampSec: number; label?: string }>>([]);
   const [showNotes, setShowNotes] = useState(false);
 
   useEffect(() => {
@@ -49,8 +45,6 @@ export function VideoPlayer({ videoId, title, teacherName }: Props) {
   function skipBackward() {
     if (!videoRef.current) return;
     videoRef.current.currentTime = Math.max(0, videoRef.current.currentTime - 5);
-    setSkipFeedback('left');
-    setTimeout(() => setSkipFeedback((prev) => (prev === 'left' ? null : prev)), 600);
   }
 
   function skipForward() {
@@ -59,8 +53,6 @@ export function VideoPlayer({ videoId, title, teacherName }: Props) {
       videoRef.current.duration || Infinity,
       videoRef.current.currentTime + 5,
     );
-    setSkipFeedback('right');
-    setTimeout(() => setSkipFeedback((prev) => (prev === 'right' ? null : prev)), 600);
   }
 
   useEffect(() => {
@@ -141,11 +133,7 @@ export function VideoPlayer({ videoId, title, teacherName }: Props) {
           },
           { once: true },
         );
-        const [b, n] = await Promise.all([
-          api<{ items: Array<{ _id: string; timestampSec: number; label?: string }> }>(`/api/videos/${videoId}/bookmarks`),
-          api<{ items: Array<{ _id: string; timestampSec: number; body: string }> }>(`/api/videos/${videoId}/notes`),
-        ]);
-        setBookmarks(b.items ?? []);
+        const n = await api<{ items: Array<{ _id: string; timestampSec: number; body: string }> }>(`/api/videos/${videoId}/notes`);
         setNotes(n.items ?? []);
       } catch (e) {
         setError(e instanceof Error ? e.message : 'Playback is not available');
@@ -172,20 +160,6 @@ export function VideoPlayer({ videoId, title, teacherName }: Props) {
       hls?.destroy();
     };
   }, [videoId]);
-
-  async function bookmark() {
-    const t = videoRef.current?.currentTime ?? 0;
-    try {
-      const res = await api<{ item: { _id: string; timestampSec: number } }>(`/api/videos/${videoId}/bookmarks`, {
-        method: 'POST',
-        body: JSON.stringify({ timestampSec: t, label: `At ${Math.floor(t)}s` }),
-      });
-      setBookmarks((prev) => [...prev, res.item]);
-      toast.success('Moment bookmarked');
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Could not bookmark');
-    }
-  }
 
   async function addNote(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -245,51 +219,78 @@ export function VideoPlayer({ videoId, title, teacherName }: Props) {
           preload="metadata"
           crossOrigin="anonymous"
         />
-
-        {/* Left 5-second rewind playback overlay button */}
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            skipBackward();
-          }}
-          className="absolute left-3 top-1/2 -translate-y-1/2 z-20 flex flex-col items-center justify-center h-12 w-12 rounded-full bg-black/60 hover:bg-black/90 text-white border border-white/25 transition-all hover:scale-105 active:scale-95 shadow-lg cursor-pointer group"
-          title="Rewind 5 seconds (or Left Arrow)"
-          aria-label="Rewind 5 seconds"
-        >
-          <RotateCcw className="h-4 w-4 group-hover:scale-110 transition-transform" />
-          <span className="text-[9px] font-bold tracking-tight text-amber-300">-5s</span>
-        </button>
-
-        {/* Right 5-second forward playback overlay button */}
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            skipForward();
-          }}
-          className="absolute right-3 top-1/2 -translate-y-1/2 z-20 flex flex-col items-center justify-center h-12 w-12 rounded-full bg-black/60 hover:bg-black/90 text-white border border-white/25 transition-all hover:scale-105 active:scale-95 shadow-lg cursor-pointer group"
-          title="Forward 5 seconds (or Right Arrow)"
-          aria-label="Forward 5 seconds"
-        >
-          <RotateCw className="h-4 w-4 group-hover:scale-110 transition-transform" />
-          <span className="text-[9px] font-bold tracking-tight text-amber-300">+5s</span>
-        </button>
-
-        {/* Animated Skip Feedback Indicator */}
-        {skipFeedback === 'left' && (
-          <div className="absolute left-16 top-1/2 -translate-y-1/2 z-30 pointer-events-none rounded-full bg-amber-500/90 text-white px-3 py-1.5 text-xs font-extrabold shadow-lg animate-pulse">
-            « -5s
-          </div>
-        )}
-        {skipFeedback === 'right' && (
-          <div className="absolute right-16 top-1/2 -translate-y-1/2 z-30 pointer-events-none rounded-full bg-amber-500/90 text-white px-3 py-1.5 text-xs font-extrabold shadow-lg animate-pulse">
-            +5s »
-          </div>
-        )}
       </div>
 
-      {/* Video Title and Teacher Name (Below the video) */}
+      {/* Playback Controls & Features Bar (Directly below video matching reference image) */}
+      <div className="rounded-2xl border border-slate-200 bg-white p-2.5 sm:p-3 shadow-xs">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-2.5">
+          {/* Speed Selector */}
+          <div className="relative inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50/70 hover:bg-slate-100/70 px-3 py-2 transition shadow-2xs cursor-pointer">
+            <Gauge className="h-4 w-4 text-amber-600 shrink-0" />
+            <span className="text-xs sm:text-[13px] font-semibold text-slate-900">
+              Speed: <span className="font-bold">{rate}x</span>
+            </span>
+            <ChevronDown className="h-3.5 w-3.5 text-slate-700 shrink-0" />
+            <select
+              aria-label="Playback speed"
+              className="absolute inset-0 opacity-0 cursor-pointer w-full h-full text-xs"
+              value={rate}
+              onChange={(e) => setRate(Number(e.target.value))}
+              suppressHydrationWarning
+            >
+              {[0.5, 0.75, 1, 1.25, 1.5, 1.75, 2].map((s) => (
+                <option key={s} value={s} className="bg-white text-slate-900">
+                  {s}x
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Picture in Picture */}
+          <button
+            type="button"
+            onClick={() => void pip()}
+            className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50/80 px-3 py-2 text-xs sm:text-[13px] font-semibold text-slate-900 shadow-2xs transition cursor-pointer"
+            title="Pop out video player"
+          >
+            <Maximize2 className="h-4 w-4 text-slate-600 shrink-0" />
+            <span>Picture-in-picture</span>
+          </button>
+
+          {/* Notes Toggle */}
+          <button
+            type="button"
+            onClick={() => setShowNotes((v) => !v)}
+            className={`inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-xs sm:text-[13px] font-semibold shadow-2xs transition cursor-pointer ${
+              showNotes
+                ? 'border-amber-500 bg-amber-50 text-amber-900'
+                : 'border-slate-200 bg-white text-slate-900 hover:bg-slate-50/80'
+            }`}
+            title="Open personal video notes"
+          >
+            <FileText className="h-4 w-4 text-amber-600 shrink-0" />
+            <span>Notes</span>
+            {notes.length > 0 && (
+              <span className="ml-0.5 rounded-full bg-amber-200/90 px-1.5 py-0.2 text-[10px] font-bold text-amber-900">
+                {notes.length}
+              </span>
+            )}
+          </button>
+
+          {/* Download for offline */}
+          <button
+            type="button"
+            onClick={() => void downloadOffline()}
+            className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50/80 px-3 py-2 text-xs sm:text-[13px] font-semibold text-slate-900 shadow-2xs transition cursor-pointer"
+            title="Download encrypted lecture for offline study"
+          >
+            <Download className="h-4 w-4 text-slate-600 shrink-0" />
+            <span>Download for offline</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Video Title and Teacher Name (Below controls bar) */}
       <div className="px-1 py-1">
         <h3 className="font-display text-lg font-bold text-slate-900 truncate" title={title || 'Lecture Video'}>
           {title || 'Lecture Video'}
@@ -298,130 +299,6 @@ export function VideoPlayer({ videoId, title, teacherName }: Props) {
           <p className="text-xs text-slate-500 font-medium mt-0.5">
             By {teacherName}
           </p>
-        )}
-      </div>
-
-      {/* Playback Controls & Features Bar */}
-      <div className="rounded-xl border border-slate-200 bg-white p-3 shadow-xs">
-        <div className="flex flex-wrap items-center justify-between gap-2.5">
-          <div className="flex flex-wrap items-center gap-2">
-            {/* Speed Selector */}
-            <div className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-xs font-semibold text-slate-800 shadow-2xs">
-              <Gauge className="h-3.5 w-3.5 text-amber-600" />
-              <span>Speed:</span>
-              <select
-                aria-label="Playback speed"
-                className="bg-transparent font-bold text-slate-900 outline-none cursor-pointer text-xs"
-                value={rate}
-                onChange={(e) => setRate(Number(e.target.value))}
-                suppressHydrationWarning
-              >
-                {[0.5, 0.75, 1, 1.25, 1.5, 1.75, 2].map((s) => (
-                  <option key={s} value={s} className="bg-white text-slate-900">
-                    {s}x
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* -5s Rewind Button */}
-            <button
-              type="button"
-              onClick={skipBackward}
-              className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 hover:border-amber-400 hover:text-amber-800 transition cursor-pointer"
-              title="Rewind 5 seconds (or Left Arrow)"
-            >
-              <RotateCcw className="h-3.5 w-3.5 text-amber-600" />
-              <span>-5s</span>
-            </button>
-
-            {/* +5s Forward Button */}
-            <button
-              type="button"
-              onClick={skipForward}
-              className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 hover:border-amber-400 hover:text-amber-800 transition cursor-pointer"
-              title="Forward 5 seconds (or Right Arrow)"
-            >
-              <RotateCw className="h-3.5 w-3.5 text-amber-600" />
-              <span>+5s</span>
-            </button>
-
-            {/* Bookmark this moment */}
-            <button
-              type="button"
-              onClick={() => void bookmark()}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 hover:border-amber-400 hover:text-amber-800 transition cursor-pointer"
-              title="Save a bookmark at the current timestamp"
-            >
-              <Bookmark className="h-3.5 w-3.5 text-amber-600" />
-              <span>Bookmark this moment</span>
-            </button>
-
-            {/* Picture in Picture */}
-            <button
-              type="button"
-              onClick={() => void pip()}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 hover:border-slate-300 transition cursor-pointer"
-              title="Pop out video player"
-            >
-              <Maximize2 className="h-3.5 w-3.5 text-slate-600" />
-              <span>Picture-in-picture</span>
-            </button>
-
-            {/* Notes Toggle */}
-            <button
-              type="button"
-              onClick={() => setShowNotes((v) => !v)}
-              className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold shadow-2xs transition cursor-pointer ${showNotes
-                ? 'border-amber-500 bg-amber-50 text-amber-800'
-                : 'border-slate-200 bg-white text-slate-800 hover:bg-slate-50'
-                }`}
-              title="Open personal video notes"
-            >
-              <FileText className="h-3.5 w-3.5 text-amber-600" />
-              <span>Notes</span>
-              {notes.length > 0 && (
-                <span className="ml-0.5 rounded-full bg-amber-200/90 px-1.5 py-0.2 text-[10px] font-bold text-amber-900">
-                  {notes.length}
-                </span>
-              )}
-            </button>
-
-            {/* Download for offline */}
-            <button
-              type="button"
-              onClick={() => void downloadOffline()}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 hover:border-slate-300 transition cursor-pointer"
-              title="Download encrypted lecture for offline study"
-            >
-              <Download className="h-3.5 w-3.5 text-slate-600" />
-              <span>Download for offline</span>
-            </button>
-          </div>
-        </div>
-
-        {/* Bookmarks (0s, 1s, etc.) */}
-        {bookmarks.length > 0 && (
-          <div className="mt-3 pt-3 border-t border-slate-100 flex flex-wrap items-center gap-2">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-600 flex items-center gap-1 mr-1">
-              <Bookmark className="h-3 w-3 text-amber-600" />
-              Saved Moments:
-            </span>
-            {bookmarks.map((b) => (
-              <button
-                key={b._id}
-                type="button"
-                className="inline-flex items-center gap-1 rounded-full border border-amber-300 bg-amber-50 px-3 py-1 text-xs font-bold text-amber-900 shadow-2xs hover:bg-amber-100 hover:border-amber-400 transition cursor-pointer"
-                title={`Jump to ${Math.floor(b.timestampSec)}s`}
-                onClick={() => {
-                  if (videoRef.current) videoRef.current.currentTime = b.timestampSec;
-                }}
-              >
-                <Clock className="h-3 w-3 text-amber-600" />
-                <span>{Math.floor(b.timestampSec)}s</span>
-              </button>
-            ))}
-          </div>
         )}
       </div>
 

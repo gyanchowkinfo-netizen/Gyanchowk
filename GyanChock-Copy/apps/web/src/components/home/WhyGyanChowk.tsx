@@ -337,170 +337,173 @@ export function ArchedCardsCarousel({ items }: { items: LearningStackCardItem[] 
   };
 
   return (
-    <div className="relative w-full overflow-hidden pt-4 pb-12 sm:pb-16 select-none">
-      {/* Viewport with lateral gradient masks */}
-      <div
-        ref={viewportRef}
-        role="region"
-        aria-roledescription="carousel"
-        aria-label="Why Gyan Chowk Learning Stack Showcase"
-        tabIndex={0}
-        onMouseEnter={() => {
-          pausedRef.current = true;
-        }}
-        onMouseLeave={() => {
-          if (!draggingRef.current) pausedRef.current = false;
-        }}
-        onFocus={() => {
-          pausedRef.current = true;
-        }}
-        onBlur={() => {
-          pausedRef.current = false;
-        }}
-        onPointerDown={(e) => {
-          if (e.pointerType === 'mouse' && e.button !== 0) return;
-          draggingRef.current = true;
-          dragXRef.current = e.clientX;
-          dragOriginRef.current = offsetRef.current;
-          pausedRef.current = true;
-          viewportRef.current?.setPointerCapture(e.pointerId);
-        }}
-        onPointerMove={(e) => {
-          if (!draggingRef.current) return;
-          const dx = e.clientX - dragXRef.current;
-          offsetRef.current = dragOriginRef.current + dx;
-          const lw = loopWidthRef.current;
-          if (lw > 0) {
-            while (offsetRef.current <= -lw) offsetRef.current += lw;
-            while (offsetRef.current > 0) offsetRef.current -= lw;
-          }
-        }}
-        onPointerUp={() => {
-          draggingRef.current = false;
-          pausedRef.current = false;
-        }}
-        onPointerCancel={() => {
-          draggingRef.current = false;
-          pausedRef.current = false;
-        }}
-        className="w-full overflow-hidden cursor-grab active:cursor-grabbing"
-        style={{ minHeight: isMobile ? '350px' : '410px' }}
-      >
+    <div className="relative w-full overflow-hidden pt-4 pb-6 sm:pb-8 select-none">
+      <div className="relative w-full">
+        {/* Viewport with lateral gradient masks */}
         <div
-          ref={trackRef}
-          className="flex will-change-transform py-4"
-          style={{ width: 'max-content' }}
+          ref={viewportRef}
+          role="region"
+          aria-roledescription="carousel"
+          aria-label="Why Gyan Chowk Learning Stack Showcase"
+          tabIndex={0}
+          onMouseEnter={() => {
+            pausedRef.current = true;
+          }}
+          onMouseLeave={() => {
+            if (!draggingRef.current) pausedRef.current = false;
+          }}
+          onFocus={() => {
+            pausedRef.current = true;
+          }}
+          onBlur={() => {
+            pausedRef.current = false;
+          }}
+          onPointerDown={(e) => {
+            if (e.pointerType === 'mouse' && e.button !== 0) return;
+            draggingRef.current = true;
+            dragXRef.current = e.clientX;
+            dragOriginRef.current = offsetRef.current;
+            pausedRef.current = true;
+            viewportRef.current?.setPointerCapture(e.pointerId);
+          }}
+          onPointerMove={(e) => {
+            if (!draggingRef.current) return;
+            const dx = e.clientX - dragXRef.current;
+            offsetRef.current = dragOriginRef.current + dx;
+            const lw = loopWidthRef.current;
+            if (lw > 0) {
+              while (offsetRef.current <= -lw) offsetRef.current += lw;
+              while (offsetRef.current > 0) offsetRef.current -= lw;
+            }
+          }}
+          onPointerUp={() => {
+            draggingRef.current = false;
+            pausedRef.current = false;
+          }}
+          onPointerCancel={() => {
+            draggingRef.current = false;
+            pausedRef.current = false;
+          }}
+          className="w-full overflow-hidden cursor-grab active:cursor-grabbing"
+          style={{ minHeight: isMobile ? '350px' : '410px' }}
         >
-          {duplicatedSlides.map((card, i) => {
-            return (
-              <div
-                key={`${card._id || card.title}-${i}`}
-                style={{
-                  width: `${cardWidth}px`,
-                  flex: `0 0 ${cardWidth}px`,
-                  marginRight: `${cardGap}px`,
-                }}
-                className="perspective-[1000px]"
-                aria-hidden={i >= count}
-              >
-                {/* Inner Card Container that receives arch transform */}
+          <div
+            ref={trackRef}
+            className="flex will-change-transform py-4"
+            style={{ width: 'max-content' }}
+          >
+            {duplicatedSlides.map((card, i) => {
+              return (
                 <div
-                  className="transition-[box-shadow,border-color] duration-200 will-change-transform"
+                  key={`${card._id || card.title}-${i}`}
                   style={{
-                    transformOrigin: '50% 100%',
-                    transform: 'translate3d(0, 0, 0) rotate(0deg)',
+                    width: `${cardWidth}px`,
+                    flex: `0 0 ${cardWidth}px`,
+                    marginRight: `${cardGap}px`,
                   }}
+                  className="perspective-[1000px]"
+                  aria-hidden={i >= count}
                 >
-                  <Link
-                    href={card.href || '/courses'}
-                    className="group relative flex flex-col justify-between overflow-hidden rounded-[22px] border border-black/10 bg-[#161B26] text-white shadow-[0_16px_36px_-10px_rgba(0,0,0,0.18)] transition-all duration-300 hover:shadow-[0_24px_48px_-12px_rgba(0,0,0,0.3)] hover:border-amber-400/50"
+                  {/* Inner Card Container that receives arch transform */}
+                  <div
+                    className="transition-[box-shadow,border-color] duration-200 will-change-transform"
                     style={{
-                      height: isMobile ? '320px' : '360px',
+                      transformOrigin: '50% 100%',
+                      transform: 'translate3d(0, 0, 0) rotate(0deg)',
                     }}
                   >
-                    {/* Background Visual Image */}
-                    <div className="absolute inset-0 z-0">
-                      {card.imageUrl ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={card.imageUrl}
-                          alt={card.title}
-                          className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
-                          loading={i < 6 ? 'eager' : 'lazy'}
-                        />
-                      ) : (
-                        <div className="h-full w-full bg-gradient-to-br from-[#1E293B] to-[#0F172A]" />
-                      )}
+                    <Link
+                      href={card.href || '/courses'}
+                      className="group relative flex flex-col justify-between overflow-hidden rounded-[22px] border border-black/10 bg-[#161B26] text-white shadow-[0_16px_36px_-10px_rgba(0,0,0,0.18)] transition-all duration-300 hover:shadow-[0_24px_48px_-12px_rgba(0,0,0,0.3)] hover:border-amber-400/50"
+                      style={{
+                        height: isMobile ? '320px' : '360px',
+                      }}
+                    >
+                      {/* Background Visual Image */}
+                      <div className="absolute inset-0 z-0">
+                        {card.imageUrl ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={card.imageUrl}
+                            alt={card.title}
+                            className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+                            loading={i < 6 ? 'eager' : 'lazy'}
+                          />
+                        ) : (
+                          <div className="h-full w-full bg-gradient-to-br from-[#1E293B] to-[#0F172A]" />
+                        )}
 
-                      {/* Film grain and dark readability gradient veil */}
-                      <div className="absolute inset-0 bg-gradient-to-t from-[#0A0D14] via-[#0A0D14]/65 to-black/30" />
-                    </div>
-
-                    {/* Card Top: Accent pill & Serial badge */}
-                    <div className="relative z-10 flex items-center justify-between p-4 sm:p-5">
-                      <span
-                        className="inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider backdrop-blur-md shadow-xs"
-                        style={{
-                          backgroundColor: 'rgba(255, 255, 255, 0.12)',
-                          color: '#FFFFFF',
-                          border: '1px solid rgba(255, 255, 255, 0.22)',
-                        }}
-                      >
-                        {card.badge}
-                      </span>
-
-                      <span
-                        className="h-2.5 w-2.5 rounded-full shadow-xs"
-                        style={{ backgroundColor: card.accentColor }}
-                        aria-hidden="true"
-                      />
-                    </div>
-
-                    {/* Card Bottom: Title & Body description */}
-                    <div className="relative z-10 p-5 sm:p-6 mt-auto">
-                      <p className="text-[10.5px] font-semibold uppercase tracking-[0.16em] text-amber-300/90">
-                        {card.kicker}
-                      </p>
-
-                      <h3 className="mt-1 font-serif text-[1.25rem] sm:text-[1.35rem] font-bold leading-snug text-white tracking-tight">
-                        {card.title}
-                      </h3>
-
-                      <p className="mt-2 text-xs leading-relaxed text-stone-300 line-clamp-2">
-                        {card.description}
-                      </p>
-
-                      <div className="mt-4 flex items-center gap-1.5 text-xs font-semibold text-white/80 group-hover:text-amber-300 transition-colors">
-                        <span>Explore</span>
-                        <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
+                        {/* Film grain and dark readability gradient veil */}
+                        <div className="absolute inset-0 bg-gradient-to-t from-[#0A0D14] via-[#0A0D14]/65 to-black/30" />
                       </div>
-                    </div>
-                  </Link>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
 
-      {/* Navigation Controls (Left / Right Arrows) */}
-      <div className="gc-container relative z-20 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 mt-2 flex items-center justify-end gap-2.5">
-        <button
-          type="button"
-          onClick={() => nudge(1)}
-          aria-label="Previous learning stack cards"
-          className="grid h-9 w-9 sm:h-10 sm:w-10 place-items-center rounded-full border border-stone-300 bg-white text-stone-700 shadow-xs transition hover:bg-stone-50 hover:text-black hover:border-stone-400 active:scale-95"
-        >
-          <ChevronLeft className="h-4 w-4 sm:h-5 sm:w-5" />
-        </button>
-        <button
-          type="button"
-          onClick={() => nudge(-1)}
-          aria-label="Next learning stack cards"
-          className="grid h-9 w-9 sm:h-10 sm:w-10 place-items-center rounded-full border border-stone-300 bg-white text-stone-700 shadow-xs transition hover:bg-stone-50 hover:text-black hover:border-stone-400 active:scale-95"
-        >
-          <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5" />
-        </button>
+                      {/* Card Top: Accent pill & Serial badge */}
+                      <div className="relative z-10 flex items-center justify-between p-4 sm:p-5">
+                        <span
+                          className="inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider backdrop-blur-md shadow-xs"
+                          style={{
+                            backgroundColor: 'rgba(255, 255, 255, 0.12)',
+                            color: '#FFFFFF',
+                            border: '1px solid rgba(255, 255, 255, 0.22)',
+                          }}
+                        >
+                          {card.badge}
+                        </span>
+
+                        <span
+                          className="h-2.5 w-2.5 rounded-full shadow-xs"
+                          style={{ backgroundColor: card.accentColor }}
+                          aria-hidden="true"
+                        />
+                      </div>
+
+                      {/* Card Bottom: Title & Body description */}
+                      <div className="relative z-10 p-5 sm:p-6 mt-auto">
+                        <p className="text-[10.5px] font-semibold uppercase tracking-[0.16em] text-amber-300/90">
+                          {card.kicker}
+                        </p>
+
+                        <h3 className="mt-1 font-serif text-[1.25rem] sm:text-[1.35rem] font-bold leading-snug text-white tracking-tight">
+                          {card.title}
+                        </h3>
+
+                        <p className="mt-2 text-xs leading-relaxed text-stone-300 line-clamp-2">
+                          {card.description}
+                        </p>
+
+                        <div className="mt-4 flex items-center gap-1.5 text-xs font-semibold text-white/80 group-hover:text-amber-300 transition-colors">
+                          <span>Explore</span>
+                          <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
+                        </div>
+                      </div>
+                    </Link>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {count > 1 ? (
+          <>
+            <button
+              type="button"
+              onClick={() => nudge(1)}
+              aria-label="Previous learning stack cards"
+              className="absolute left-2 sm:left-4 md:left-6 top-1/2 z-20 grid h-8 w-8 sm:h-10 sm:w-10 md:h-11 md:w-11 -translate-y-1/2 place-items-center rounded-full bg-white/95 text-[color:var(--brand-navy)] shadow-[0_4px_16px_rgba(0,0,0,0.15)] hover:bg-white hover:scale-105 active:scale-95 transition-all border border-slate-200/80 cursor-pointer"
+            >
+              <ChevronLeft className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6" />
+            </button>
+            <button
+              type="button"
+              onClick={() => nudge(-1)}
+              aria-label="Next learning stack cards"
+              className="absolute right-2 sm:right-4 md:right-6 top-1/2 z-20 grid h-8 w-8 sm:h-10 sm:w-10 md:h-11 md:w-11 -translate-y-1/2 place-items-center rounded-full bg-white/95 text-[color:var(--brand-navy)] shadow-[0_4px_16px_rgba(0,0,0,0.15)] hover:bg-white hover:scale-105 active:scale-95 transition-all border border-slate-200/80 cursor-pointer"
+            >
+              <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6" />
+            </button>
+          </>
+        ) : null}
       </div>
     </div>
   );
